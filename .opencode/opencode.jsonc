@@ -1,0 +1,86 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "default_agent": "gasty-feature-dev",
+  "agent": {
+    "gasty-architect": {
+      "prompt": "{file:./agent/gasty-architect.md}",
+      "mode": "primary",
+      "tools": {
+        "read": true,
+        "grep": true,
+        "glob": true,
+        "write": true,
+        "edit": true,
+        "bash": true
+      }
+    },
+    "gasty-feature-dev": {
+      "prompt": "{file:./agent/gasty-feature-dev.md}",
+      "mode": "primary",
+      "tools": {
+        "read": true,
+        "grep": true,
+        "glob": true,
+        "write": true,
+        "edit": true,
+        "bash": true
+      }
+    },
+    "gasty-parser-expert": {
+      "prompt": "{file:./agent/gasty-parser-expert.md}",
+      "mode": "subagent",
+      "tools": {
+        "read": true,
+        "grep": true,
+        "glob": true,
+        "edit": true,
+        "bash": true
+      }
+    },
+    "gasty-data-engineer": {
+      "prompt": "{file:./agent/gasty-data-engineer.md}",
+      "mode": "subagent",
+      "tools": {
+        "read": true,
+        "grep": true,
+        "glob": true,
+        "edit": true,
+        "bash": true
+      }
+    },
+    "gasty-test-writer": {
+      "prompt": "{file:./agent/gasty-test-writer.md}",
+      "mode": "subagent",
+      "tools": {
+        "read": true,
+        "grep": true,
+        "glob": true,
+        "write": true,
+        "edit": true,
+        "bash": true
+      }
+    },
+    "gasty-reviewer": {
+      "prompt": "{file:./agent/gasty-reviewer.md}",
+      "mode": "primary",
+      "tools": {
+        "read": true,
+        "grep": true,
+        "glob": true,
+        "bash": true
+      }
+    },
+    "gasty-release": {
+      "prompt": "{file:./agent/gasty-release.md}",
+      "mode": "subagent",
+      "tools": {
+        "read": true,
+        "grep": true,
+        "glob": true,
+        "write": true,
+        "edit": true,
+        "bash": true
+      }
+    }
+  }
+}
