@@ -40,11 +40,11 @@ const MONTHS_FULL = [
 ]
 
 export function formatDate(iso: string): string {
-  const d = new Date(iso)
+  const [y, m, d] = iso.split('-').map(Number)
+  const date = new Date(y, m - 1, d)
   const now = new Date()
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-  const target = new Date(d.getFullYear(), d.getMonth(), d.getDate())
-  const diff = Math.floor((today.getTime() - target.getTime()) / (1000 * 60 * 60 * 24))
+  const diff = Math.floor((today.getTime() - date.getTime()) / (1000 * 60 * 60 * 24))
 
   if (diff === 0) return 'Hoy'
   if (diff === 1) return 'Ayer'
@@ -52,12 +52,12 @@ export function formatDate(iso: string): string {
   if (diff > 1 && diff < 7) return `Hace ${diff} días`
   if (diff < 0 && diff > -7) return `En ${-diff} días`
 
-  return `${d.getDate()} ${MONTHS_ES[d.getMonth()]}`
+  return `${d} ${MONTHS_ES[m - 1]}`
 }
 
 export function formatDateFull(iso: string): string {
-  const d = new Date(iso)
-  return `${d.getDate()} de ${MONTHS_FULL[d.getMonth()]}`
+  const [, m, d] = iso.split('-').map(Number)
+  return `${d} de ${MONTHS_FULL[m - 1]}`
 }
 
 export function formatMonth(date: Date = new Date()): string {

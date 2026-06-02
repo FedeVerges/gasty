@@ -4,7 +4,7 @@ import { useCategories } from '../../hooks/useCategories'
 import { BalanceCard } from './BalanceCard'
 import { MonthSummary } from './MonthSummary'
 import { TransactionItem } from '../transactions/TransactionItem'
-import { formatMoney, formatMonth, MONTHS_FULL } from '../../lib/format'
+import { formatMoney, formatMonth } from '../../lib/format'
 import { useSettings } from '../../context/SettingsContext'
 
 export function Dashboard() {
@@ -16,9 +16,6 @@ export function Dashboard() {
   const currentYear = now.getFullYear()
   const currentMonth = now.getMonth()
 
-  const [selectedMonth, setSelectedMonth] = useState(() =>
-    `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`
-  )
   const [filterCategory, setFilterCategory] = useState('all')
 
   const summary = useMemo(() => {
@@ -52,32 +49,16 @@ export function Dashboard() {
     return { totalIncome, totalExpense, monthSpent, monthIncome, prevMonthSpent }
   }, [transactions, currentYear, currentMonth])
 
-  const months = useMemo(() => {
-    const set = new Set<string>()
-    set.add(`${currentYear}-${String(currentMonth).padStart(2, '0')}`)
-    for (const tx of transactions) {
-      set.add(tx.date.slice(0, 7))
-    }
-    return Array.from(set).sort().reverse().slice(0, 12)
-  }, [transactions, currentYear, currentMonth])
-
   const filtered = useMemo(() => {
     return transactions
-      .filter((t) => t.date.startsWith(selectedMonth))
       .filter((t) => filterCategory === 'all' || t.categoryId === filterCategory)
       .sort((a, b) => b.date.localeCompare(a.date))
-  }, [transactions, selectedMonth, filterCategory])
+  }, [transactions, filterCategory])
 
-  const monthTotal = useMemo(
-    () => filtered.reduce((acc, t) => acc + (t.type === 'expense' ? t.amount : -t.amount), 0),
+  const balance = useMemo(
+    () => filtered.reduce((acc, t) => acc + (t.type === 'expense' ? -t.amount : t.amount), 0),
     [filtered],
   )
-
-  const formatMonthKey = (key: string) => {
-    const [y, m] = key.split('-')
-    const idx = parseInt(m, 10)
-    return `${MONTHS_FULL[idx].charAt(0).toUpperCase() + MONTHS_FULL[idx].slice(1)} ${y}`
-  }
 
   return (
     <div className="space-y-4">
@@ -97,24 +78,6 @@ export function Dashboard() {
         monthIncome={summary.monthIncome}
         monthLabel={formatMonth(now)}
       />
-
-      <div className="flex gap-2 overflow-x-auto scrollbar-hide -mx-5 px-5 pb-1">
-        {months.map((m) => (
-          <button
-            key={m}
-            onClick={() => setSelectedMonth(m)}
-            className={`
-              shrink-0 px-4 py-2 rounded-full text-sm font-medium
-              transition-colors whitespace-nowrap
-              ${selectedMonth === m
-                ? 'bg-accent text-white'
-                : 'bg-card border border-border text-text-muted active:bg-card-hover'}
-            `}
-          >
-            {formatMonthKey(m)}
-          </button>
-        ))}
-      </div>
 
       <div className="flex gap-2 overflow-x-auto scrollbar-hide -mx-5 px-5 pb-1">
         <button
@@ -164,13 +127,13 @@ export function Dashboard() {
       ) : (
         <>
           <div className="bg-card border border-border rounded-2xl px-4 py-3 flex justify-between items-center">
-            <span className="text-sm text-text-muted">Balance del mes</span>
+            <span className="text-sm text-text-muted">Balance</span>
             <span
               className={`font-bold ${
-                monthTotal >= 0 ? 'text-income' : 'text-expense'
+                balance >= 0 ? 'text-income' : 'text-expense'
               }`}
             >
-              {monthTotal >= 0 ? '+' : '−'} {formatMoney(Math.abs(monthTotal), settings.currency)}
+              {balance >= 0 ? '+' : '−'} {formatMoney(Math.abs(balance), settings.currency)}
             </span>
           </div>
 
