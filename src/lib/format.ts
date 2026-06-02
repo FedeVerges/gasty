@@ -1,0 +1,67 @@
+import type { Currency } from '../types'
+
+const FORMATTERS: Record<Currency, Intl.NumberFormat> = {
+  ARS: new Intl.NumberFormat('es-AR', {
+    style: 'currency',
+    currency: 'ARS',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  }),
+  USD: new Intl.NumberFormat('es-AR', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }),
+}
+
+export function formatMoney(amount: number, currency: Currency = 'ARS'): string {
+  return FORMATTERS[currency].format(amount)
+}
+
+export function formatCompact(amount: number, currency: Currency = 'ARS'): string {
+  const formatter = new Intl.NumberFormat('es-AR', {
+    style: 'currency',
+    currency,
+    notation: 'compact',
+    maximumFractionDigits: 1,
+  })
+  return formatter.format(amount)
+}
+
+const MONTHS_ES = [
+  'ene', 'feb', 'mar', 'abr', 'may', 'jun',
+  'jul', 'ago', 'sep', 'oct', 'nov', 'dic',
+]
+
+const MONTHS_FULL = [
+  'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
+  'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre',
+]
+
+export function formatDate(iso: string): string {
+  const d = new Date(iso)
+  const now = new Date()
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  const target = new Date(d.getFullYear(), d.getMonth(), d.getDate())
+  const diff = Math.floor((today.getTime() - target.getTime()) / (1000 * 60 * 60 * 24))
+
+  if (diff === 0) return 'Hoy'
+  if (diff === 1) return 'Ayer'
+  if (diff === -1) return 'Mañana'
+  if (diff > 1 && diff < 7) return `Hace ${diff} días`
+  if (diff < 0 && diff > -7) return `En ${-diff} días`
+
+  return `${d.getDate()} ${MONTHS_ES[d.getMonth()]}`
+}
+
+export function formatDateFull(iso: string): string {
+  const d = new Date(iso)
+  return `${d.getDate()} de ${MONTHS_FULL[d.getMonth()]}`
+}
+
+export function formatMonth(date: Date = new Date()): string {
+  return `${MONTHS_FULL[date.getMonth()].charAt(0).toUpperCase() + MONTHS_FULL[date.getMonth()].slice(1)} ${date.getFullYear()}`
+}
+
+export { MONTHS_FULL, MONTHS_ES }
