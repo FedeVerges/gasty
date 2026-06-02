@@ -1,0 +1,163 @@
+                                                                                                   Proyecto: Smart Input Hub
+
+SMART INPUT HUB
+Dossier de Arquitectura, Especificación de Producto y Planos de Interfaz
+
+
+
+
+Preparado para: Federico Verges | Enfoque Estratégico: Local-First (Fase 1) a Cloud Premium (Fase 2) | Fecha de
+Emisión: Junio 2026
+
+
+
+
+  1. Resumen Ejecutivo y Filosofía de Evolución
+
+Este informe técnico consolida la estrategia de producto resultante de fusionar las propuestas de diseño
+originales basadas en tarjetas de esquinas suavizadas y paleta cromática sutil, junto con el análisis de
+mercado del competidor local de pago único (GuitaFix).
+
+El pilar fundamental de esta arquitectura es el enfoque Local-First Estratégico. Al posponer temporalmente
+la capa de procesamiento en la nube (NLP/OCR y sincronización distribuida) para una versión posterior, se
+elimina por completo la latencia de red en el uso diario, se garantizan costos operativos de infraestructura
+cero ($0) durante el lanzamiento, y se blinda la privacidad absoluta del usuario al almacenar los movimientos
+financieros estrictamente dentro de la memoria física del dispositivo.
+
+
+
+  2. Matriz de Fases y Roadmap del MVP
+
+La aplicación se construirá bajo un esquema iterativo dividido en dos grandes fases de ingeniería,
+permitiendo llegar al usuario final (Play Store) de forma ágil mediante un producto mínimo viable altamente
+funcional.
+
+
+ Área Funcional          Fase 1: MVP (Local-First Offline)                Fase 2: Premium (Cloud Connected)
+
+
+ Almacenamiento          Base de datos local segura (SQLite / MMKV        Sincronización bidireccional asíncrona con
+                         en dispositivo).                                 la nube (PostgreSQL/Supabase).
+
+
+ Carga de Datos          Formulario manual de alto rendimiento (foco      Inferencia multimodal mediante OCR de
+                         automático, menos de 3 clics).                   tickets y análisis de lenguaje natural en
+                                                                          backend.
+
+
+ Finanzas                Módulos de Gastos Fijos mensuales y              Alertas de vencimiento automatizadas
+ Especiales              control diferido de cuotas (CuotaFix) locales.   mediante notificaciones push y flujos
+                                                                          compartidos.
+
+
+ Soporte Divisas         Patrimonio bimonetario consolidado con           Conexión automática a APIs del mercado
+                         actualización manual de cotización.              financiero (Dólar Blue, MEP, Cripto y
+                                                                          CEDEARs).
+
+
+
+
+                                                      Página 1 de 3
+                                                                                                         Proyecto: Smart Input Hub
+
+
+
+
+   🎯 Justificación del Cambio de Carga Manual
+   Al remover el procesamiento lingüístico complejo del MVP, el diseño de la interfaz se optimizó para
+   acelerar la carga analógica. El Botón Flotante (FAB) despliega instantáneamente un teclado numérico
+   dedicado, reduciendo la entrada de un gasto a un patrón táctil repetitivo que toma menos de 4
+   segundos en completarse.
+
+
+
+
+  3. Especificación de Diseño de Interfaz (Planos UX)
+
+A continuación se presentan los planos estructurales que representan fielmente los diseños creados,
+aplicando la nueva paleta de colores sutiles basada en grises limpios y el color turquesa empolvado como eje
+de acento visual.
+
+
+          Diseño 1: Dashboard Principal MVP                                Diseño 2: Formulario de Entrada Rápida
+
+
+        👤 $fedeverges                               🔍🔔
+
+
+
+           Pesos Disponibles (👁️)
+
+
+           $1.240,75                                                              Nuevo Movimiento Local
+
+                                                                             Monto de la Operación
+           Presupuesto Mensual: 68% gastado
+
+                                                                                        $ 15.000,00
+            🛒 Súper           🚌 Transp        🎾 Tenis 0%
+              49%                  58%                                       Concepto / Nota Corta
+
+
+                                                                               Milanesas y verduras súper
+        ÚLTIMOS GASTOS DEL MES
+
+                                                                             ASIGNACIÓN ESTRUCTURADA
+          Supermercado                          -$15.000
+          Hoy, 13:15 · Alimentos
+                                                                               Tipo: GASTO
+                                                                               Categoría: 🛒 Comida / Súper
+          Cine Center                            -$8.500
+                                                                               Destino: Efectivo Local
+          Ayer · Entretenimiento
+
+
+
+          Pasaje Autobús                        -$12.000                              Guardar Movimiento
+          30 Mayo · Transporte
+
+                                                    +
+                   Ver Todos los Movimientos →
+
+
+
+
+                                                           Página 2 de 3
+                                                                                         Proyecto: Smart Input Hub
+
+
+
+
+  4. Arquitectura de Almacenamiento Local (Esquema de Tablas)
+
+Para asegurar la escalabilidad hacia la Fase 2, la persistencia local de la Fase 1 estructurará los datos
+utilizando un modelo relacional normalizado. Esto evitará migraciones destructivas de datos cuando se
+conecte el backend en la nube.
+
+ • Tabla `Transactions`: Almacena el registro atómico de cada movimiento. Campos core: `id` (UUID),
+   `amount` (Decimal), `type` (ENUM: Gasto, Ingreso), `concept` (TEXT), `category_id` (FK), `created_at`
+   (TIMESTAMP) y `installments_total` (INTEGER para CuotaFix).
+
+ • Tabla `Categories`: Contiene el catálogo de clasificación de gastos manipulable por el usuario. Campos
+   core: `id` (INT), `display_name` (TEXT), `icon_identifier` (TEXT) y `budget_limit` (DECIMAL, opcional para
+   alertas de control).
+
+ • Tabla `FixedExpenses`: Modulo derivado del benchmark. Guarda las plantillas de gastos recurrentes que
+   el motor de la app debe instanciar automáticamente de forma local al cumplirse el ciclo de facturación
+   establecido.
+
+
+
+  5. Estrategia de Despliegue para Play Store
+
+El desarrollo multiplataforma nos permite empaquetar el código fuente en un artefacto compilado nativo de
+Android (`.apk` para pruebas internas y `.aab` para distribución oficial). Al no depender de servidores web
+externos en la Fase 1, el proceso de aprobación en la consola de desarrolladores de Google (Google Play
+Console) es sumamente ágil, al no requerir configuraciones complejas de endpoints de autenticación ni
+políticas de privacidad de datos de servidores de terceros.
+
+
+
+
+                                                  Página 3 de 3
+

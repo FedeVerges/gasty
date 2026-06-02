@@ -4,7 +4,7 @@ import { useCategories } from '../../hooks/useCategories'
 import { BalanceCard } from './BalanceCard'
 import { MonthSummary } from './MonthSummary'
 import { TransactionItem } from '../transactions/TransactionItem'
-import { formatMoney, formatMonth } from '../../lib/format'
+import { formatMonth } from '../../lib/format'
 import { useSettings } from '../../context/SettingsContext'
 
 export function Dashboard() {
@@ -54,11 +54,6 @@ export function Dashboard() {
       .filter((t) => filterCategory === 'all' || t.categoryId === filterCategory)
       .sort((a, b) => b.date.localeCompare(a.date))
   }, [transactions, filterCategory])
-
-  const balance = useMemo(
-    () => filtered.reduce((acc, t) => acc + (t.type === 'expense' ? -t.amount : t.amount), 0),
-    [filtered],
-  )
 
   return (
     <div className="space-y-4">
@@ -125,24 +120,11 @@ export function Dashboard() {
           </p>
         </div>
       ) : (
-        <>
-          <div className="bg-card border border-border rounded-2xl px-4 py-3 flex justify-between items-center">
-            <span className="text-sm text-text-muted">Balance</span>
-            <span
-              className={`font-bold ${
-                balance >= 0 ? 'text-income' : 'text-expense'
-              }`}
-            >
-              {balance >= 0 ? '+' : '−'} {formatMoney(Math.abs(balance), settings.currency)}
-            </span>
-          </div>
-
-          <div className="space-y-1">
-            {filtered.map((tx) => (
-              <TransactionItem key={tx.id} transaction={tx} />
-            ))}
-          </div>
-        </>
+        <div className="space-y-1">
+          {filtered.map((tx) => (
+            <TransactionItem key={tx.id} transaction={tx} />
+          ))}
+        </div>
       )}
     </div>
   )

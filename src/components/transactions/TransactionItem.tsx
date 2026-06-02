@@ -66,29 +66,29 @@ export function TransactionItem({ transaction }: TransactionItemProps) {
         </div>
       </div>
 
-      <div className="flex flex-col items-end gap-1">
-        <span
-          className={`font-bold text-base ${isIncome ? 'text-income' : 'text-expense'}`}
-        >
-          {isIncome ? '+' : '−'} {formatMoney(transaction.amount, settings.currency)}
-        </span>
-        <div className="flex gap-2">
-          <button
-            onClick={() => onEdit?.(transaction)}
-            className="text-accent text-xs px-1"
-            aria-label="Editar"
+        <div className="flex flex-col items-end gap-2">
+          <span
+            className={`font-bold text-lg ${isIncome ? 'text-income' : 'text-expense'}`}
           >
-            Editar
-          </button>
-          <button
-            onClick={handleDelete}
-            className="text-text-subtle text-xs px-1"
-            aria-label="Eliminar"
-          >
-            Eliminar
-          </button>
+            {isIncome ? '+' : '−'} {formatMoney(transaction.amount, settings.currency)}
+          </span>
+          <div className="flex gap-3 w-full">
+            <button
+              onClick={() => onEdit?.(transaction)}
+              className="flex-1 items-center justify-center px-4 py-2 text-accent font-medium rounded-lg border border-accent hover:bg-accent/10"
+              aria-label="Editar"
+            >
+              Editar
+            </button>
+            <button
+              onClick={handleDelete}
+              className="flex-1 items-center justify-center px-4 py-2 text-text-subtle font-medium rounded-lg border border-border hover:bg-card-hover"
+              aria-label="Eliminar"
+            >
+              Eliminar
+            </button>
+          </div>
         </div>
-      </div>
     </div>
   )
 }

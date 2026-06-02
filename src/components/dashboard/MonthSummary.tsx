@@ -12,6 +12,8 @@ export function MonthSummary({ monthSpent, monthIncome, monthLabel }: MonthSumma
   const { settings } = useSettings()
   const remaining = monthIncome - monthSpent
   const hasIncome = monthIncome > 0
+  const progress = hasIncome ? Math.min(monthSpent / monthIncome, 1) : 0
+  const overBudget = hasIncome && monthSpent > monthIncome
 
   return (
     <Card>
@@ -39,6 +41,21 @@ export function MonthSummary({ monthSpent, monthIncome, monthLabel }: MonthSumma
           </span>
         </div>
       </div>
+
+      {hasIncome && (
+        <div className="mt-4">
+          <div className="flex justify-between text-xs text-text-muted mb-1.5">
+            <span>{overBudget ? '¡Excediste el presupuesto!' : `${(progress * 100).toFixed(0)}% de los ingresos`}</span>
+            <span>{formatMoney(monthIncome, settings.currency)}</span>
+          </div>
+          <div className="w-full h-2.5 bg-border rounded-full overflow-hidden">
+            <div
+              className={`h-full rounded-full transition-all duration-500 ${overBudget ? 'bg-expense' : 'bg-accent'}`}
+              style={{ width: `${Math.min(progress * 100, 100)}%` }}
+            />
+          </div>
+        </div>
+      )}
     </Card>
   )
 }
