@@ -81,13 +81,13 @@ export function Stats() {
     return (
       <div className="space-y-4">
         <header className="pt-2 pb-1">
-          <h1 className="text-3xl font-bold tracking-tight">Stats</h1>
+          <h1 className="text-4xl font-black tracking-tight leading-none">Stats</h1>
         </header>
         <Card>
           <div className="flex flex-col items-center justify-center py-10 text-center">
             <span className="text-5xl mb-3">📈</span>
-            <p className="text-text font-medium">Sin datos todavía</p>
-            <p className="text-sm text-text-muted mt-1">
+            <p className="text-ink font-medium">Sin datos todavía</p>
+            <p className="text-sm text-body mt-1">
               Empezá a registrar gastos para ver estadísticas
             </p>
           </div>
@@ -104,18 +104,18 @@ export function Stats() {
   return (
     <div className="space-y-4">
       <header className="pt-2 pb-1">
-        <h1 className="text-3xl font-bold tracking-tight">Stats</h1>
+        <h1 className="text-4xl font-black tracking-tight leading-none">Stats</h1>
       </header>
 
       <Card>
-        <span className="text-xs uppercase tracking-widest text-text-muted font-medium block mb-1">
+        <span className="text-xs uppercase tracking-widest text-body font-medium block mb-1">
           Últimos 6 meses
         </span>
         <div className="flex items-baseline gap-2 mb-4">
           <span className="text-3xl font-bold">
             {formatMoney(data.totalLast6, settings.currency)}
           </span>
-          <span className="text-sm text-text-muted">
+          <span className="text-sm text-body">
             · promedio {formatMoney(data.avg, settings.currency)}
           </span>
         </div>
@@ -137,7 +137,7 @@ export function Stats() {
                   width={BAR_WIDTH}
                   height={h}
                   rx="6"
-                  fill="var(--color-accent)"
+                  fill="var(--color-positive)"
                   opacity={m.total > 0 ? 1 : 0.2}
                 />
                 <text
@@ -145,7 +145,7 @@ export function Stats() {
                   y={HEIGHT + 14}
                   textAnchor="middle"
                   fontSize="10"
-                  fill="var(--color-text-muted)"
+                  fill="var(--color-mute)"
                 >
                   {m.label}
                 </text>
@@ -162,7 +162,7 @@ export function Stats() {
 
       {topCategory && topCategory.category && (
         <Card>
-          <span className="text-xs uppercase tracking-widest text-text-muted font-medium block mb-3">
+          <span className="text-xs uppercase tracking-widest text-body font-medium block mb-3">
             Top categoría del mes
           </span>
           <div className="flex items-center gap-4">
@@ -173,10 +173,10 @@ export function Stats() {
               {topCategory.category.emoji}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="font-bold text-lg text-text truncate">
+              <p className="font-bold text-lg text-ink truncate">
                 {topCategory.category.name}
               </p>
-              <p className="text-2xl font-bold text-text">
+              <p className="text-2xl font-bold text-ink">
                 {formatMoney(topCategory.total, settings.currency)}
               </p>
             </div>

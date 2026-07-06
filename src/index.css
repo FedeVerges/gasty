@@ -1,48 +1,115 @@
 @import "tailwindcss";
+@import "@fontsource/inter/latin-400.css";
+@import "@fontsource/inter/latin-600.css";
+@import "@fontsource/inter/latin-900.css";
 
 @theme {
-  --color-bg: #f5f5f7;
-  --color-card: #ffffff;
-  --color-card-hover: #fafafa;
-  --color-text: #1a1a2e;
-  --color-text-muted: #6b7280;
-  --color-text-subtle: #9ca3af;
-  --color-border: #e5e7eb;
-  --color-border-strong: #d1d5db;
-  --color-accent: #7c3aed;
-  --color-accent-2: #6366f1;
-  --color-accent-soft: #ede9fe;
-  --color-expense: #ef4444;
-  --color-expense-soft: #fee2e2;
-  --color-income: #22c55e;
-  --color-income-soft: #dcfce7;
-  --color-recurring: #f59e0b;
-  --color-recurring-soft: #fef3c7;
+  /* ── Brand & Accent ── */
+  --color-primary: #9fe870;
+  --color-on-primary: #0e0f0c;
+  --color-primary-active: #cdffad;
+  --color-primary-neutral: #c5edab;
+  --color-primary-pale: #e2f6d5;
+
+  /* ── Surface ── */
+  --color-canvas: #ffffff;
+  --color-canvas-soft: #f5f5f4;
   --color-overlay: rgba(0, 0, 0, 0.4);
 
-  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter",
-    "Segoe UI", Roboto, sans-serif;
+  /* ── Text ── */
+  --color-ink: #0e0f0c;
+  --color-ink-deep: #163300;
+  --color-body: #454745;
+  --color-mute: #5c5e59;
+
+  /* ── Semantic ── */
+  --color-positive: #1a7a35;
+  --color-positive-deep: #054d28;
+  --color-warning: #ffd11a;
+  --color-warning-deep: #b86700;
+  --color-warning-content: #4a3b1c;
+  --color-negative: #d03238;
+  --color-negative-deep: #a72027;
+  --color-negative-darkest: #a7000d;
+  --color-negative-bg: #320707;
+
+  /* ── Accent tertiary ── */
+  --color-accent-orange: #ffc091;
+  --color-accent-cyan: #38c8ff;
+
+  /* ── Legacy aliases (point to new tokens) ── */
+  --color-bg: var(--color-canvas);
+  --color-card: var(--color-canvas);
+  --color-card-hover: #ececeb;
+  --color-text: var(--color-ink);
+  --color-text-muted: var(--color-body);
+  --color-text-subtle: var(--color-mute);
+  --color-border: #d6d9d3;
+  --color-border-strong: #c1c4be;
+  --color-accent: var(--color-primary);
+  --color-accent-2: var(--color-primary);
+  --color-accent-soft: var(--color-primary-pale);
+  --color-expense: var(--color-negative);
+  --color-expense-soft: #fbe4e4;
+  --color-income: var(--color-positive);
+  --color-income-soft: #e4f3e4;
+  --color-recurring: var(--color-warning);
+  --color-recurring-soft: #fef3c7;
+
+  /* ── Typography ── */
+  --font-display: "Inter", system-ui, sans-serif;
+  --font-body: "Inter", system-ui, sans-serif;
+  --font-sans: "Inter", system-ui, -apple-system, sans-serif;
 }
 
 [data-theme="dark"] {
-  --color-bg: #16161e;
-  --color-card: #1e1e2a;
-  --color-card-hover: #25252f;
-  --color-text: #e0e0e0;
-  --color-text-muted: #888;
-  --color-text-subtle: #5c5c6a;
-  --color-border: #2a2a3a;
-  --color-border-strong: #3a3a4a;
-  --color-accent: #a78bfa;
-  --color-accent-2: #818cf8;
-  --color-accent-soft: #2a2440;
-  --color-expense: #f87171;
-  --color-expense-soft: #3a1f1f;
-  --color-income: #4ade80;
-  --color-income-soft: #1f3a2a;
-  --color-recurring: #fbbf24;
-  --color-recurring-soft: #3a2f1a;
+  /* ── Surface ── */
+  --color-canvas: #1a1e17;
+  --color-canvas-soft: #22261f;
   --color-overlay: rgba(0, 0, 0, 0.6);
+
+  /* ── Text ── */
+  --color-ink: #eef0ea;
+  --color-ink-deep: #b4e89a;
+  --color-body: #abada7;
+  --color-mute: #8f918b;
+
+  /* ── Semantic ── */
+  --color-positive: #4ade80;
+  --color-positive-deep: #22c55e;
+  --color-warning: #fbbf24;
+  --color-warning-deep: #f59e0b;
+  --color-warning-content: #fef3c7;
+  --color-negative: #f87171;
+  --color-negative-deep: #ef4444;
+  --color-negative-darkest: #fca5a5;
+  --color-negative-bg: #3b1a1a;
+
+  /* ── Brand (maintain same green) ── */
+  --color-primary: #9fe870;
+  --color-on-primary: #0e0f0c;
+  --color-primary-active: #cdffad;
+  --color-primary-neutral: #c5edab;
+  --color-primary-pale: #2a3324;
+
+  /* ── Legacy aliases ── */
+  --color-bg: var(--color-canvas-soft);
+  --color-card: var(--color-canvas);
+  --color-card-hover: #262b23;
+  --color-text: var(--color-ink);
+  --color-text-muted: var(--color-body);
+  --color-text-subtle: var(--color-mute);
+  --color-border: #2d322a;
+  --color-border-strong: #3d4339;
+  --color-accent: var(--color-primary);
+  --color-accent-2: var(--color-primary);
+  --color-accent-soft: var(--color-primary-pale);
+  --color-expense: var(--color-negative);
+  --color-expense-soft: #3b1a1a;
+  --color-income: var(--color-positive);
+  --color-income-soft: #1a2e1a;
+  --color-recurring: var(--color-warning);
+  --color-recurring-soft: #3a2f1a;
 }
 
 @layer base {
@@ -60,6 +127,7 @@
     -moz-osx-font-smoothing: grayscale;
     font-synthesis: none;
     text-rendering: optimizeLegibility;
+    font-feature-settings: "calt";
   }
 
   #root {
@@ -70,7 +138,6 @@
     background: var(--color-bg);
     min-height: 100svh;
     position: relative;
-    box-shadow: 0 0 0 1px var(--color-border);
   }
 
   button {

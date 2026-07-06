@@ -18,24 +18,24 @@ export function MonthSummary({ monthSpent, monthIncome, monthLabel }: MonthSumma
   return (
     <Card>
       <div className="flex items-center justify-between mb-4">
-        <span className="text-xs uppercase tracking-widest text-text-muted font-medium">
+        <span className="text-xs uppercase tracking-widest text-body font-medium">
           {monthLabel}
         </span>
       </div>
 
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <span className="block text-sm text-text-muted">Gastado</span>
-          <span className="block text-2xl font-bold text-expense">
+          <span className="block text-sm text-body">Gastado</span>
+          <span className="block text-2xl font-bold text-negative">
             {formatMoney(monthSpent, settings.currency)}
           </span>
         </div>
         <div>
-          <span className="block text-sm text-text-muted">
+          <span className="block text-sm text-body">
             {hasIncome ? 'Restante' : 'Ingresos'}
           </span>
           <span
-            className={`block text-2xl font-bold ${hasIncome ? (remaining >= 0 ? 'text-income' : 'text-expense') : 'text-text-muted'}`}
+            className={`block text-2xl font-bold ${hasIncome ? (remaining >= 0 ? 'text-income' : 'text-negative') : 'text-body'}`}
           >
             {hasIncome ? formatMoney(remaining, settings.currency) : formatMoney(0, settings.currency)}
           </span>
@@ -44,13 +44,13 @@ export function MonthSummary({ monthSpent, monthIncome, monthLabel }: MonthSumma
 
       {hasIncome && (
         <div className="mt-4">
-          <div className="flex justify-between text-xs text-text-muted mb-1.5">
+          <div className="flex justify-between text-xs text-body mb-1.5">
             <span>{overBudget ? '¡Excediste el presupuesto!' : `${(progress * 100).toFixed(0)}% de los ingresos`}</span>
             <span>{formatMoney(monthIncome, settings.currency)}</span>
           </div>
-          <div className="w-full h-2.5 bg-border rounded-full overflow-hidden">
+          <div className="w-full h-2.5 bg-primary-pale rounded-full overflow-hidden">
             <div
-              className={`h-full rounded-full transition-all duration-500 ${overBudget ? 'bg-expense' : 'bg-accent'}`}
+              className={`h-full rounded-full transition-all duration-500 ${overBudget ? 'bg-negative' : 'bg-positive'}`}
               style={{ width: `${Math.min(progress * 100, 100)}%` }}
             />
           </div>

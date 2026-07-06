@@ -2,7 +2,7 @@ import type { ReactNode, ButtonHTMLAttributes } from 'react'
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   children: ReactNode
-  variant?: 'primary' | 'secondary' | 'ghost' | 'danger'
+  variant?: 'primary' | 'secondary' | 'tertiary' | 'danger'
   size?: 'sm' | 'md' | 'lg'
   fullWidth?: boolean
 }
@@ -17,17 +17,19 @@ export function Button({
 }: ButtonProps) {
   const variants: Record<string, string> = {
     primary:
-      'bg-gradient-to-br from-accent to-accent-2 text-white shadow-md active:scale-95',
+      'bg-primary text-on-primary active:brightness-90',
     secondary:
-      'bg-card border border-border text-text active:bg-card-hover',
-    ghost: 'text-text-muted active:bg-card-hover',
-    danger: 'bg-expense text-white active:scale-95',
+      'bg-canvas-soft text-ink active:brightness-95',
+    tertiary:
+      'bg-canvas text-ink border border-ink active:bg-canvas-soft',
+    danger:
+      'bg-negative text-white active:brightness-90',
   }
 
   const sizes: Record<string, string> = {
     sm: 'px-3 py-2 text-sm rounded-xl',
-    md: 'px-4 py-3 text-base rounded-2xl',
-    lg: 'px-5 py-4 text-lg rounded-2xl',
+    md: 'px-4 py-3 text-base rounded-3xl',
+    lg: 'px-5 py-4 text-lg rounded-3xl',
   }
 
   return (

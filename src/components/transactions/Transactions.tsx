@@ -53,7 +53,7 @@ export function Transactions() {
   return (
     <div className="space-y-4">
       <header className="pt-2 pb-1">
-        <h1 className="text-3xl font-bold tracking-tight">Movimientos</h1>
+        <h1 className="text-4xl font-black tracking-tight leading-none">Movimientos</h1>
       </header>
 
       <div className="flex gap-2 overflow-x-auto scrollbar-hide -mx-5 px-5 pb-1">
@@ -65,8 +65,8 @@ export function Transactions() {
               shrink-0 px-4 py-2 rounded-full text-sm font-medium
               transition-colors whitespace-nowrap
               ${selectedMonth === m
-                ? 'bg-accent text-white'
-                : 'bg-card border border-border text-text-muted active:bg-card-hover'}
+                ? 'bg-ink text-canvas'
+                : 'bg-card border border-border text-body active:bg-card-hover'}
             `}
           >
             {formatMonthKey(m)}
@@ -80,8 +80,8 @@ export function Transactions() {
           className={`
             shrink-0 px-3 py-1.5 rounded-full text-xs font-medium
             ${filterCategory === 'all'
-              ? 'bg-text text-card'
-              : 'bg-card border border-border text-text-muted'}
+              ? 'bg-ink text-canvas'
+              : 'bg-card border border-border text-body'}
           `}
         >
           Todas
@@ -97,7 +97,7 @@ export function Transactions() {
                 flex items-center gap-1
                 ${filterCategory === c.id
                   ? 'text-white'
-                  : 'bg-card border border-border text-text-muted'}
+                  : 'bg-card border border-border text-body'}
               `}
               style={
                 filterCategory === c.id
@@ -114,25 +114,25 @@ export function Transactions() {
       {filtered.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 text-center">
           <span className="text-5xl mb-3">🫥</span>
-          <p className="text-text font-medium">Sin movimientos</p>
-          <p className="text-sm text-text-muted mt-1">
+          <p className="text-ink font-medium">Sin movimientos</p>
+          <p className="text-sm text-body mt-1">
             Tocá el botón + para registrar uno
           </p>
         </div>
       ) : (
         <>
           <div className="bg-card border border-border rounded-2xl px-4 py-3 flex justify-between items-center">
-            <span className="text-sm text-text-muted">Balance del mes</span>
+            <span className="text-sm text-body">Balance del mes</span>
             <span
               className={`font-bold ${
-                monthTotal >= 0 ? 'text-income' : 'text-expense'
+                monthTotal >= 0 ? 'text-positive' : 'text-negative'
               }`}
             >
               {monthTotal >= 0 ? '+' : '−'} {formatMoney(Math.abs(monthTotal), settings.currency)}
             </span>
           </div>
 
-          <div className="space-y-1">
+          <div className="bg-card border border-border rounded-2xl divide-y divide-border">
             {filtered.map((tx) => (
               <TransactionItem key={tx.id} transaction={tx} />
             ))}

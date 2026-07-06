@@ -16,21 +16,21 @@ export function BalanceCard({ totalIncome, totalExpense, prevMonthExpense }: Bal
   const isLower = diff < 0
 
   return (
-    <Card className="bg-gradient-to-br from-accent to-accent-2 border-0 text-white">
+    <Card variant="dark">
       <div className="flex flex-col gap-1">
-        <span className="text-xs uppercase tracking-widest text-white/70 font-medium">
+        <span className="text-xs uppercase tracking-widest text-primary-neutral font-medium">
           Disponible
         </span>
-        <span className="text-5xl font-bold tracking-tight">
+        <span className="text-5xl font-bold tracking-tight text-primary">
           {formatMoney(balance, settings.currency)}
         </span>
-        <div className="mt-2 flex items-center gap-2 text-sm text-white/80">
+        <div className="mt-2 flex items-center gap-2 text-sm text-primary-pale">
           {prevMonthExpense > 0 ? (
             <>
               <span
                 className={`
                   inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-xs font-medium
-                  ${isLower ? 'bg-white/20' : 'bg-white/20'}
+                  ${isLower ? 'bg-primary-pale/20 text-primary-pale' : 'bg-primary-pale/20 text-primary-pale'}
                 `}
               >
                 {isLower ? '↓' : '↑'} {Math.abs(diffPct).toFixed(0)}%
@@ -38,7 +38,7 @@ export function BalanceCard({ totalIncome, totalExpense, prevMonthExpense }: Bal
               <span>vs mes pasado</span>
             </>
           ) : (
-            <span className="text-white/60">Empezá a registrar gastos</span>
+            <span className="text-primary-neutral">Empezá a registrar gastos</span>
           )}
         </div>
       </div>

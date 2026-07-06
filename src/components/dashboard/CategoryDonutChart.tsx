@@ -24,12 +24,12 @@ export function CategoryDonutChart({ data, total }: CategoryDonutChartProps) {
   if (data.length === 0 || total === 0) {
     return (
       <Card>
-        <span className="text-xs uppercase tracking-widest text-text-muted font-medium block mb-4">
+        <span className="text-xs uppercase tracking-widest text-body font-medium block mb-4">
           Por categoría
         </span>
         <div className="flex flex-col items-center justify-center py-10 text-center">
           <span className="text-4xl mb-2">📊</span>
-          <p className="text-sm text-text-muted">
+          <p className="text-sm text-body">
             Sin gastos este mes todavía
           </p>
         </div>
@@ -50,7 +50,7 @@ export function CategoryDonutChart({ data, total }: CategoryDonutChartProps) {
 
   return (
     <Card>
-      <span className="text-xs uppercase tracking-widest text-text-muted font-medium block mb-4">
+      <span className="text-xs uppercase tracking-widest text-body font-medium block mb-4">
         Por categoría
       </span>
 
@@ -82,8 +82,8 @@ export function CategoryDonutChart({ data, total }: CategoryDonutChartProps) {
             ))}
           </svg>
           <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <span className="text-xs text-text-muted">Total</span>
-            <span className="text-lg font-bold text-text">
+            <span className="text-xs text-body">Total</span>
+            <span className="text-lg font-bold text-ink">
               {formatMoney(total, settings.currency)}
             </span>
           </div>
@@ -97,10 +97,10 @@ export function CategoryDonutChart({ data, total }: CategoryDonutChartProps) {
                 style={{ background: s.category.color }}
               />
               <span className="text-lg">{s.category.emoji}</span>
-              <span className="flex-1 text-sm text-text truncate">
+              <span className="flex-1 text-sm text-ink truncate">
                 {s.category.name}
               </span>
-              <span className="text-sm font-medium text-text-muted">
+              <span className="text-sm font-medium text-body">
                 {(s.fraction * 100).toFixed(0)}%
               </span>
             </div>

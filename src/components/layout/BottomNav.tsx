@@ -66,7 +66,7 @@ export function BottomNav({ active, onChange }: BottomNavProps) {
       className="
         fixed bottom-0 left-1/2 -translate-x-1/2
         w-full max-w-[480px]
-        bg-card/80 backdrop-blur-lg
+        bg-canvas/80 backdrop-blur-lg
         border-t border-border
         z-40
       "
@@ -81,7 +81,7 @@ export function BottomNav({ active, onChange }: BottomNavProps) {
               className={`
                 flex flex-col items-center justify-center gap-1
                 transition-colors
-                ${isActive ? 'text-accent' : 'text-text-muted'}
+                ${isActive ? 'text-ink' : 'text-mute'}
               `}
             >
               <Icon name={tab.icon} className="w-5 h-5" />

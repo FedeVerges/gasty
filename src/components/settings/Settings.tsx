@@ -1,9 +1,7 @@
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState } from 'react'
 import { Card } from '../ui/Card'
-import { Button } from '../ui/Button'
 import { useSettings } from '../../context/SettingsContext'
 import { getRecurringSources, deleteRecurringSource } from '../../lib/recurring'
-import { importCsv, type CsvImportResult } from '../../lib/csv'
 import { useCategories } from '../../hooks/useCategories'
 import { formatMoney, formatDate } from '../../lib/format'
 import type { Transaction } from '../../types'
@@ -12,9 +10,6 @@ export function Settings() {
   const { settings, setTheme, setCurrency } = useSettings()
   const categories = useCategories()
   const [recurring, setRecurring] = useState<Transaction[]>([])
-  const [csvResult, setCsvResult] = useState<CsvImportResult | null>(null)
-  const [csvLoading, setCsvLoading] = useState(false)
-  const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     getRecurringSources().then(setRecurring)
@@ -29,30 +24,14 @@ export function Settings() {
     }
   }
 
-  const handleCsvFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-    setCsvLoading(true)
-    setCsvResult(null)
-    try {
-      const text = await file.text()
-      const result = await importCsv(text)
-      setCsvResult(result)
-    } catch {
-      setCsvResult({ imported: 0, errors: 1, errorLines: [] })
-    }
-    setCsvLoading(false)
-    if (fileInputRef.current) fileInputRef.current.value = ''
-  }
-
   return (
     <div className="space-y-4">
       <header className="pt-2 pb-1">
-        <h1 className="text-3xl font-bold tracking-tight">Ajustes</h1>
+        <h1 className="text-4xl font-black tracking-tight leading-none">Ajustes</h1>
       </header>
 
       <Card>
-        <span className="text-xs uppercase tracking-widest text-text-muted font-medium block mb-3">
+        <span className="text-xs uppercase tracking-widest text-body font-medium block mb-3">
           Apariencia
         </span>
         <div className="grid grid-cols-2 gap-2">
@@ -60,33 +39,33 @@ export function Settings() {
             onClick={() => setTheme('light')}
             className={`
               p-4 rounded-2xl border-2 transition-colors text-left
-              ${settings.theme === 'light' ? 'border-accent bg-accent-soft' : 'border-border bg-card'}
+              ${settings.theme === 'light' ? 'border-primary bg-primary-pale' : 'border-border bg-card'}
             `}
           >
             <div className="flex items-center gap-2 mb-1">
               <span className="text-lg">☀️</span>
               <span className="font-semibold">Claro</span>
             </div>
-            <p className="text-xs text-text-muted">Fondo claro y suave</p>
+            <p className="text-xs text-body">Fondo blanco</p>
           </button>
           <button
             onClick={() => setTheme('dark')}
             className={`
               p-4 rounded-2xl border-2 transition-colors text-left
-              ${settings.theme === 'dark' ? 'border-accent bg-accent-soft' : 'border-border bg-card'}
+              ${settings.theme === 'dark' ? 'border-primary bg-primary-pale' : 'border-border bg-card'}
             `}
           >
             <div className="flex items-center gap-2 mb-1">
               <span className="text-lg">🌙</span>
               <span className="font-semibold">Oscuro</span>
             </div>
-            <p className="text-xs text-text-muted">No tan oscuro</p>
+            <p className="text-xs text-body">No tan oscuro</p>
           </button>
         </div>
       </Card>
 
       <Card>
-        <span className="text-xs uppercase tracking-widest text-text-muted font-medium block mb-3">
+        <span className="text-xs uppercase tracking-widest text-body font-medium block mb-3">
           Moneda
         </span>
         <div className="grid grid-cols-2 gap-2">
@@ -94,7 +73,7 @@ export function Settings() {
             onClick={() => setCurrency('ARS')}
             className={`
               p-3 rounded-2xl border-2 transition-colors font-semibold
-              ${settings.currency === 'ARS' ? 'border-accent bg-accent-soft text-accent' : 'border-border text-text-muted'}
+              ${settings.currency === 'ARS' ? 'border-primary bg-primary-pale text-on-primary' : 'border-border text-body'}
             `}
           >
             $ ARS
@@ -103,7 +82,7 @@ export function Settings() {
             onClick={() => setCurrency('USD')}
             className={`
               p-3 rounded-2xl border-2 transition-colors font-semibold
-              ${settings.currency === 'USD' ? 'border-accent bg-accent-soft text-accent' : 'border-border text-text-muted'}
+              ${settings.currency === 'USD' ? 'border-primary bg-primary-pale text-on-primary' : 'border-border text-body'}
             `}
           >
             US$ USD
@@ -113,18 +92,18 @@ export function Settings() {
 
       <Card>
         <div className="flex items-center justify-between mb-3">
-          <span className="text-xs uppercase tracking-widest text-text-muted font-medium">
+          <span className="text-xs uppercase tracking-widest text-body font-medium">
             Gastos recurrentes
           </span>
-          <span className="text-xs text-text-muted">
+          <span className="text-xs text-body">
             {recurring.length} activos
           </span>
         </div>
 
         {recurring.length === 0 ? (
           <div className="text-center py-6">
-            <p className="text-sm text-text-muted">No tenés gastos recurrentes</p>
-            <p className="text-xs text-text-muted mt-1">
+            <p className="text-sm text-body">No tenés gastos recurrentes</p>
+            <p className="text-xs text-body mt-1">
               Al crear un gasto, marcá la opción 🔄
             </p>
           </div>
@@ -135,7 +114,7 @@ export function Settings() {
               return (
                 <div
                   key={tx.id}
-                  className="flex items-center gap-3 p-3 rounded-2xl bg-bg"
+                  className="flex items-center gap-3 p-3 rounded-2xl bg-canvas-soft"
                 >
                   <div
                     className="w-10 h-10 rounded-xl flex items-center justify-center text-lg shrink-0"
@@ -144,10 +123,10 @@ export function Settings() {
                     {cat?.emoji ?? '🔁'}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="font-medium text-text truncate">
+                    <p className="font-medium text-ink truncate">
                       {tx.description}
                     </p>
-                    <p className="text-xs text-text-muted">
+                    <p className="text-xs text-body">
                       {cat?.name} · {formatDate(tx.date)}
                       {tx.recurring.kind === 'fixed_temporary' &&
                         ` · ${tx.recurring.currentMonth}/${tx.recurring.totalMonths}`}
@@ -159,7 +138,7 @@ export function Settings() {
                     </span>
                     <button
                       onClick={() => handleDeleteRecurring(tx.id)}
-                      className="text-xs text-expense"
+                      className="text-xs text-negative"
                     >
                       Eliminar
                     </button>
@@ -172,56 +151,13 @@ export function Settings() {
       </Card>
 
       <Card>
-        <span className="text-xs uppercase tracking-widest text-text-muted font-medium block mb-3">
-          Importar CSV
-        </span>
-        <p className="text-sm text-text-muted mb-3">
-          Seleccioná un archivo CSV con columnas: descripción, monto, fecha (opcional).
-        </p>
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept=".csv"
-          onChange={handleCsvFile}
-          className="hidden"
-        />
-        <Button
-          onClick={() => fileInputRef.current?.click()}
-          disabled={csvLoading}
-          fullWidth
-        >
-          {csvLoading ? 'Importando…' : 'Seleccionar archivo CSV'}
-        </Button>
-        {csvResult && (
-          <div className="mt-3 text-sm">
-            {csvResult.errors === 0 ? (
-              <p className="text-income font-medium">
-                ✓ Se importaron {csvResult.imported} transacciones
-              </p>
-            ) : (
-              <div>
-                <p className="text-income font-medium">
-                  ✓ {csvResult.imported} importadas
-                </p>
-                <p className="text-expense font-medium">
-                  ✗ {csvResult.errors} errores
-                  {csvResult.errorLines.length > 0 &&
-                    ` (líneas: ${csvResult.errorLines.join(', ')})`}
-                </p>
-              </div>
-            )}
-          </div>
-        )}
-      </Card>
-
-      <Card>
-        <span className="text-xs uppercase tracking-widest text-text-muted font-medium block mb-3">
+        <span className="text-xs uppercase tracking-widest text-body font-medium block mb-3">
           Sobre Gasty
         </span>
-        <p className="text-sm text-text-muted">
+        <p className="text-sm text-body">
           Tu app de gastos personal. Tus datos quedan en tu dispositivo.
         </p>
-        <p className="text-xs text-text-subtle mt-2">v0.1.0</p>
+        <p className="text-xs text-mute mt-2">v0.1.0</p>
       </Card>
     </div>
   )

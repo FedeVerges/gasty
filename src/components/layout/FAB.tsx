@@ -11,9 +11,8 @@ export function FAB({ onClick }: FABProps) {
         translate-y-1/2
         z-50
         w-14 h-14 rounded-full
-        bg-gradient-to-br from-accent to-accent-2
-        text-white
-        shadow-xl shadow-accent/30
+        bg-primary text-on-primary
+        shadow-xl
         flex items-center justify-center
         active:scale-95 transition-transform
       "

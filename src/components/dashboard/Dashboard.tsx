@@ -4,19 +4,27 @@ import { useCategories } from '../../hooks/useCategories'
 import { BalanceCard } from './BalanceCard'
 import { MonthSummary } from './MonthSummary'
 import { TransactionItem } from '../transactions/TransactionItem'
-import { formatMonth } from '../../lib/format'
-import { useSettings } from '../../context/SettingsContext'
+import { MONTHS_FULL } from '../../lib/format'
 
 export function Dashboard() {
   const transactions = useAllTransactions()
   const categories = useCategories()
-  useSettings()
 
   const now = new Date()
   const currentYear = now.getFullYear()
   const currentMonth = now.getMonth()
 
   const [filterCategory, setFilterCategory] = useState('all')
+
+  const monthLabel = useMemo(
+    () => `${MONTHS_FULL[currentMonth].charAt(0).toUpperCase() + MONTHS_FULL[currentMonth].slice(1)} ${currentYear}`,
+    [currentYear, currentMonth],
+  )
+
+  const expenseCategories = useMemo(
+    () => categories.filter((c) => c.type === 'expense'),
+    [categories],
+  )
 
   const summary = useMemo(() => {
     const prevYear = currentMonth === 0 ? currentYear - 1 : currentYear
@@ -52,14 +60,14 @@ export function Dashboard() {
   const filtered = useMemo(() => {
     return transactions
       .filter((t) => filterCategory === 'all' || t.categoryId === filterCategory)
-      .sort((a, b) => b.date.localeCompare(a.date))
+      .toSorted((a, b) => b.date.localeCompare(a.date))
   }, [transactions, filterCategory])
 
   return (
     <div className="space-y-4">
       <header className="pt-2 pb-1">
-        <h1 className="text-3xl font-bold tracking-tight">Gasty</h1>
-        <p className="text-sm text-text-muted mt-1">Tus gastos, simples.</p>
+        <h1 className="text-4xl font-black tracking-tight leading-none">Gasty</h1>
+        <p className="text-sm text-body mt-2">Tus gastos, simples.</p>
       </header>
 
       <BalanceCard
@@ -71,7 +79,7 @@ export function Dashboard() {
       <MonthSummary
         monthSpent={summary.monthSpent}
         monthIncome={summary.monthIncome}
-        monthLabel={formatMonth(now)}
+        monthLabel={monthLabel}
       />
 
       <div className="flex gap-2 overflow-x-auto scrollbar-hide -mx-5 px-5 pb-1">
@@ -80,15 +88,13 @@ export function Dashboard() {
           className={`
             shrink-0 px-3 py-1.5 rounded-full text-xs font-medium
             ${filterCategory === 'all'
-              ? 'bg-text text-card'
-              : 'bg-card border border-border text-text-muted'}
+              ? 'bg-ink text-canvas'
+              : 'bg-card border border-border text-body'}
           `}
         >
           Todas
         </button>
-        {categories
-          .filter((c) => c.type === 'expense')
-          .map((c) => (
+        {expenseCategories.map((c) => (
             <button
               key={c.id}
               onClick={() => setFilterCategory(c.id)}
@@ -97,7 +103,7 @@ export function Dashboard() {
                 flex items-center gap-1
                 ${filterCategory === c.id
                   ? 'text-white'
-                  : 'bg-card border border-border text-text-muted'}
+                  : 'bg-card border border-border text-body'}
               `}
               style={
                 filterCategory === c.id
@@ -114,13 +120,13 @@ export function Dashboard() {
       {filtered.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 text-center">
           <span className="text-5xl mb-3">🫥</span>
-          <p className="text-text font-medium">Sin movimientos</p>
-          <p className="text-sm text-text-muted mt-1">
+          <p className="text-ink font-medium">Sin movimientos</p>
+          <p className="text-sm text-body mt-1">
             Tocá el botón + para registrar uno
           </p>
         </div>
       ) : (
-        <div className="space-y-1">
+        <div className="bg-card border border-border rounded-2xl divide-y divide-border">
           {filtered.map((tx) => (
             <TransactionItem key={tx.id} transaction={tx} />
           ))}

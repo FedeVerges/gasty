@@ -17,7 +17,7 @@ export function TransactionItem({ transaction }: TransactionItemProps) {
   const onEdit = useContext(EditTransactionContext)
 
   const isIncome = transaction.type === 'income'
-  const color = category?.color ?? 'var(--color-text-muted)'
+  const color = category?.color ?? 'var(--color-mute)'
 
   const handleDelete = async (e: React.MouseEvent) => {
     e.stopPropagation()
@@ -28,10 +28,10 @@ export function TransactionItem({ transaction }: TransactionItemProps) {
 
   return (
     <div
+      onClick={() => onEdit?.(transaction)}
       className="
-        flex items-center gap-3 p-3
-        rounded-2xl
-        active:bg-card-hover transition-colors
+        flex items-center gap-3 px-4 py-3
+        active:bg-card-hover transition-colors cursor-pointer
       "
     >
       <div
@@ -43,16 +43,16 @@ export function TransactionItem({ transaction }: TransactionItemProps) {
 
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
-          <p className="font-medium text-text truncate">
+          <p className="font-medium text-ink truncate">
             {transaction.description}
           </p>
         </div>
         <div className="flex items-center gap-1.5 mt-0.5">
-          <span className="text-xs text-text-muted truncate">
+          <span className="text-xs text-body truncate">
             {category?.name}
           </span>
-          <span className="text-xs text-text-subtle">·</span>
-          <span className="text-xs text-text-muted">
+          <span className="text-xs text-mute">·</span>
+          <span className="text-xs text-body">
             {formatDate(transaction.date)}
           </span>
           {transaction.recurring.kind === 'fixed' && (
@@ -66,29 +66,26 @@ export function TransactionItem({ transaction }: TransactionItemProps) {
         </div>
       </div>
 
-        <div className="flex flex-col items-end gap-2">
-          <span
-            className={`font-bold text-lg ${isIncome ? 'text-income' : 'text-expense'}`}
-          >
-            {isIncome ? '+' : '−'} {formatMoney(transaction.amount, settings.currency)}
-          </span>
-          <div className="flex gap-3 w-full">
-            <button
-              onClick={() => onEdit?.(transaction)}
-              className="flex-1 items-center justify-center px-4 py-2 text-accent font-medium rounded-lg border border-accent hover:bg-accent/10"
-              aria-label="Editar"
-            >
-              Editar
-            </button>
-            <button
-              onClick={handleDelete}
-              className="flex-1 items-center justify-center px-4 py-2 text-text-subtle font-medium rounded-lg border border-border hover:bg-card-hover"
-              aria-label="Eliminar"
-            >
-              Eliminar
-            </button>
-          </div>
-        </div>
+      <div className="flex items-center gap-2">
+        <span
+          className={`font-bold text-lg ${isIncome ? 'text-positive' : 'text-negative'}`}
+        >
+          {isIncome ? '+' : '−'} {formatMoney(transaction.amount, settings.currency)}
+        </span>
+        <button
+          onClick={handleDelete}
+          className="text-negative/70 hover:text-negative transition-colors p-2.5 -m-1"
+          aria-label="Eliminar"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M3 6h18" />
+            <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+            <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+            <line x1="10" y1="11" x2="10" y2="17" />
+            <line x1="14" y1="11" x2="14" y2="17" />
+          </svg>
+        </button>
+      </div>
     </div>
   )
 }

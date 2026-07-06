@@ -2,16 +2,18 @@ import type { ReactNode } from 'react'
 
 interface BadgeProps {
   children: ReactNode
-  color?: 'default' | 'recurring' | 'income' | 'expense' | 'accent'
+  color?: 'default' | 'recurring' | 'income' | 'expense' | 'accent' | 'positive' | 'negative'
   className?: string
 }
 
 const COLORS: Record<string, string> = {
-  default: 'bg-gray-100 text-text-muted',
+  default: 'bg-canvas-soft text-body',
   recurring: 'bg-recurring-soft text-recurring',
   income: 'bg-income-soft text-income',
   expense: 'bg-expense-soft text-expense',
-  accent: 'bg-accent-soft text-accent',
+  accent: 'bg-primary-pale text-on-primary',
+  positive: 'bg-primary-pale text-positive-deep',
+  negative: 'bg-negative-bg text-white',
 }
 
 export function Badge({ children, color = 'default', className = '' }: BadgeProps) {

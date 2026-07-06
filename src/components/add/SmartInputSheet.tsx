@@ -101,19 +101,19 @@ export function SmartInputSheet({ open, onClose, editTransaction }: SmartInputSh
       <div
         className="
           w-full max-w-[480px]
-          bg-card rounded-t-3xl
+          bg-canvas rounded-t-3xl
           animate-slide-up
           max-h-[90vh] overflow-y-auto
         "
         style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
       >
-        <div className="sticky top-0 bg-card px-5 pt-4 pb-2 z-10">
+        <div className="sticky top-0 bg-canvas px-5 pt-4 pb-2 z-10">
           <div className="w-10 h-1 bg-border rounded-full mx-auto mb-4" />
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-lg font-bold">{editTransaction ? 'Editar transacción' : 'Nueva transacción'}</h2>
             <button
               onClick={onClose}
-              className="text-text-muted p-1 active:scale-95"
+              className="text-body p-1 active:scale-95"
               aria-label="Cerrar"
             >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-6 h-6">
@@ -130,23 +130,18 @@ export function SmartInputSheet({ open, onClose, editTransaction }: SmartInputSh
               type="text"
               value={text}
               onChange={(e) => setText(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && parsed) {
-                  handleConfirm()
-                }
-              }}
               placeholder="birra 1500, alquiler 45000, sueldo 150000..."
               className="
                 w-full text-xl p-4
                 rounded-2xl
-                bg-bg border-2 border-border
-                focus:border-accent
-                placeholder:text-text-subtle
+                bg-canvas border-2 border-border
+                focus:border-primary
+                placeholder:text-mute
                 transition-colors
               "
               autoFocus
             />
-            <p className="text-xs text-text-muted mt-2 px-1">
+            <p className="text-xs text-body mt-2 px-1">
               Tip: "lomito 3000 20-5" — fecha con guión. "cuota auto 25000 4/24" — con cuotas.
             </p>
           </div>
@@ -170,12 +165,12 @@ export function SmartInputSheet({ open, onClose, editTransaction }: SmartInputSh
                   <div className="flex items-center gap-2">
                     <span
                       className="text-2xl font-bold"
-                      style={{ color: parsed.type === 'income' ? 'var(--color-income)' : 'var(--color-expense)' }}
+                      style={{ color: parsed.type === 'income' ? 'var(--color-positive)' : 'var(--color-negative)' }}
                     >
                       {parsed.type === 'income' ? '+' : '−'} {formatMoney(parsed.amount, settings.currency)}
                     </span>
                   </div>
-                  <p className="text-sm text-text-muted truncate">
+                  <p className="text-sm text-body truncate">
                     {parsed.description} · {category.name} · {formatDateFull(parsed.date)}
                   </p>
                 </div>
@@ -195,7 +190,7 @@ export function SmartInputSheet({ open, onClose, editTransaction }: SmartInputSh
 
           {parsed && (
             <div>
-              <p className="text-xs text-text-muted uppercase tracking-wide mb-2 font-medium">
+              <p className="text-xs text-body uppercase tracking-wide mb-2 font-medium">
                 ¿Es recurrente?
               </p>
               <div className="grid grid-cols-3 gap-2">
@@ -203,7 +198,7 @@ export function SmartInputSheet({ open, onClose, editTransaction }: SmartInputSh
                   onClick={() => { userTouchedRecurrence.current = true; setRecurring({ kind: 'none' }) }}
                   className={`
                     py-3 px-2 rounded-2xl text-sm font-medium border-2 transition-colors
-                    ${recurring.kind === 'none' ? 'border-accent bg-accent-soft text-accent' : 'border-border text-text-muted'}
+                    ${recurring.kind === 'none' ? 'border-primary bg-primary-pale text-on-primary' : 'border-border text-body'}
                   `}
                 >
                   No
@@ -212,7 +207,7 @@ export function SmartInputSheet({ open, onClose, editTransaction }: SmartInputSh
                   onClick={() => { userTouchedRecurrence.current = true; setRecurring({ kind: 'fixed' }) }}
                   className={`
                     py-3 px-2 rounded-2xl text-sm font-medium border-2 transition-colors
-                    ${recurring.kind === 'fixed' ? 'border-recurring bg-recurring-soft text-recurring' : 'border-border text-text-muted'}
+                    ${recurring.kind === 'fixed' ? 'border-recurring bg-recurring-soft text-recurring' : 'border-border text-body'}
                   `}
                 >
                   🔄 Todos los meses
@@ -221,7 +216,7 @@ export function SmartInputSheet({ open, onClose, editTransaction }: SmartInputSh
                   onClick={() => { userTouchedRecurrence.current = true; setRecurring({ kind: 'fixed_temporary' }) }}
                   className={`
                     py-3 px-2 rounded-2xl text-sm font-medium border-2 transition-colors
-                    ${recurring.kind === 'fixed_temporary' ? 'border-recurring bg-recurring-soft text-recurring' : 'border-border text-text-muted'}
+                    ${recurring.kind === 'fixed_temporary' ? 'border-recurring bg-recurring-soft text-recurring' : 'border-border text-body'}
                   `}
                 >
                   ⏱️ Por un tiempo
@@ -230,16 +225,16 @@ export function SmartInputSheet({ open, onClose, editTransaction }: SmartInputSh
 
               {recurring.kind === 'fixed_temporary' && (
                 <div className="mt-3 flex items-center gap-2">
-                  <span className="text-sm text-text-muted">Por</span>
+                  <span className="text-sm text-body">Por</span>
                   <input
                     type="number"
                     min="1"
                     max="240"
                     value={tempMonths}
                     onChange={(e) => setTempMonths(Math.max(1, Math.min(240, parseInt(e.target.value) || 1)))}
-                    className="w-20 px-3 py-2 rounded-xl bg-bg border border-border text-center"
+                    className="w-20 px-3 py-2 rounded-xl bg-canvas border border-border text-center"
                   />
-                  <span className="text-sm text-text-muted">meses</span>
+                  <span className="text-sm text-body">meses</span>
                 </div>
               )}
             </div>
