@@ -10,7 +10,7 @@ import { useSettings } from '../../context/SettingsContext'
 export function Dashboard() {
   const transactions = useAllTransactions()
   const categories = useCategories()
-  const { settings } = useSettings()
+  useSettings()
 
   const now = new Date()
   const currentYear = now.getFullYear()

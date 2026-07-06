@@ -15,9 +15,11 @@ interface AppShellProps {
 export function AppShell({ active, onTabChange, children }: AppShellProps) {
   const [inputOpen, setInputOpen] = useState(false)
   const [editTransaction, setEditTransaction] = useState<Transaction | null>(null)
+  const [sheetKey, setSheetKey] = useState(0)
 
   const handleEdit = (tx: Transaction) => {
     setEditTransaction(tx)
+    setSheetKey(k => k + 1)
     setInputOpen(true)
   }
 
@@ -33,9 +35,13 @@ export function AppShell({ active, onTabChange, children }: AppShellProps) {
           {children}
         </div>
       </main>
-      <FAB onClick={() => setInputOpen(true)} />
+      <FAB onClick={() => {
+        setEditTransaction(null)
+        setSheetKey(k => k + 1)
+        setInputOpen(true)
+      }} />
       <BottomNav active={active} onChange={onTabChange} />
-      <SmartInputSheet open={inputOpen} onClose={handleClose} editTransaction={editTransaction} />
+      <SmartInputSheet key={sheetKey} open={inputOpen} onClose={handleClose} editTransaction={editTransaction} />
     </EditTransactionContext.Provider>
   )
 }

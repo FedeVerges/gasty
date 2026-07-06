@@ -1,6 +1,6 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { db } from '../../lib/db'
-import { parseInput, createTransactionFromParsed } from '../../lib/parser'
+import { parseInput, createTransactionFromParsed, toLocalISO } from '../../lib/parser'
 import { useCategories } from '../../hooks/useCategories'
 import { useSettings } from '../../context/SettingsContext'
 import { formatMoney, formatDateFull } from '../../lib/format'
@@ -16,7 +16,7 @@ interface SmartInputSheetProps {
 
 function generateEditText(tx: Transaction): string {
   const parts = [tx.description, String(tx.amount)]
-  const today = new Date().toISOString().slice(0, 10)
+  const today = toLocalISO(new Date())
   if (tx.date !== today) {
     const [, m, d] = tx.date.split('-').map(Number)
     parts.push(`${d}-${m}`)
@@ -27,21 +27,18 @@ function generateEditText(tx: Transaction): string {
 export function SmartInputSheet({ open, onClose, editTransaction }: SmartInputSheetProps) {
   const { settings } = useSettings()
   const categories = useCategories()
-  const [text, setText] = useState('')
-  const [recurring, setRecurring] = useState<RecurringConfig>({ kind: 'none' })
-  const [tempMonths, setTempMonths] = useState(12)
-
-  useEffect(() => {
-    if (open) {
-      if (editTransaction) {
-        setText(generateEditText(editTransaction))
-        setRecurring(editTransaction.recurring)
-      } else {
-        setText('')
-        setRecurring({ kind: 'none' })
-      }
-    }
-  }, [open, editTransaction])
+  const [text, setText] = useState(() =>
+    editTransaction ? generateEditText(editTransaction) : ''
+  )
+  const [recurring, setRecurring] = useState<RecurringConfig>(
+    () => editTransaction?.recurring ?? { kind: 'none' }
+  )
+  const [tempMonths, setTempMonths] = useState(() =>
+    editTransaction?.recurring.kind === 'fixed_temporary'
+      ? editTransaction.recurring.totalMonths ?? 12
+      : 12
+  )
+  const userTouchedRecurrence = useRef(false)
 
   useEffect(() => {
     if (open) {
@@ -61,9 +58,15 @@ export function SmartInputSheet({ open, onClose, editTransaction }: SmartInputSh
   const handleConfirm = async () => {
     if (!parsed) return
     const finalRecurring: RecurringConfig =
-      recurring.kind !== 'none' && recurring.kind === 'fixed_temporary'
-        ? { ...recurring, totalMonths: tempMonths, currentMonth: 1 }
-        : recurring
+      userTouchedRecurrence.current
+        ? recurring.kind === 'fixed_temporary'
+          ? { ...recurring, totalMonths: tempMonths, currentMonth: 1 }
+          : recurring
+        : editTransaction?.recurring ?? (
+            parsed.recurring.kind !== 'none'
+              ? parsed.recurring
+              : recurring
+          )
 
     if (editTransaction) {
       const tx = createTransactionFromParsed({
@@ -127,6 +130,11 @@ export function SmartInputSheet({ open, onClose, editTransaction }: SmartInputSh
               type="text"
               value={text}
               onChange={(e) => setText(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && parsed) {
+                  handleConfirm()
+                }
+              }}
               placeholder="birra 1500, alquiler 45000, sueldo 150000..."
               className="
                 w-full text-xl p-4
@@ -173,9 +181,13 @@ export function SmartInputSheet({ open, onClose, editTransaction }: SmartInputSh
                 </div>
               </div>
 
-              {parsed.recurring.kind === 'fixed' && recurring.kind === 'none' && (
+              {(parsed.recurring.kind === 'fixed' || parsed.recurring.kind === 'fixed_temporary') && recurring.kind === 'none' && (
                 <div className="mt-3 flex flex-wrap gap-2">
-                  <Badge color="recurring">🔄 Detectado: recurrente</Badge>
+                  <Badge color="recurring">
+                    {parsed.recurring.kind === 'fixed_temporary'
+                      ? `⏱️ ${parsed.recurring.currentMonth}/${parsed.recurring.totalMonths} cuotas`
+                      : '🔄 Detectado: recurrente'}
+                  </Badge>
                 </div>
               )}
             </div>
@@ -188,7 +200,7 @@ export function SmartInputSheet({ open, onClose, editTransaction }: SmartInputSh
               </p>
               <div className="grid grid-cols-3 gap-2">
                 <button
-                  onClick={() => setRecurring({ kind: 'none' })}
+                  onClick={() => { userTouchedRecurrence.current = true; setRecurring({ kind: 'none' }) }}
                   className={`
                     py-3 px-2 rounded-2xl text-sm font-medium border-2 transition-colors
                     ${recurring.kind === 'none' ? 'border-accent bg-accent-soft text-accent' : 'border-border text-text-muted'}
@@ -197,7 +209,7 @@ export function SmartInputSheet({ open, onClose, editTransaction }: SmartInputSh
                   No
                 </button>
                 <button
-                  onClick={() => setRecurring({ kind: 'fixed' })}
+                  onClick={() => { userTouchedRecurrence.current = true; setRecurring({ kind: 'fixed' }) }}
                   className={`
                     py-3 px-2 rounded-2xl text-sm font-medium border-2 transition-colors
                     ${recurring.kind === 'fixed' ? 'border-recurring bg-recurring-soft text-recurring' : 'border-border text-text-muted'}
@@ -206,7 +218,7 @@ export function SmartInputSheet({ open, onClose, editTransaction }: SmartInputSh
                   🔄 Todos los meses
                 </button>
                 <button
-                  onClick={() => setRecurring({ kind: 'fixed_temporary' })}
+                  onClick={() => { userTouchedRecurrence.current = true; setRecurring({ kind: 'fixed_temporary' }) }}
                   className={`
                     py-3 px-2 rounded-2xl text-sm font-medium border-2 transition-colors
                     ${recurring.kind === 'fixed_temporary' ? 'border-recurring bg-recurring-soft text-recurring' : 'border-border text-text-muted'}

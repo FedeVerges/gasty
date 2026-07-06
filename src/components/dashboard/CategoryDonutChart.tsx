@@ -37,19 +37,16 @@ export function CategoryDonutChart({ data, total }: CategoryDonutChartProps) {
     )
   }
 
-  let offset = 0
-  const segments = data.map((d) => {
-    const fraction = d.total / total
-    const length = fraction * CIRCUMFERENCE
-    const segment = {
-      ...d,
-      fraction,
-      length,
-      offset,
-    }
-    offset += length
-    return segment
-  })
+  const segments = data.reduce<Array<CategoryTotal & { fraction: number; length: number; offset: number }>>(
+    (acc, d) => {
+      const fraction = d.total / total
+      const length = fraction * CIRCUMFERENCE
+      const offset = acc.length > 0 ? acc[acc.length - 1].offset + acc[acc.length - 1].length : 0
+      acc.push({ ...d, fraction, length, offset })
+      return acc
+    },
+    []
+  )
 
   return (
     <Card>

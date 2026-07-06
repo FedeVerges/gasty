@@ -1,7 +1,9 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { Card } from '../ui/Card'
+import { Button } from '../ui/Button'
 import { useSettings } from '../../context/SettingsContext'
 import { getRecurringSources, deleteRecurringSource } from '../../lib/recurring'
+import { importCsv, type CsvImportResult } from '../../lib/csv'
 import { useCategories } from '../../hooks/useCategories'
 import { formatMoney, formatDate } from '../../lib/format'
 import type { Transaction } from '../../types'
@@ -10,6 +12,9 @@ export function Settings() {
   const { settings, setTheme, setCurrency } = useSettings()
   const categories = useCategories()
   const [recurring, setRecurring] = useState<Transaction[]>([])
+  const [csvResult, setCsvResult] = useState<CsvImportResult | null>(null)
+  const [csvLoading, setCsvLoading] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     getRecurringSources().then(setRecurring)
@@ -22,6 +27,22 @@ export function Settings() {
       await deleteRecurringSource(id)
       await refresh()
     }
+  }
+
+  const handleCsvFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setCsvLoading(true)
+    setCsvResult(null)
+    try {
+      const text = await file.text()
+      const result = await importCsv(text)
+      setCsvResult(result)
+    } catch {
+      setCsvResult({ imported: 0, errors: 1, errorLines: [] })
+    }
+    setCsvLoading(false)
+    if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
   return (
@@ -146,6 +167,49 @@ export function Settings() {
                 </div>
               )
             })}
+          </div>
+        )}
+      </Card>
+
+      <Card>
+        <span className="text-xs uppercase tracking-widest text-text-muted font-medium block mb-3">
+          Importar CSV
+        </span>
+        <p className="text-sm text-text-muted mb-3">
+          Seleccioná un archivo CSV con columnas: descripción, monto, fecha (opcional).
+        </p>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".csv"
+          onChange={handleCsvFile}
+          className="hidden"
+        />
+        <Button
+          onClick={() => fileInputRef.current?.click()}
+          disabled={csvLoading}
+          fullWidth
+        >
+          {csvLoading ? 'Importando…' : 'Seleccionar archivo CSV'}
+        </Button>
+        {csvResult && (
+          <div className="mt-3 text-sm">
+            {csvResult.errors === 0 ? (
+              <p className="text-income font-medium">
+                ✓ Se importaron {csvResult.imported} transacciones
+              </p>
+            ) : (
+              <div>
+                <p className="text-income font-medium">
+                  ✓ {csvResult.imported} importadas
+                </p>
+                <p className="text-expense font-medium">
+                  ✗ {csvResult.errors} errores
+                  {csvResult.errorLines.length > 0 &&
+                    ` (líneas: ${csvResult.errorLines.join(', ')})`}
+                </p>
+              </div>
+            )}
           </div>
         )}
       </Card>

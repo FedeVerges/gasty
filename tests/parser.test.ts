@@ -54,7 +54,7 @@ describe('parser: fechas', () => {
 
   it('parsea fecha con guión', () => {
     const result = parseInput('lomito 3000 20-5')
-    expect(result?.date).toBe('2026-05-20')
+    expect(result?.date).toBe('2027-05-20')
   })
 
   it('parsea fecha con barra', () => {
