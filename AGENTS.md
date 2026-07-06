@@ -140,6 +140,8 @@ CSS `@theme` tokens and `[data-theme="dark"]` overrides are in `src/index.css`.
 | Concern | Source |
 |---|---|
 | Domain types, IDs, defaults | `src/types/index.ts` |
+| **Functional specification** | `docs/functional.md` |
+| **Architecture & data flow** | `docs/architecture.md` |
 | UI tokens + component conventions | `.opencode/skill/gasty-ui-conventions/SKILL.md` |
 | Parser rules (regex, keywords) | `.opencode/skill/gasty-parser-rules/SKILL.md` |
 | Data layer (Dexie, hooks, recurring) | `.opencode/skill/gasty-data-layer/SKILL.md` |

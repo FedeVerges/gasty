@@ -1,14 +1,16 @@
-import { useEffect, useState } from 'react'
+import { useContext, useEffect, useState } from 'react'
 import { Card } from '../ui/Card'
 import { useSettings } from '../../context/SettingsContext'
 import { getRecurringSources, deleteRecurringSource } from '../../lib/recurring'
 import { useCategories } from '../../hooks/useCategories'
 import { formatMoney, formatDate } from '../../lib/format'
+import { CsvImportContext } from '../../context/CsvImportContext'
 import type { Transaction } from '../../types'
 
 export function Settings() {
   const { settings, setTheme, setCurrency } = useSettings()
   const categories = useCategories()
+  const openCsvImport = useContext(CsvImportContext)
   const [recurring, setRecurring] = useState<Transaction[]>([])
 
   useEffect(() => {
@@ -88,6 +90,25 @@ export function Settings() {
             US$ USD
           </button>
         </div>
+      </Card>
+
+      <Card>
+        <span className="text-xs uppercase tracking-widest text-body font-medium block mb-3">
+          Importar datos
+        </span>
+        <p className="text-sm text-body mb-3">
+          Cargá gastos desde un archivo CSV (nombre, importe, fecha, categoría).
+        </p>
+        <button
+          onClick={openCsvImport ?? undefined}
+          className="
+            w-full py-3 px-4 rounded-2xl
+            bg-primary text-on-primary font-semibold
+            active:brightness-90 transition-all
+          "
+        >
+          Importar CSV
+        </button>
       </Card>
 
       <Card>

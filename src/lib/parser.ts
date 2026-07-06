@@ -1,9 +1,6 @@
 import type { ParsedTransaction, RecurringConfig } from '../types'
 import { KEYWORDS, INCOME_KEYWORDS, RECURRING_KEYWORDS } from './categories'
-
-function generateId(): string {
-  return crypto.randomUUID()
-}
+import { generateId } from './db'
 
 function todayISO(): string {
   return toLocalISO(new Date())
@@ -13,7 +10,9 @@ export function toLocalISO(d: Date): string {
   const y = d.getFullYear()
   const m = String(d.getMonth() + 1).padStart(2, '0')
   const day = String(d.getDate()).padStart(2, '0')
-  return `${y}-${m}-${day}`
+  const h = String(d.getHours()).padStart(2, '0')
+  const min = String(d.getMinutes()).padStart(2, '0')
+  return `${y}-${m}-${day}T${h}:${min}`
 }
 
 function parseAmount(text: string): { amount: number; remaining: string } {

@@ -2,11 +2,12 @@ import { useState, useEffect, useMemo, useRef } from 'react'
 import { db } from '../../lib/db'
 import { parseInput, createTransactionFromParsed, toLocalISO } from '../../lib/parser'
 import { useCategories } from '../../hooks/useCategories'
+import { useKeyboardHeight } from '../../hooks/useKeyboardHeight'
 import { useSettings } from '../../context/SettingsContext'
 import { formatMoney, formatDateFull } from '../../lib/format'
 import { Button } from '../ui/Button'
 import { Badge } from '../ui/Badge'
-import type { ParsedTransaction, RecurringConfig, Transaction } from '../../types'
+import type { ParsedTransaction, RecurringConfig, Transaction, TransactionType } from '../../types'
 
 interface SmartInputSheetProps {
   open: boolean
@@ -16,9 +17,10 @@ interface SmartInputSheetProps {
 
 function generateEditText(tx: Transaction): string {
   const parts = [tx.description, String(tx.amount)]
-  const today = toLocalISO(new Date())
-  if (tx.date !== today) {
-    const [, m, d] = tx.date.split('-').map(Number)
+  const datePart = tx.date.split('T')[0]
+  const today = toLocalISO(new Date()).split('T')[0]
+  if (datePart !== today) {
+    const [, m, d] = datePart.split('-').map(Number)
     parts.push(`${d}-${m}`)
   }
   return parts.join(' ')
@@ -38,35 +40,55 @@ export function SmartInputSheet({ open, onClose, editTransaction }: SmartInputSh
       ? editTransaction.recurring.totalMonths ?? 12
       : 12
   )
+  const [typeOverride, setTypeOverride] = useState<TransactionType | null>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
   const userTouchedRecurrence = useRef(false)
+  const keyboardHeight = useKeyboardHeight()
 
   useEffect(() => {
     if (open) {
-      document.body.style.overflow = 'hidden'
+      const scrollY = window.scrollY
+      document.body.style.position = 'fixed'
+      document.body.style.top = `-${scrollY}px`
+      document.body.style.width = '100%'
       return () => {
-        document.body.style.overflow = ''
+        document.body.style.position = ''
+        document.body.style.top = ''
+        document.body.style.width = ''
+        window.scrollTo(0, scrollY)
       }
     }
   }, [open])
 
-  const parsed: ParsedTransaction | null = useMemo(() => parseInput(text), [text])
+  const parsed: ParsedTransaction | null = useMemo(() => {
+    const base = parseInput(text)
+    if (!base) return null
+    if (!typeOverride) return base
+    const isIncome = typeOverride === 'income'
+    const categoryId = isIncome
+      ? (categories.find(c => c.type === 'income')?.id ?? 'other_inc')
+      : (categories.find(c => c.id === base.categoryId && c.type === 'expense')?.id ?? base.categoryId)
+    return { ...base, type: typeOverride, categoryId }
+  }, [text, typeOverride, categories])
 
   const category = parsed
     ? categories.find((c) => c.id === parsed.categoryId)
     : undefined
 
-  const handleConfirm = async () => {
+  const handleSubmit = async (e: React.PointerEvent | React.FormEvent) => {
+    e.preventDefault()
     if (!parsed) return
+    inputRef.current?.blur()
     const finalRecurring: RecurringConfig =
       userTouchedRecurrence.current
         ? recurring.kind === 'fixed_temporary'
           ? { ...recurring, totalMonths: tempMonths, currentMonth: 1 }
           : recurring
         : editTransaction?.recurring ?? (
-            parsed.recurring.kind !== 'none'
-              ? parsed.recurring
-              : recurring
-          )
+          parsed.recurring.kind !== 'none'
+            ? parsed.recurring
+            : recurring
+        )
 
     if (editTransaction) {
       const tx = createTransactionFromParsed({
@@ -103,9 +125,15 @@ export function SmartInputSheet({ open, onClose, editTransaction }: SmartInputSh
           w-full max-w-[480px]
           bg-canvas rounded-t-3xl
           animate-slide-up
-          max-h-[90vh] overflow-y-auto
+          overflow-y-auto
         "
-        style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+        style={{
+          paddingBottom: 'env(safe-area-inset-bottom)',
+          marginBottom: keyboardHeight || undefined,
+          maxHeight: keyboardHeight > 0
+            ? `calc(100vh - ${keyboardHeight + 80}px)`
+            : '90vh',
+        }}
       >
         <div className="sticky top-0 bg-canvas px-5 pt-4 pb-2 z-10">
           <div className="w-10 h-1 bg-border rounded-full mx-auto mb-4" />
@@ -124,9 +152,10 @@ export function SmartInputSheet({ open, onClose, editTransaction }: SmartInputSh
           </div>
         </div>
 
-        <div className="px-5 pb-6 space-y-4">
+        <form className="px-5 pb-6 space-y-4" >
           <div>
             <input
+              ref={inputRef}
               type="text"
               value={text}
               onChange={(e) => setText(e.target.value)}
@@ -141,9 +170,41 @@ export function SmartInputSheet({ open, onClose, editTransaction }: SmartInputSh
               "
               autoFocus
             />
-            <p className="text-xs text-body mt-2 px-1">
-              Tip: "lomito 3000 20-5" — fecha con guión. "cuota auto 25000 4/24" — con cuotas.
-            </p>
+            <div className="flex items-center gap-2 mt-2 px-1">
+              <p className="text-xs text-body flex-1">
+                Tip: "lomito 3000 20-5" — fecha. "cuota auto 25000 4/24" — cuotas.
+              </p>
+              <div className="flex gap-1">
+                <button
+                  type="button"
+                  onClick={() => setTypeOverride(typeOverride === 'expense' ? null : 'expense')}
+                  className={`
+                    w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold
+                    transition-colors
+                    ${typeOverride === 'expense'
+                      ? 'bg-negative text-white'
+                      : 'bg-canvas-soft text-body border border-border'}
+                  `}
+                  aria-label="Marcar como gasto"
+                >
+                  −
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setTypeOverride(typeOverride === 'income' ? null : 'income')}
+                  className={`
+                    w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold
+                    transition-colors
+                    ${typeOverride === 'income'
+                      ? 'bg-positive text-white'
+                      : 'bg-canvas-soft text-body border border-border'}
+                  `}
+                  aria-label="Marcar como ingreso"
+                >
+                  +
+                </button>
+              </div>
+            </div>
           </div>
 
           {parsed && category && (
@@ -195,6 +256,7 @@ export function SmartInputSheet({ open, onClose, editTransaction }: SmartInputSh
               </p>
               <div className="grid grid-cols-3 gap-2">
                 <button
+                  type="button"
                   onClick={() => { userTouchedRecurrence.current = true; setRecurring({ kind: 'none' }) }}
                   className={`
                     py-3 px-2 rounded-2xl text-sm font-medium border-2 transition-colors
@@ -204,6 +266,7 @@ export function SmartInputSheet({ open, onClose, editTransaction }: SmartInputSh
                   No
                 </button>
                 <button
+                  type="button"
                   onClick={() => { userTouchedRecurrence.current = true; setRecurring({ kind: 'fixed' }) }}
                   className={`
                     py-3 px-2 rounded-2xl text-sm font-medium border-2 transition-colors
@@ -213,6 +276,7 @@ export function SmartInputSheet({ open, onClose, editTransaction }: SmartInputSh
                   🔄 Todos los meses
                 </button>
                 <button
+                  type="button"
                   onClick={() => { userTouchedRecurrence.current = true; setRecurring({ kind: 'fixed_temporary' }) }}
                   className={`
                     py-3 px-2 rounded-2xl text-sm font-medium border-2 transition-colors
@@ -242,7 +306,8 @@ export function SmartInputSheet({ open, onClose, editTransaction }: SmartInputSh
 
           <div className="pt-2">
             <Button
-              onClick={handleConfirm}
+              type="submit"
+              onClick={handleSubmit}
               disabled={!parsed}
               fullWidth
               size="lg"
@@ -250,7 +315,7 @@ export function SmartInputSheet({ open, onClose, editTransaction }: SmartInputSh
               Confirmar
             </Button>
           </div>
-        </div>
+        </form>
       </div>
     </div>
   )

@@ -35,7 +35,7 @@ export function Button({
   return (
     <button
       className={`
-        font-semibold transition-all
+        font-semibold transition-all cursor-pointer touch-manipulation
         ${variants[variant]}
         ${sizes[size]}
         ${fullWidth ? 'w-full' : ''}

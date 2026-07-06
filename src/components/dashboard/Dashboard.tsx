@@ -37,7 +37,8 @@ export function Dashboard() {
     let prevMonthSpent = 0
 
     for (const tx of transactions) {
-      const [y, m] = tx.date.split('-').map(Number)
+      const datePart = tx.date.split('T')[0]
+      const [y, m] = datePart.split('-').map(Number)
       if (tx.type === 'income') {
         totalIncome += tx.amount
         if (y === currentYear && m === currentMonth + 1) {

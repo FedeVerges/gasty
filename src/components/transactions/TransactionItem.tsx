@@ -4,7 +4,7 @@ import { useSettings } from '../../context/SettingsContext'
 import { useCategory } from '../../hooks/useCategories'
 import { formatMoney, formatDate } from '../../lib/format'
 import { db } from '../../lib/db'
-import { EditTransactionContext } from '../layout/AppShell'
+import { EditTransactionContext } from '../../context/EditTransactionContext'
 import type { Transaction } from '../../types'
 
 interface TransactionItemProps {

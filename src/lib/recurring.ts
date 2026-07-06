@@ -1,15 +1,13 @@
-import { db } from './db'
+import { db, generateId } from './db'
 import type { Transaction } from '../types'
-
-function generateId(): string {
-  return crypto.randomUUID()
-}
 
 function toLocalISO(d: Date): string {
   const y = d.getFullYear()
   const m = String(d.getMonth() + 1).padStart(2, '0')
   const day = String(d.getDate()).padStart(2, '0')
-  return `${y}-${m}-${day}`
+  const h = String(d.getHours()).padStart(2, '0')
+  const min = String(d.getMinutes()).padStart(2, '0')
+  return `${y}-${m}-${day}T${h}:${min}`
 }
 
 export async function checkAndCloneRecurring(): Promise<number> {

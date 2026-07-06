@@ -1,10 +1,11 @@
-import { useState, createContext, type ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 import type { Tab, Transaction } from '../../types'
 import { BottomNav } from './BottomNav'
 import { FAB } from './FAB'
 import { SmartInputSheet } from '../add/SmartInputSheet'
-
-export const EditTransactionContext = createContext<((tx: Transaction) => void) | null>(null)
+import { CsvImportSheet } from '../add/CsvImportSheet'
+import { CsvImportContext } from '../../context/CsvImportContext'
+import { EditTransactionContext } from '../../context/EditTransactionContext'
 
 interface AppShellProps {
   active: Tab
@@ -14,6 +15,7 @@ interface AppShellProps {
 
 export function AppShell({ active, onTabChange, children }: AppShellProps) {
   const [inputOpen, setInputOpen] = useState(false)
+  const [csvOpen, setCsvOpen] = useState(false)
   const [editTransaction, setEditTransaction] = useState<Transaction | null>(null)
   const [sheetKey, setSheetKey] = useState(0)
 
@@ -29,19 +31,22 @@ export function AppShell({ active, onTabChange, children }: AppShellProps) {
   }
 
   return (
-    <EditTransactionContext.Provider value={handleEdit}>
-      <main className="flex-1 pb-20 overflow-y-auto">
-        <div className="px-5 pt-6 pb-4">
-          {children}
-        </div>
-      </main>
-      <FAB onClick={() => {
-        setEditTransaction(null)
-        setSheetKey(k => k + 1)
-        setInputOpen(true)
-      }} />
-      <BottomNav active={active} onChange={onTabChange} />
-      <SmartInputSheet key={sheetKey} open={inputOpen} onClose={handleClose} editTransaction={editTransaction} />
-    </EditTransactionContext.Provider>
+    <CsvImportContext.Provider value={() => setCsvOpen(true)}>
+      <EditTransactionContext.Provider value={handleEdit}>
+        <main className="flex-1 pb-20 overflow-y-auto">
+          <div className="px-5 pt-6 pb-4">
+            {children}
+          </div>
+        </main>
+        <FAB onClick={() => {
+          setEditTransaction(null)
+          setSheetKey(k => k + 1)
+          setInputOpen(true)
+        }} />
+        <BottomNav active={active} onChange={onTabChange} />
+        <SmartInputSheet key={sheetKey} open={inputOpen} onClose={handleClose} editTransaction={editTransaction} />
+        <CsvImportSheet open={csvOpen} onClose={() => setCsvOpen(false)} />
+      </EditTransactionContext.Provider>
+    </CsvImportContext.Provider>
   )
 }
