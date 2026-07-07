@@ -26,3 +26,6 @@ dist-ssr
 # local HTTPS certificates
 cert.pem
 cert-key.pem
+
+package-lock.json
+
