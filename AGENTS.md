@@ -69,13 +69,9 @@ No `src/utils/`, `src/store/`, `src/router/`, `src/pages/` allowed.
 
 | Agent | Role | When |
 |---|---|---|
-| `gasty-architect` | Stack guardian. ADRs in `docs/adr/`. | Before new dep, screen, viz. |
-| `gasty-feature-dev` ⭐ | Default implementer. Components, hooks, UI. | Most feature work. |
-| `gasty-parser-expert` | `src/lib/parser.ts` + `categories.ts`. | Regex/keyword changes. |
-| `gasty-data-engineer` | Dexie schema, `useLiveQuery`, recurring. | Schema bump, new index, recurring logic. |
-| `gasty-test-writer` | Vitest author. | New logic needing coverage. |
-| `gasty-reviewer` | Read-only diff review. | Before merging non-trivial changes. |
-| `gasty-release` | Build, PWA, Capacitor, Play Store. | Cutting a release. |
+| `gasty-dev` ⭐ | Default implementer. Components, hooks, UI, ADRs. | Most work. |
+| `gasty-review` | Code review + architectural decisions. | After non-trivial changes. |
+| `gasty-test` | Tests + data validation + parser review. | New logic, data changes. |
 
 ## Anti-patterns (refuse even if asked)
 
@@ -84,7 +80,7 @@ No `src/utils/`, `src/store/`, `src/router/`, `src/pages/` allowed.
 - 🟥 Editing clones of recurring transactions — only edit the source (rows with `originalId` are derived)
 - 🟥 Hardcoded hex colors — use tokens from `@theme` (`bg-accent`, `text-expense`, `bg-card`, `border-border`)
 - 🟥 `toISOString()` for the `Transaction.date` field — use `toLocalISO(d)` from `parser.ts` / `recurring.ts`
-- 🟥 Adding a dep without an ADR (call `gasty-architect` first)
+- 🟥 Adding a dep without evaluating bundle impact (load `gasty-bundle-budget` skill first)
 - 🟥 Skipping dark mode counterpart for a new color (must have `[data-theme="dark"]` entry in `index.css`)
 - 🟥 Animating `width`, `height`, `top`, `left` — use only `transform` / `opacity`
 

@@ -71,7 +71,7 @@ ls -lahS dist/assets/*.js | head
 ANALYZE=true npx vite build
 ```
 
-Si el total JS gzipped > 100KB, el release está **bloqueado**. Identificá al culpable con `ls -lahS`, trazalo al import que lo arrastró, y hand off al agent dueño (generalmente `gasty-feature-dev` o `gasty-architect`).
+Si el total JS gzipped > 100KB, el release está **bloqueado**. Identificá al culpable con `ls -lahS`, trazalo al import que lo arrastró, y hand off a `gasty-dev`.
 
 ## Tree-shaking — qué lo rompe
 
@@ -95,7 +95,7 @@ Antes de instalar:
 2. **¿Cuánto pesa?** Buscá en [bundlephobia.com](https://bundlephobia.com) o en el repo de la lib (sección "Bundle Size" o "Size").
 3. **¿Tree-shakeable?** Si la lib tiene barrel imports, el tamaño real es mayor.
 4. **¿Hay alternativa interna?** Un SVG inline, un `useState`, un `useMemo` suelen bastar.
-5. **¿Lo aprueba el architect?** Si pasa los 4 puntos, abrí un ADR con la justificación y dejá que el `gasty-architect` apruebe.
+5. **¿Pasa el budget?** Si pasa los 4 puntos, documentá la decisión y pedí review a `gasty-review`.
 
 ## Performance, además del bundle
 

@@ -1,85 +1,68 @@
 {
   "$schema": "https://opencode.ai/config.json",
-  "default_agent": "gasty-feature-dev",
+  "default_agent": "gasty-dev",
   "agent": {
-    "gasty-architect": {
-      "prompt": "{file:./agent/gasty-architect.md}",
+    "gasty-dev": {
+      "prompt": "{file:./agent/gasty-dev.md}",
       "mode": "primary",
-      "tools": {
-        "read": true,
-        "grep": true,
-        "glob": true,
-        "write": true,
-        "edit": true,
-        "bash": true
+      "temperature": 0.2,
+      "description": "Default implementer. Builds features, components, hooks, UI. Delegates review and testing.",
+      "permission": {
+        "read": "allow",
+        "edit": "allow",
+        "glob": "allow",
+        "grep": "allow",
+        "bash": {
+          "*": "ask",
+          "npm run dev": "allow",
+          "npm run lint": "allow",
+          "npm run build": "allow",
+          "npm run preview": "allow",
+          "git status*": "allow",
+          "git diff*": "allow"
+        },
+        "task": {
+          "gasty-review": "allow",
+          "gasty-test": "allow"
+        }
       }
     },
-    "gasty-feature-dev": {
-      "prompt": "{file:./agent/gasty-feature-dev.md}",
-      "mode": "primary",
-      "tools": {
-        "read": true,
-        "grep": true,
-        "glob": true,
-        "write": true,
-        "edit": true,
-        "bash": true
-      }
-    },
-    "gasty-parser-expert": {
-      "prompt": "{file:./agent/gasty-parser-expert.md}",
+    "gasty-review": {
+      "prompt": "{file:./agent/gasty-review.md}",
       "mode": "subagent",
-      "tools": {
-        "read": true,
-        "grep": true,
-        "glob": true,
-        "edit": true,
-        "bash": true
+      "temperature": 0.1,
+      "description": "Reviews code, authors ADRs, enforces bundle budget and anti-patterns.",
+      "permission": {
+        "read": "allow",
+        "edit": "deny",
+        "glob": "allow",
+        "grep": "allow",
+        "bash": {
+          "*": "deny",
+          "git diff*": "allow",
+          "git log*": "allow",
+          "git status*": "allow"
+        },
+        "task": "deny"
       }
     },
-    "gasty-data-engineer": {
-      "prompt": "{file:./agent/gasty-data-engineer.md}",
+    "gasty-test": {
+      "prompt": "{file:./agent/gasty-test.md}",
       "mode": "subagent",
-      "tools": {
-        "read": true,
-        "grep": true,
-        "glob": true,
-        "edit": true,
-        "bash": true
-      }
-    },
-    "gasty-test-writer": {
-      "prompt": "{file:./agent/gasty-test-writer.md}",
-      "mode": "subagent",
-      "tools": {
-        "read": true,
-        "grep": true,
-        "glob": true,
-        "write": true,
-        "edit": true,
-        "bash": true
-      }
-    },
-    "gasty-reviewer": {
-      "prompt": "{file:./agent/gasty-reviewer.md}",
-      "mode": "primary",
-      "tools": {
-        "read": true,
-        "grep": true,
-        "glob": true,
-        "bash": true
-      }
-    },
-    "gasty-release": {
-      "prompt": "{file:./agent/gasty-release.md}",
-      "mode": "subagent",
-      "tools": {
-        "read": true,
-        "grep": true,
-        "glob": true,
-        "write": true,
-        "edit": true,
-        "bash": true
+      "temperature": 0.1,
+      "description": "Writes tests, validates data layer, reviews parser changes.",
+      "permission": {
+        "read": "allow",
+        "edit": "allow",
+        "glob": "allow",
+        "grep": "allow",
+        "bash": {
+          "*": "deny",
+          "npm test*": "allow",
+          "npm run test:watch*": "allow",
+          "vitest*": "allow"
+        },
+        "task": "deny"
       }
     }
   }

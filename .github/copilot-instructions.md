@@ -86,12 +86,8 @@ After any non-trivial change, run **both** `npm run lint` and `npm test` before 
 
 Open Copilot Chat, click the mode selector, pick one of:
 
-- **gasty-feature-dev** ⭐ — default; for general feature work
-- **gasty-architect** — before adding deps or new screens
-- **gasty-parser-expert** — only when changing `src/lib/parser.ts` or `categories.ts`
-- **gasty-data-engineer** — Dexie schema, hooks, recurring
-- **gasty-test-writer** — when writing/modifying tests
-- **gasty-reviewer** — read-only diff review
-- **gasty-release** — build, PWA, Capacitor, Play Store
+- **gasty-dev** ⭐ — default; for general feature work, components, hooks, UI
+- **gasty-review** — code review + architectural decisions (ADRs)
+- **gasty-test** — tests + data validation + parser review
 
 For role-specific rules and deeper context, each chat mode inlines the relevant opencode skill content (the canonical version lives in `.opencode/skill/*/SKILL.md`).
