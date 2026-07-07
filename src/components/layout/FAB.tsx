@@ -1,21 +1,24 @@
 interface FABProps {
   onClick: () => void
+  isDesktop: boolean
 }
 
-export function FAB({ onClick }: FABProps) {
+export function FAB({ onClick, isDesktop }: FABProps) {
   return (
     <button
       onClick={onClick}
-      className="
-        fixed bottom-20 left-1/2 -translate-x-1/2
-        translate-y-1/2
-        z-50
+      className={`
+        fixed z-50
         w-14 h-14 rounded-full
         bg-primary text-on-primary
         shadow-xl
         flex items-center justify-center
         active:scale-95 transition-transform
-      "
+        ${isDesktop
+          ? 'top-6 right-6'
+          : 'bottom-20 left-1/2 -translate-x-1/2 translate-y-1/2'
+        }
+      `}
       aria-label="Agregar transacción"
     >
       <svg

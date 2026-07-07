@@ -15,27 +15,133 @@ export function toLocalISO(d: Date): string {
   return `${y}-${m}-${day}T${h}:${min}`
 }
 
-function parseAmount(text: string): { amount: number; remaining: string } {
-  const patterns = [
-    /\$\s*(\d{1,3}(?:[.,]\d{3})+|\d+)(?:[.,](\d{1,2}))?/,
-    /(\d{1,3}(?:[.,]\d{3})+|\d+)(?:[.,](\d{1,2}))?\s*(?:pesos|ars|usd|dolares|dólares)?/,
-  ]
-
-  for (const pattern of patterns) {
-    const match = text.match(pattern)
-    if (match) {
-      const rawNumber = match[1]
-      const decimals = match[2]
-      const normalized = rawNumber.replace(/[.,]/g, '')
-      const amount = decimals
-        ? parseFloat(`${normalized}.${decimals}`)
-        : parseFloat(normalized)
-      const remaining = text.replace(match[0], ' ').replace(/\s+/g, ' ').trim()
-      return { amount, remaining }
-    }
+/**
+ * Parse a currency string into a number.
+ * Handles formats like:
+ *   "ARS 590,000.00" → 590000  (comma=thousands, dot=decimal)
+ *   "ARS 590.000,00" → 590000  (dot=thousands, comma=decimal)
+ *   "$ 45.000"       → 45000   (dot=thousands, no decimals)
+ *   "45000"          → 45000
+ *
+ * @param text - The raw text to parse
+ * @param opts - Optional format hints (thousandsSep, decimalSep, stripCurrencyPrefix)
+ *   When omitted, auto-detects based on the pattern of separators.
+ */
+export function parseAmountFromText(
+  text: string,
+  opts?: { thousandsSep?: string; decimalSep?: string; stripCurrencyPrefix?: boolean },
+): { amount: number; remaining: string } {
+  // 1. Strip currency prefix if configured or by default
+  const stripPrefix = opts?.stripCurrencyPrefix !== false
+  let cleaned = text
+  if (stripPrefix) {
+    // Match common prefixes: "ARS", "USD", "$", "US$", "U$S", "pesos"
+    cleaned = cleaned.replace(/\b(ars|usd|u\$s|dolares|dólares|pesos)\b\s*/gi, '')
+    cleaned = cleaned.replace(/^\$\s*/, '')
+    cleaned = cleaned.replace(/^US\$\s*/, '')
   }
 
-  return { amount: 0, remaining: text }
+  // 2. Find all number-like tokens (word-boundary delimited)
+  const tokenPattern = /\d[\d.,]*/g
+  const tokens: Array<{ value: string; start: number; end: number }> = []
+  let m: RegExpExecArray | null
+  while ((m = tokenPattern.exec(cleaned)) !== null) {
+    tokens.push({ value: m[0], start: m.index, end: m.index + m[0].length })
+  }
+
+  if (tokens.length === 0) {
+    return { amount: 0, remaining: text }
+  }
+
+  // Pick the last numeric token (most likely the amount when there are multiple numbers)
+  const token = tokens[tokens.length - 1]!
+  const raw = token.value
+
+  // 3. Determine format: auto-detect or use hints
+  const dotPos = raw.lastIndexOf('.')
+  const commaPos = raw.lastIndexOf(',')
+
+  const userThousands = opts?.thousandsSep !== 'auto' ? opts?.thousandsSep : undefined
+  const userDecimal = opts?.decimalSep !== 'auto' ? opts?.decimalSep : undefined
+
+  let thousandsSep: string | undefined = userThousands
+  let decimalSep: string | undefined = userDecimal
+
+  if (!thousandsSep && !decimalSep) {
+    // Both auto — detect from the number itself
+    if (dotPos >= 0 && commaPos >= 0) {
+      // Both present — the one closer to the end is decimal
+      if (commaPos > dotPos) {
+        thousandsSep = '.'
+        decimalSep = ','
+      } else {
+        thousandsSep = ','
+        decimalSep = '.'
+      }
+    } else if (dotPos >= 0) {
+      // Only dot: "45.000" → thousands, "45.50" → decimal (<=2 digits after = decimal)
+      const afterDot = raw.length - dotPos - 1
+      if (afterDot <= 2) {
+        decimalSep = '.'
+      } else {
+        thousandsSep = '.'
+      }
+    } else if (commaPos >= 0) {
+      // Only comma: "45,000" → thousands, "45,50" → decimal (<=2 digits after = decimal)
+      const afterComma = raw.length - commaPos - 1
+      if (afterComma <= 2) {
+        decimalSep = ','
+      } else {
+        thousandsSep = ','
+      }
+    }
+  } else if (thousandsSep && !decimalSep) {
+    // User provided thousands — infer decimal as the other separator
+    if (thousandsSep === ',' && dotPos >= 0) {
+      const afterDot = raw.length - dotPos - 1
+      if (afterDot <= 2) decimalSep = '.'
+    } else if (thousandsSep === '.' && commaPos >= 0) {
+      const afterComma = raw.length - commaPos - 1
+      if (afterComma <= 2) decimalSep = ','
+    }
+  } else if (!thousandsSep && decimalSep) {
+    // User provided decimal — infer thousands as the other separator
+    if (decimalSep === '.' && commaPos >= 0) {
+      thousandsSep = ','
+    } else if (decimalSep === ',' && dotPos >= 0) {
+      thousandsSep = '.'
+    }
+  }
+  // else: both provided by user — use as-is
+
+  // 4. Strip thousands separator, normalize decimal to dot
+  let normalized = raw
+  if (thousandsSep) {
+    // Remove all occurrences of the thousands separator
+    const escaped = thousandsSep === '.' ? '\\.' : thousandsSep === ',' ? ',' : thousandsSep
+    normalized = normalized.replace(new RegExp(escaped, 'g'), '')
+  }
+  if (decimalSep && decimalSep !== '.') {
+    // Replace decimal separator with dot for parseFloat
+    const escaped = decimalSep === ',' ? ',' : decimalSep
+    normalized = normalized.replace(new RegExp(escaped, 'g'), '.')
+  }
+
+  const amount = parseFloat(normalized)
+  if (isNaN(amount) || amount <= 0) {
+    return { amount: 0, remaining: text }
+  }
+
+  // 5. Build remaining text (everything before the token)
+  const before = cleaned.slice(0, token.start).trim()
+  const after = cleaned.slice(token.end).trim()
+  const remaining = [before, after].filter(Boolean).join(' ').replace(/\s+/g, ' ').trim()
+
+  return { amount, remaining }
+}
+
+function parseAmount(text: string): { amount: number; remaining: string } {
+  return parseAmountFromText(text)
 }
 
 function parseDate(text: string): { date: string; remaining: string } {
@@ -94,7 +200,7 @@ function parseDate(text: string): { date: string; remaining: string } {
     }
   }
 
-  const datePattern = /\b(\d{1,2})[\/\-](\d{1,2})(?:[\/\-](\d{2,4}))?\b/
+  const datePattern = /\b(\d{1,2})[/-](\d{1,2})(?:[/-](\d{2,4}))?\b/
   const dm = working.match(datePattern)
   if (dm) {
     const day = parseInt(dm[1], 10)

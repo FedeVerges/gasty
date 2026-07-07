@@ -4,6 +4,7 @@ import { parseCsvContent, executeImport, type CsvRow } from '../../lib/csv'
 import { DEFAULT_CATEGORIES } from '../../lib/categories'
 import { formatMoney } from '../../lib/format'
 import { useSettings } from '../../context/SettingsContext'
+import { useViewport } from '../../hooks/useViewport'
 
 interface CsvImportSheetProps {
   open: boolean
@@ -14,6 +15,7 @@ type Step = 'select' | 'preview' | 'result'
 
 export function CsvImportSheet({ open, onClose }: CsvImportSheetProps) {
   const { settings } = useSettings()
+  const { isDesktop } = useViewport()
   const [step, setStep] = useState<Step>('select')
   const [rows, setRows] = useState<CsvRow[]>([])
   const [parseErrors, setParseErrors] = useState<number[]>([])
@@ -43,7 +45,7 @@ export function CsvImportSheet({ open, onClose }: CsvImportSheetProps) {
     const reader = new FileReader()
     reader.onload = (ev) => {
       const content = ev.target?.result as string
-      const { rows: parsed, errors } = parseCsvContent(content)
+      const { rows: parsed, errors } = parseCsvContent(content, settings.csvFormat)
       setRows(parsed)
       setParseErrors(errors)
       setStep('preview')
@@ -76,20 +78,20 @@ export function CsvImportSheet({ open, onClose }: CsvImportSheetProps) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center animate-fade-in"
+      className={`fixed inset-0 z-50 flex justify-center animate-fade-in ${isDesktop ? 'items-center sheet-desktop' : 'items-end'}`}
       onClick={handleBackdrop}
       style={{ background: 'var(--color-overlay)' }}
     >
       <div
-        className="
+        className={`
           w-full max-w-[480px]
-          bg-canvas rounded-t-3xl
-          animate-slide-up
+          bg-canvas
           overflow-y-auto
-        "
+          ${isDesktop ? 'rounded-3xl' : 'rounded-t-3xl animate-slide-up'}
+        `}
         style={{
           paddingBottom: 'env(safe-area-inset-bottom)',
-          maxHeight: '90vh',
+          maxHeight: isDesktop ? '85vh' : '90vh',
         }}
       >
         <div className="sticky top-0 bg-canvas px-5 pt-4 pb-2 z-10">
@@ -159,11 +161,11 @@ Birra,2500,15/6,Salidas`}
               )}
 
               <div className="space-y-2 max-h-[50vh] overflow-y-auto">
-                {rows.map((row, i) => {
+                {rows.map((row) => {
                   const cat = DEFAULT_CATEGORIES.find((c) => c.id === row.categoryId)
                   return (
                     <div
-                      key={i}
+                      key={row.rawLine}
                       className="rounded-2xl border border-border p-3 bg-card"
                     >
                       <div className="flex items-center justify-between">

@@ -8,7 +8,7 @@ import { CsvImportContext } from '../../context/CsvImportContext'
 import type { Transaction } from '../../types'
 
 export function Settings() {
-  const { settings, setTheme, setCurrency } = useSettings()
+  const { settings, setTheme, setCurrency, setCsvFormat } = useSettings()
   const categories = useCategories()
   const openCsvImport = useContext(CsvImportContext)
   const [recurring, setRecurring] = useState<Transaction[]>([])
@@ -94,6 +94,90 @@ export function Settings() {
 
       <Card>
         <span className="text-xs uppercase tracking-widest text-body font-medium block mb-3">
+          Formato de CSV
+        </span>
+        <p className="text-xs text-body mb-3">
+          Configurá cómo se leen los montos en archivos CSV importados.
+        </p>
+
+        {/* Thousands separator */}
+        <div className="mb-3">
+          <label className="text-xs text-mute block mb-1">Separador de miles</label>
+          <div className="grid grid-cols-3 gap-1">
+            {([
+              { value: 'auto' as const, label: 'Auto' },
+              { value: ',' as const, label: 'Coma (1,000)' },
+              { value: '.' as const, label: 'Punto (1.000)' },
+            ]).map((opt) => (
+              <button
+                key={opt.value}
+                onClick={() => setCsvFormat({ thousandsSeparator: opt.value })}
+                className={`
+                  py-3 px-2 rounded-xl text-xs font-medium transition-colors
+                  ${settings.csvFormat.thousandsSeparator === opt.value
+                    ? 'bg-primary text-on-primary'
+                    : 'bg-canvas-soft text-body'}
+                `}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Decimal separator */}
+        <div className="mb-3">
+          <label className="text-xs text-mute block mb-1">Separador decimal</label>
+          <div className="grid grid-cols-3 gap-1">
+            {([
+              { value: 'auto' as const, label: 'Auto' },
+              { value: '.' as const, label: 'Punto (10.50)' },
+              { value: ',' as const, label: 'Coma (10,50)' },
+            ]).map((opt) => (
+              <button
+                key={opt.value}
+                onClick={() => setCsvFormat({ decimalSeparator: opt.value })}
+                className={`
+                  py-3 px-2 rounded-xl text-xs font-medium transition-colors
+                  ${settings.csvFormat.decimalSeparator === opt.value
+                    ? 'bg-primary text-on-primary'
+                    : 'bg-canvas-soft text-body'}
+                `}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Strip currency prefix */}
+        <div className="flex items-center justify-between py-3">
+          <div>
+            <span className="text-sm text-body">Quitar prefijo de moneda</span>
+            <p className="text-xs text-mute">Ej: "ARS 590.000" → "590.000"</p>
+          </div>
+          <button
+            onClick={() => setCsvFormat({ stripCurrencyPrefix: !settings.csvFormat.stripCurrencyPrefix })}
+            className={`
+              relative w-11 h-8 rounded-full transition-colors
+              ${settings.csvFormat.stripCurrencyPrefix ? 'bg-primary' : 'bg-canvas-soft border border-border'}
+            `}
+            role="switch"
+            aria-checked={settings.csvFormat.stripCurrencyPrefix}
+            aria-label="Quitar prefijo de moneda"
+          >
+            <span
+              className={`
+                absolute top-1 left-1 w-6 h-6 rounded-full bg-white shadow transition-transform
+                ${settings.csvFormat.stripCurrencyPrefix ? 'translate-x-3' : 'translate-x-0'}
+              `}
+            />
+          </button>
+        </div>
+      </Card>
+
+      <Card>
+        <span className="text-xs uppercase tracking-widest text-body font-medium block mb-3">
           Importar datos
         </span>
         <p className="text-sm text-body mb-3">
@@ -104,7 +188,7 @@ export function Settings() {
           className="
             w-full py-3 px-4 rounded-2xl
             bg-primary text-on-primary font-semibold
-            active:brightness-90 transition-all
+            active:scale-[0.98] transition-transform
           "
         >
           Importar CSV

@@ -35,9 +35,22 @@ export type Theme = 'light' | 'dark'
 
 export type Currency = 'ARS' | 'USD'
 
+export type CsvThousandsSep = ',' | '.' | 'auto'
+export type CsvDecimalSep = ',' | '.' | 'auto'
+
+export interface CsvFormatSettings {
+  /** How thousands are separated in the CSV amount column */
+  thousandsSeparator: CsvThousandsSep
+  /** How decimals are separated in the CSV amount column */
+  decimalSeparator: CsvDecimalSep
+  /** Whether to strip currency prefixes like "ARS", "USD", "$", "US$" */
+  stripCurrencyPrefix: boolean
+}
+
 export interface Settings {
   theme: Theme
   currency: Currency
+  csvFormat: CsvFormatSettings
 }
 
 export interface ParsedTransaction {

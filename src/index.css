@@ -140,6 +140,13 @@
     position: relative;
   }
 
+  @media (min-width: 768px) {
+    #root {
+      max-width: none;
+      flex-direction: row;
+    }
+  }
+
   button {
     font-family: inherit;
     cursor: pointer;
@@ -183,4 +190,19 @@
 
 .animate-fade-in {
   animation: fade-in 0.2s ease-out;
+}
+
+/* ── Desktop sheet overrides ── */
+@media (min-width: 768px) {
+  .sheet-desktop {
+    align-items: center;
+  }
+  .sheet-desktop > div {
+    border-radius: 1.5rem;
+    max-height: 85vh;
+    width: 100%;
+    max-width: 480px;
+    margin: 0 auto;
+    animation: fade-in 0.2s ease-out;
+  }
 }

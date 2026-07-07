@@ -3,6 +3,7 @@ import { db } from '../../lib/db'
 import { parseInput, createTransactionFromParsed, toLocalISO } from '../../lib/parser'
 import { useCategories } from '../../hooks/useCategories'
 import { useKeyboardHeight } from '../../hooks/useKeyboardHeight'
+import { useViewport } from '../../hooks/useViewport'
 import { useSettings } from '../../context/SettingsContext'
 import { formatMoney, formatDateFull } from '../../lib/format'
 import { Button } from '../ui/Button'
@@ -28,6 +29,7 @@ function generateEditText(tx: Transaction): string {
 
 export function SmartInputSheet({ open, onClose, editTransaction }: SmartInputSheetProps) {
   const { settings } = useSettings()
+  const { isDesktop } = useViewport()
   const categories = useCategories()
   const [text, setText] = useState(() =>
     editTransaction ? generateEditText(editTransaction) : ''
@@ -116,23 +118,25 @@ export function SmartInputSheet({ open, onClose, editTransaction }: SmartInputSh
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center animate-fade-in"
+      className={`fixed inset-0 z-50 flex justify-center animate-fade-in ${isDesktop ? 'items-center sheet-desktop' : 'items-end'}`}
       onClick={handleBackdrop}
       style={{ background: 'var(--color-overlay)' }}
     >
       <div
-        className="
+        className={`
           w-full max-w-[480px]
-          bg-canvas rounded-t-3xl
-          animate-slide-up
+          bg-canvas
           overflow-y-auto
-        "
+          ${isDesktop ? 'rounded-3xl' : 'rounded-t-3xl animate-slide-up'}
+        `}
         style={{
           paddingBottom: 'env(safe-area-inset-bottom)',
-          marginBottom: keyboardHeight || undefined,
-          maxHeight: keyboardHeight > 0
-            ? `calc(100vh - ${keyboardHeight + 80}px)`
-            : '90vh',
+          marginBottom: !isDesktop && keyboardHeight ? keyboardHeight : undefined,
+          maxHeight: isDesktop
+            ? '85vh'
+            : keyboardHeight > 0
+              ? `calc(100vh - ${keyboardHeight + 80}px)`
+              : '90vh',
         }}
       >
         <div className="sticky top-0 bg-canvas px-5 pt-4 pb-2 z-10">

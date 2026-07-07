@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react'
 import { useAllTransactions } from '../../hooks/useTransactions'
 import { useCategories } from '../../hooks/useCategories'
+import { useViewport } from '../../hooks/useViewport'
 import { BalanceCard } from './BalanceCard'
 import { MonthSummary } from './MonthSummary'
 import { TransactionItem } from '../transactions/TransactionItem'
@@ -9,6 +10,7 @@ import { MONTHS_FULL } from '../../lib/format'
 export function Dashboard() {
   const transactions = useAllTransactions()
   const categories = useCategories()
+  const { isDesktop } = useViewport()
 
   const now = new Date()
   const currentYear = now.getFullYear()
@@ -71,17 +73,19 @@ export function Dashboard() {
         <p className="text-sm text-body mt-2">Tus gastos, simples.</p>
       </header>
 
-      <BalanceCard
-        totalIncome={summary.totalIncome}
-        totalExpense={summary.totalExpense}
-        prevMonthExpense={summary.prevMonthSpent}
-      />
+      <div className={isDesktop ? 'grid grid-cols-2 gap-4' : 'space-y-4'}>
+        <BalanceCard
+          totalIncome={summary.totalIncome}
+          totalExpense={summary.totalExpense}
+          prevMonthExpense={summary.prevMonthSpent}
+        />
 
-      <MonthSummary
-        monthSpent={summary.monthSpent}
-        monthIncome={summary.monthIncome}
-        monthLabel={monthLabel}
-      />
+        <MonthSummary
+          monthSpent={summary.monthSpent}
+          monthIncome={summary.monthIncome}
+          monthLabel={monthLabel}
+        />
+      </div>
 
       <div className="flex gap-2 overflow-x-auto scrollbar-hide -mx-5 px-5 pb-1">
         <button

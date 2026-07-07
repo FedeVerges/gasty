@@ -1,6 +1,7 @@
-import { parseInput, createTransactionFromParsed } from './parser'
+import { parseInput, createTransactionFromParsed, parseAmountFromText } from './parser'
 import { db } from './db'
 import { DEFAULT_CATEGORIES } from './categories'
+import type { CsvFormatSettings } from '../types'
 
 function parseCSVLine(line: string): string[] {
   const result: string[] = []
@@ -42,6 +43,7 @@ function matchCategory(name: string): string | null {
     }
   }
   const aliases: Record<string, string> = {
+    // ── Core category names ──
     comida: 'food',
     vivienda: 'home',
     servicios: 'services',
@@ -55,6 +57,8 @@ function matchCategory(name: string): string | null {
     otros: 'other_exp',
     sueldo: 'salary',
     'otros ingresos': 'other_inc',
+
+    // ── Common sub-aliases ──
     alquiler: 'home',
     luz: 'services',
     gas: 'services',
@@ -64,6 +68,84 @@ function matchCategory(name: string): string | null {
     nafta: 'transport',
     taxi: 'transport',
     uber: 'transport',
+
+    // ── Real CSV export categories (bancos, apps financieras) ──
+    hogar: 'home',
+    'vivienda y hogar': 'home',
+    'finanzas y deudas': 'other_exp',
+    finanzas: 'other_exp',
+    deudas: 'other_exp',
+    ahorros: 'other_exp',
+    ahorro: 'other_exp',
+    deporte: 'leisure',
+    deportes: 'leisure',
+    'servicios públicos': 'services',
+    'servicios publicos': 'services',
+    alimentación: 'food',
+    alimentacion: 'food',
+    'entretenimiento y salidas a comer': 'leisure',
+    entretenimiento: 'leisure',
+    suscripciones: 'services',
+    suscripción: 'services',
+    ocio: 'leisure',
+    'salud y bienestar': 'health',
+    'belleza y cuidado personal': 'health',
+    'educación y formación': 'education',
+    'compras y retail': 'other_exp',
+    compras: 'other_exp',
+    'impuestos y tasas': 'other_exp',
+    impuestos: 'other_exp',
+    'seguros': 'other_exp',
+    'transferencias': 'other_exp',
+    'cuotas': 'other_exp',
+    'préstamos': 'other_exp',
+    prestamos: 'other_exp',
+    'créditos': 'other_exp',
+    creditos: 'other_exp',
+    'inversiones': 'other_exp',
+    'donaciones': 'other_exp',
+    'mascotas': 'other_exp',
+    'regalos': 'other_exp',
+    'baby': 'other_exp',
+    'tecnología': 'other_exp',
+    tecnologia: 'other_exp',
+    'hogar y muebles': 'home',
+    'electrodomésticos': 'home',
+    electrodomesticos: 'home',
+    'ropa y calzado': 'other_exp',
+    'farmacia': 'health',
+    'gimnasio': 'leisure',
+    'streaming': 'services',
+    'combustible': 'transport',
+    'estacionamiento': 'transport',
+    'peaje': 'transport',
+    'taxi / uber': 'transport',
+    'delivery': 'food',
+    'supermercado / mercado': 'supermarket',
+    'restaurante': 'leisure',
+    'café': 'leisure',
+    cafe: 'leisure',
+    'bar': 'leisure',
+    'cine': 'leisure',
+    'teatro': 'leisure',
+    'viaje': 'leisure',
+    'hotel': 'leisure',
+    'alojamiento': 'leisure',
+    'farmacia / medicamentos': 'health',
+    'médico': 'health',
+    medico: 'health',
+    'dentista': 'health',
+    'hospital': 'health',
+    'análisis': 'health',
+    analisis: 'health',
+    'colegio': 'education',
+    'universidad': 'education',
+    'curso': 'education',
+    'libro': 'education',
+    'matrícula': 'education',
+    matricula: 'education',
+    'útiles': 'education',
+    utiles: 'education',
   }
   return aliases[lower] ?? null
 }
@@ -78,13 +160,13 @@ interface CsvColumnMap {
 function determineCols(cols: string[]): CsvColumnMap {
   const lower = cols.map((c) => c.toLowerCase().trim())
   const descIdx = lower.findIndex(
-    (c) => c === 'desc' || c === 'description' || c === 'concepto' || c === 'detalle' || c === 'nombre',
+    (c) => c === 'desc' || c === 'description' || c === 'concepto' || c === 'detalle' || c === 'nombre' || c === 'descripción' || c === 'descripcion' || c === 'detalle' || c === 'concepto',
   )
   const amountIdx = lower.findIndex(
-    (c) => c === 'monto' || c === 'amount' || c === 'importe' || c === 'valor',
+    (c) => c === 'monto' || c === 'amount' || c === 'importe' || c === 'valor' || c === 'importe bruto' || c === 'debito' || c === 'crédito' || c === 'credito',
   )
   const dateIdx = lower.findIndex(
-    (c) => c === 'fecha' || c === 'date' || c === 'dia' || c === 'día',
+    (c) => c === 'fecha' || c === 'date' || c === 'dia' || c === 'día' || c === 'fecha de operación' || c === 'fecha de transacción',
   )
   const catIdx = lower.findIndex(
     (c) => c.startsWith('categor'),
@@ -113,7 +195,10 @@ export interface CsvImportResult {
   errorLines: number[]
 }
 
-export function parseCsvContent(content: string): { rows: CsvRow[]; errors: number[] } {
+export function parseCsvContent(
+  content: string,
+  csvFormat?: CsvFormatSettings,
+): { rows: CsvRow[]; errors: number[] } {
   const lines = content.split(/\r?\n/).filter((l) => l.trim().length > 0)
   const rows: CsvRow[] = []
   const errors: number[] = []
@@ -131,15 +216,24 @@ export function parseCsvContent(content: string): { rows: CsvRow[]; errors: numb
   for (let i = startLine; i < lines.length; i++) {
     const cols = parseCSVLine(lines[i])
     const desc = cols[map.descIdx]?.trim()
-    const amountRaw = cols[map.amountIdx]?.trim().replace(/[$]/g, '')
 
-    if (!desc || !amountRaw || isNaN(Number(amountRaw))) {
+    // Parse amount using configurable format settings
+    const amountRaw = cols[map.amountIdx]?.trim() ?? ''
+    const { amount } = parseAmountFromText(amountRaw, {
+      thousandsSep: csvFormat?.thousandsSeparator,
+      decimalSep: csvFormat?.decimalSeparator,
+      stripCurrencyPrefix: csvFormat?.stripCurrencyPrefix ?? true,
+    })
+
+    if (!desc || amount <= 0) {
       errors.push(i + 1)
       continue
     }
 
     const date = map.dateIdx >= 0 ? cols[map.dateIdx]?.trim() : ''
-    let text = `${desc} ${amountRaw}`
+    // Build text for parseInput: "description AMOUNT DATE"
+    const amountStr = String(amount)
+    let text = `${desc} ${amountStr}`
     if (date) text += ` ${date}`
 
     const parsed = parseInput(text)

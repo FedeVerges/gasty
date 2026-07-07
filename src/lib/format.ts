@@ -87,4 +87,18 @@ export function formatMonth(date: Date = new Date()): string {
   return `${MONTHS_FULL[date.getMonth()].charAt(0).toUpperCase() + MONTHS_FULL[date.getMonth()].slice(1)} ${date.getFullYear()}`
 }
 
+export function formatDateGroupHeader(iso: string): string {
+  const datePart = iso.split('T')[0]
+  const [y, m, d] = datePart.split('-').map(Number)
+  const date = new Date(y, m - 1, d)
+  const now = new Date()
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  const diff = Math.floor((today.getTime() - date.getTime()) / (1000 * 60 * 60 * 24))
+
+  if (diff === 0) return 'Hoy'
+  if (diff === 1) return 'Ayer'
+  if (diff > 1 && diff < 7) return `Hace ${diff} días`
+  return `${d} de ${MONTHS_FULL[m - 1]}`
+}
+
 export { MONTHS_FULL, MONTHS_ES }

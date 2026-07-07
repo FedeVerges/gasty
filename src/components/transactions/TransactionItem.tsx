@@ -42,23 +42,17 @@ export function TransactionItem({ transaction }: TransactionItemProps) {
       </div>
 
       <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2">
-          <p className="font-medium text-ink truncate">
-            {transaction.description}
-          </p>
-        </div>
+        <p className="font-medium text-ink truncate">
+          {transaction.description}
+        </p>
         <div className="flex items-center gap-1.5 mt-0.5">
           <span className="text-xs text-body truncate">
             {category?.name}
           </span>
-          <span className="text-xs text-mute">·</span>
-          <span className="text-xs text-body">
-            {formatDate(transaction.date)}
-          </span>
-          {transaction.recurring.kind === 'fixed' && (
+          {transaction.recurring.kind === 'fixed' && !transaction.originalId && (
             <Badge color="recurring">🔄</Badge>
           )}
-          {transaction.recurring.kind === 'fixed_temporary' && (
+          {transaction.recurring.kind === 'fixed_temporary' && !transaction.originalId && (
             <Badge color="recurring">
               {transaction.recurring.currentMonth}/{transaction.recurring.totalMonths}
             </Badge>
@@ -66,15 +60,18 @@ export function TransactionItem({ transaction }: TransactionItemProps) {
         </div>
       </div>
 
-      <div className="flex items-center gap-2">
+      <div className="flex flex-col items-end gap-0.5 shrink-0 ml-2">
         <span
           className={`font-bold text-lg ${isIncome ? 'text-positive' : 'text-negative'}`}
         >
           {isIncome ? '+' : '−'} {formatMoney(transaction.amount, settings.currency)}
         </span>
+        <span className="text-xs text-mute">
+          {formatDate(transaction.date)}
+        </span>
         <button
           onClick={handleDelete}
-          className="text-negative/70 hover:text-negative transition-colors p-2.5 -m-1"
+          className="text-negative/70 hover:text-negative transition-colors p-2.5 -m-1 mt-0.5"
           aria-label="Eliminar"
         >
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

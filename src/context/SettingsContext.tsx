@@ -1,18 +1,19 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
-import type { Theme, Currency, Settings } from '../types'
+import type { Theme, Currency, Settings, CsvFormatSettings } from '../types'
 import { getSettings, saveSettings } from '../lib/db'
 
 interface SettingsContextValue {
   settings: Settings
   setTheme: (theme: Theme) => void
   setCurrency: (currency: Currency) => void
+  setCsvFormat: (csvFormat: Partial<CsvFormatSettings>) => void
   loading: boolean
 }
 
 const SettingsContext = createContext<SettingsContextValue | null>(null)
 
 export function SettingsProvider({ children }: { children: ReactNode }) {
-  const [settings, setSettings] = useState<Settings>({ theme: 'light', currency: 'ARS' })
+  const [settings, setSettings] = useState<Settings>({ theme: 'light', currency: 'ARS', csvFormat: { thousandsSeparator: 'auto', decimalSeparator: 'auto', stripCurrencyPrefix: true } })
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -37,8 +38,16 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     saveSettings({ currency })
   }
 
+  const setCsvFormat = (csvFormat: Partial<CsvFormatSettings>) => {
+    setSettings((s) => {
+      const next = { ...s, csvFormat: { ...s.csvFormat, ...csvFormat } }
+      saveSettings({ csvFormat: next.csvFormat })
+      return next
+    })
+  }
+
   return (
-    <SettingsContext.Provider value={{ settings, setTheme, setCurrency, loading }}>
+    <SettingsContext.Provider value={{ settings, setTheme, setCurrency, setCsvFormat, loading }}>
       {children}
     </SettingsContext.Provider>
   )

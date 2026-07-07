@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { parseInput } from '../src/lib/parser'
+import { parseInput, parseAmountFromText } from '../src/lib/parser'
 
 describe('parser: gastos básicos', () => {
   it('parsea gasto simple con monto', () => {
@@ -131,5 +131,121 @@ describe('parser: recurrentes', () => {
   it('gasto simple no es recurrente', () => {
     const result = parseInput('birra 1500')
     expect(result?.recurring.kind).toBe('none')
+  })
+})
+
+describe('parser: parseAmountFromText', () => {
+  describe('formato argentino', () => {
+    it('parsea "ARS 590,000.00" (coma=miles, punto=decimal)', () => {
+      const { amount } = parseAmountFromText('ARS 590,000.00')
+      expect(amount).toBe(590000)
+    })
+
+    it('parsea "ARS 590.000,00" (punto=miles, coma=decimal)', () => {
+      const { amount } = parseAmountFromText('ARS 590.000,00')
+      expect(amount).toBe(590000)
+    })
+  })
+
+  describe('dólar y moneda', () => {
+    it('parsea "$45.000" como 45000', () => {
+      const { amount } = parseAmountFromText('$45.000')
+      expect(amount).toBe(45000)
+    })
+
+    it('parsea "USD 1,500.50" como 1500.50', () => {
+      const { amount } = parseAmountFromText('USD 1,500.50')
+      expect(amount).toBe(1500.50)
+    })
+
+    it('parsea "pesos 35.000" como 35000', () => {
+      const { amount } = parseAmountFromText('pesos 35.000')
+      expect(amount).toBe(35000)
+    })
+  })
+
+  describe('número simple', () => {
+    it('parsea "45000" como 45000', () => {
+      const { amount } = parseAmountFromText('45000')
+      expect(amount).toBe(45000)
+    })
+  })
+
+  describe('con opciones explícitas', () => {
+    it('respeta thousandsSep y decimalSep cuando se proporcionan', () => {
+      const { amount } = parseAmountFromText('1,234.56', {
+        thousandsSep: ',',
+        decimalSep: '.',
+        stripCurrencyPrefix: true,
+      })
+      expect(amount).toBe(1234.56)
+    })
+
+    it('respeta formato argentino con opciones', () => {
+      const { amount } = parseAmountFromText('1.234,56', {
+        thousandsSep: '.',
+        decimalSep: ',',
+        stripCurrencyPrefix: true,
+      })
+      expect(amount).toBe(1234.56)
+    })
+  })
+
+  describe('auto-detección', () => {
+    it('detecta coma como decimal en "1.234,56"', () => {
+      const { amount } = parseAmountFromText('1.234,56')
+      expect(amount).toBe(1234.56)
+    })
+
+    it('detecta punto como decimal en "1,234.56"', () => {
+      const { amount } = parseAmountFromText('1,234.56')
+      expect(amount).toBe(1234.56)
+    })
+  })
+
+  describe('casos vacíos y sin números', () => {
+    it('devuelve 0 para string vacío', () => {
+      const { amount } = parseAmountFromText('')
+      expect(amount).toBe(0)
+    })
+
+    it('devuelve 0 para texto sin números', () => {
+      const { amount } = parseAmountFromText('hello')
+      expect(amount).toBe(0)
+    })
+  })
+
+  describe('texto mixto con número', () => {
+    it('extrae monto de "alquiler 45.000"', () => {
+      const { amount, remaining } = parseAmountFromText('alquiler 45.000')
+      expect(amount).toBe(45000)
+      expect(remaining).toContain('alquiler')
+    })
+
+    it('remaining contiene la descripción cuando hay texto mezclado', () => {
+      const { remaining } = parseAmountFromText('supermercado 15000')
+      expect(remaining).toContain('supermercado')
+    })
+
+    it('extrae último número cuando hay múltiples', () => {
+      const { amount } = parseAmountFromText('cuota auto 25000 4/24')
+      expect(amount).toBe(24)
+    })
+  })
+
+  describe('prefijo de moneda', () => {
+    it('elimina prefijo ARS por defecto', () => {
+      const { amount, remaining } = parseAmountFromText('ARS 50000')
+      expect(amount).toBe(50000)
+      expect(remaining).not.toMatch(/ars/i)
+    })
+
+    it('no elimina prefijo cuando stripCurrencyPrefix es false', () => {
+      const { amount, remaining } = parseAmountFromText('ARS 50000', {
+        stripCurrencyPrefix: false,
+      })
+      expect(amount).toBe(50000)
+      expect(remaining).toContain('ARS')
+    })
   })
 })
