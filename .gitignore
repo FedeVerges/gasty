@@ -28,4 +28,5 @@ cert.pem
 cert-key.pem
 
 package-lock.json
-
+pnpm-lock.yaml
+skills-lock.json
