@@ -2,7 +2,7 @@
 
 ## 1. Visión General
 
-**Gasty** es una PWA mobile-first para seguimiento personal de gastos (locale es-AR), lista para Capacitor → Play Store. Entrada inteligente en lenguaje natural ("alquiler 45000", "cuota auto 25000 4/24"), auto-clonado de transacciones recurrentes, dark mode, sin backend.
+**Gasty** es una PWA mobile-first con soporte desktop responsive para seguimiento personal de gastos (locale es-AR), lista para Capacitor → Play Store. Entrada inteligente en lenguaje natural ("alquiler 45000", "cuota auto 25000 4/24"), auto-clonado de transacciones recurrentes, importación CSV con configuración de formato, dark mode, sin backend.
 
 ---
 
@@ -21,6 +21,8 @@
 5. Selector recurrencia: **No** / **🔄 Todos los meses** / **⏱️ Por un tiempo** (con input meses 1-240)
 6. **Confirmar** → `createTransactionFromParsed` → `db.transactions.add()`
 
+> **Safari / iOS**: `SmartInputSheet` usa `useKeyboardHeight` (visualViewport API) para evitar que el teclado virtual tape el input. El sheet también fija `body position` para evitar scroll detrás del modal.
+
 ### 2.2 Editar Transacción
 - Tap en cualquier `TransactionItem` → `EditTransactionContext` → `SmartInputSheet` en modo edición (`editTransaction` prop)
 - Mantiene `id` y `createdAt` original
@@ -34,10 +36,10 @@
 
 | Tab | Ruta | Componentes Clave | Funcionalidad |
 |-----|------|-------------------|---------------|
-| **🏠 Inicio** | `Dashboard` | `BalanceCard`, `MonthSummary`, filtros categoría, lista tx mes actual | Resumen financiero + lista filtrada |
-| **📋 Movimientos** | `Transactions` | Selector mes (12 últimos), filtro categoría, balance mes, lista completa | Historial paginado por mes |
-| **📊 Stats** | `Stats` | Barras SVG 6 meses, Donut SVG categorías mes actual, Top categoría | Visualización sin deps externas |
-| **⚙️ Ajustes** | `Settings` | Theme toggle, Currency (ARS/USD), Lista recurrentes con delete cascada | Configuración + gestión recurrencias |
+| **🏠 Inicio** | `Dashboard` | `BalanceCard`, `MonthSummary`, filtros categoría, lista tx mes actual | Resumen financiero + lista filtrada (responsive) |
+| **📋 Movimientos** | `Transactions` | Selector mes, filtros fecha (`this_month`/`last_7d`/`last_month`/`this_year`), group headers por día, filtro categoría, balance mes, lista completa | Historial con filtros rápidos + agrupación por fecha |
+| **📊 Stats** | `Stats` | Barras SVG 6 meses, Donut SVG categorías mes actual, Top categoría (responsive) | Visualización sin deps externas |
+| **⚙️ Ajustes** | `Settings` | Theme toggle, Currency (ARS/USD), Configuración formato CSV, CategoryManager (CRUD categorías + keywords), Lista recurrentes con delete cascada | Configuración + gestión categorías y recurrencias |
 
 ---
 
@@ -96,25 +98,25 @@ ParsedTransaction
 
 ### 5.2 Keywords Principales
 
-**Ingresos**: `sueldo`, `salario`, `honorarios`, `venta`, `cobro`, `cobré`, `freelance`, `facturé`, `recibí`, `ingreso`, `pago recibido`, `devolución`, `transferencia recibida`
+**Ingresos**: `sueldo`, `salario`, `sueldo básico`, `sueldo neto`, `aguinaldo`, `bonificación`, `bono`, `honorarios`, `venta`, `cobro`, `cobré`, `freelance`, `facturé`, `recibí`, `ingreso`, `pago recibido`, `devolución`, `devolucion`, `transferencia recibida`, `comisión`, `comision`, `propina`, `dividendo`, `interés cobrado`, `ganancia`, `alquiler cobrado`, `alquiler recibido`
 
-**Recurrentes**: `alquiler`, `expensas`, `cuota`, `crédito`, `credito`, `servicio`, `suscripcion`, `suscripción`, `patente`, `seguro`, `impuesto`
+**Recurrentes**: `alquiler`, `expensas`, `cuota`, `crédito`, `credito`, `servicio`, `suscripcion`, `suscripción`, `patente`, `seguro`, `impuesto`, `sueldo`, `salario`
 
-**Categorías (120+ keywords → 13 cats)**:
+**Categorías (160+ keywords → 12 cats)**:
 | Cat ID | Nombre | Emoji | Keywords Ejemplo |
 |--------|--------|-------|------------------|
-| `food` | Comida | 🍔 | almuerzo, cena, hamburguesa, sushi, verdulería |
+| `food` | Comida | 🍔 | lomito, hamburguesa, pancho, choripan, helado, sushi, pollo, carne, pescado, ensalada, fruta, verdura, kiosco, almuerzo, cena, desayuno, merienda, verdulería, carnicería, panadería |
 | `home` | Vivienda | 🏠 | alquiler, expensas, hipoteca, crédito hipotecario |
-| `services` | Servicios | 💡 | luz, gas, internet, agua, cable, celular |
-| `transport` | Transporte | 🚗 | nafta, taxi, uber, sube, peaje, cuota auto, patente |
-| `leisure` | Salidas | 🎉 | birra, pizza, restaurant, café, cine, viaje, fiesta |
-| `repair` | Reparaciones | 🛠️ | arreglo, reparación, plomero, electricista, mecánico |
-| `health` | Salud | 💊 | farmacia, médico, dentista, óptica, análisis |
-| `education` | Educación | 📚 | curso, libro, universidad, matrícula |
-| `supermarket` | Supermercado | 🛒 | super, carrefour, disco, coto, jumbo |
-| `other_exp` | Otros | 📦 | (fallback gasto) |
-| `salary` | Sueldo | 💼 | sueldo, salario |
-| `other_inc` | Otros ingresos | 💰 | honorarios, venta, freelance, devolución |
+| `services` | Servicios | 💡 | luz, gas, internet, agua, cable, celular, teléfono |
+| `transport` | Transporte | 🚗 | nafta, taxi, uber, sube, peaje, colectivo, subte, estacionamiento, cuota auto, patente, seguro auto |
+| `leisure` | Salidas | 🎉 | birra, cerveza, pizza, empanada, restaurant, café, bar, recital, cine, teatro, boliche, viaje, salida, fiesta, delivery, pedidosya, rappi, uber eats, netflix, spotify, disney, hbomax, prime |
+| `repair` | Reparaciones | 🛠️ | arreglo, reparación, instalación, termotanque, plomero, electricista, mecánico |
+| `health` | Salud | 💊 | farmacia, remedio, medicamento, médico, consulta, análisis, dentista, óptica, obra social, prepaga, mutual, seguro medico, oftalmólogo, psicólogo, kinesiólogo |
+| `education` | Educación | 📚 | curso, libro, universidad, colegio, matrícula |
+| `supermarket` | Supermercado | 🛒 | super, supermercado, carrefour, disco, día, coto, jumbo, chino, almacén |
+| `other_exp` | Otros | 📦 | ropa, zapatillas, indumentaria (fallback gasto) |
+| `salary` | Sueldo | 💼 | sueldo, salario, sueldo básico, aguinaldo, bonificación, bono |
+| `other_inc` | Otros ingresos | 💰 | honorarios, venta, freelance, devolución, comisión, propina, dividendo, ganancia, alquiler cobrado |
 
 ### 5.3 Formatos de Fecha Soportados
 | Input | Ejemplo | Resultado |
@@ -140,6 +142,7 @@ interface Category {
   emoji: string
   color: string  // hex (ej: #f59e0b)
   type: 'expense' | 'income' | 'both'
+  keywords: string[]  // palabras clave para detección automática
 }
 ```
 
@@ -150,6 +153,16 @@ interface Category {
 ### 6.3 Persistencia
 - Seed automático en `db.ts:seedDatabase()` si tabla vacía
 - `useCategories()` / `useCategory(id)` → `useLiveQuery` reactivo
+- Keywords persistidas en DB y sincronizadas vía `syncKeywordMaps()`
+
+### 6.4 Category Manager (Settings)
+- **`CategoryManager`** en pantalla Ajustes — CRUD completo de categorías:
+  - Crear categoría (nombre, emoji, tipo, color aleatorio)
+  - Agregar/quitar keywords por categoría
+  - Eliminar categorías (no modifica tx existentes)
+  - Las categorías default (`food`, `home`, etc.) no se pueden eliminar
+- `syncKeywordMaps()` reconstruye los mapas de keywords desde DB tras cada cambio
+- El parser consume keywords desde los mapas dinámicos, no desde constantes estáticas
 
 ---
 
@@ -166,10 +179,44 @@ interface Category {
 
 ## 8. Importación CSV (`src/lib/csv.ts`)
 
-- Parser CSV simple (soporta comillas, headers)
-- Detecta columnas: descripción/concepto/detalle, monto/amount/importe/valor, fecha/date/día
-- Reutiliza `parseInput()` → mismo motor de categorización/recurrencia
-- Retorna `{ imported, errors, errorLines[] }`
+### 8.1 Flujo de Importación
+1. Usuario toca botón de importar (vía `CsvImportContext` desde cualquier pantalla)
+2. Se abre `CsvImportSheet` (bottom sheet modal) con 3 pasos:
+   - **Seleccionar**: selector de archivo `.csv`
+   - **Vista previa**: tabla con filas parseadas, errores resaltados
+   - **Resultado**: resumen de importadas/errores
+3. Motor de parsing (`parseCsvContent`):
+   - Detecta headers automáticamente (`descripción`, `monto`, `fecha`, `categoría` y variantes)
+   - Reutiliza `parseInput()` → mismo motor de categorización
+   - Asigna categoría vía columna explícita o por detección desde descripción
+   - `executeImport()` → `db.transactions.add()` por fila
+
+### 8.2 Detección de Columnas
+| Columna | Headers Reconocidos |
+|---------|---------------------|
+| Descripción | `desc`, `description`, `descripción`, `concepto`, `detalle` |
+| Monto | `monto`, `amount`, `importe`, `valor` |
+| Fecha | `fecha`, `date`, `día`, `dia` |
+| Categoría | `categoría`, `categoria`, `cat`, `category` |
+
+### 8.3 Parámetros de Formato Configurables (`CsvFormatSettings`)
+- **Separador de miles** (`thousandsSeparator`): `,` / `.` / `auto`
+- **Separador decimal** (`decimalSeparator`): `,` / `.` / `auto`
+- **Strip prefijo moneda** (`stripCurrencyPrefix`): elimina `$`, `ARS`, `USD`, `US$` automáticamente
+- Configuración persistida en `db.settings` y accesible desde Ajustes
+
+### 8.4 Mapeo de Categorías
+- Aliases para apps financieras/bancos: `hogar` → home, `finanzas` → other_exp, `deporte` → leisure, etc.
+- Fallback a detección por descripción vía `parseInput()` si no hay columna categoría
+
+### 8.5 Output
+```typescript
+interface CsvImportResult {
+  imported: number    // filas importadas exitosamente
+  errors: number      // filas con error
+  errorLines: number[]  // números de línea con error
+}
+```
 
 ---
 
@@ -181,22 +228,28 @@ interface Category {
 - Ver gastado/ingresado/restante mes actual + barra progreso
 - Filtrar lista por categoría (chips horizontales)
 - Tap tx → editar | Botón 🗑️ → eliminar
+- Layout responsive: se adapta a desktop
 
 ### Movimientos
-- Selector mes (últimos 12 con datos)
-- Filtro categoría
+- Filtros rápidos de fecha: **Este mes** / **Últimos 7d** / **Mes pasado** / **Este año** / selector mes específico
+- Group headers por día: `Hoy`, `Ayer`, `Hace N días`, `DD de mes`
+- Filtro categoría (chips)
 - Balance del mes (ingresos - gastos)
 - Lista completa con edit/delete
+- Layout responsive
 
 ### Stats
-- Barras SVG: últimos 6 meses (gastos)
-- Donut SVG: categorías mes actual
+- Barras SVG: últimos 6 meses (gastos) — dimensiones responsivas
+- Donut SVG: categorías mes actual — responsivo
 - Top categoría del mes
 
 ### Ajustes
 - Theme: Light / Dark (persiste en `db.settings` + `data-theme` en `<html>`)
 - Currency: ARS / USD
+- **Formato CSV**: configuración de separadores de miles, decimales y prefijo moneda
+- **CategoryManager**: CRUD completo de categorías + keywords
 - Lista recurrentes activos con delete cascada
+- Botón **Importar CSV** (abre `CsvImportSheet`)
 - Version info
 
 ---
@@ -207,5 +260,5 @@ interface Category {
 2. **Fechas siempre local** — `toLocalISO(d)` (YYYY-MM-DD en timezone local), **nunca** `toISOString()` (UTC shift en AR = -3h → día anterior).
 3. **Moneda en enteros** — ARS sin decimales, USD 2 decimales. `formatMoney` maneja presentación.
 4. **Touch targets ≥ 44px** — `py-3` mínimo en botones/inputs.
-5. **Container max-w-[480px]** — mobile-first, centrado en `#root`.
+5. **Container max-w-[480px] (mobile)** — mobile-first, centrado en `#root`. En desktop (≥768px) `#root` pasa a `flex-row` sin límite de ancho y el contenido usa `max-w-[960px]`.
 6. **Bundle budgets** — JS < 100KB gz, CSS < 10KB gz. Sin deps pesadas.

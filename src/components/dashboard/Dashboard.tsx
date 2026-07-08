@@ -1,36 +1,32 @@
 import { useState, useMemo } from 'react'
 import { useAllTransactions } from '../../hooks/useTransactions'
-import { useCategories } from '../../hooks/useCategories'
-import { useViewport } from '../../hooks/useViewport'
+import { useProjections } from '../../hooks/useProjections'
 import { BalanceCard } from './BalanceCard'
-import { MonthSummary } from './MonthSummary'
+import { MonthSelector } from './MonthSelector'
 import { TransactionItem } from '../transactions/TransactionItem'
-import { MONTHS_FULL } from '../../lib/format'
+import { formatMonth, formatDateGroupHeader } from '../../lib/format'
+
+function monthKey(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+}
 
 export function Dashboard() {
   const transactions = useAllTransactions()
-  const categories = useCategories()
-  const { isDesktop } = useViewport()
 
-  const now = new Date()
-  const currentYear = now.getFullYear()
-  const currentMonth = now.getMonth()
+  const now = useMemo(() => new Date(), [])
+  const currentKey = monthKey(now)
+  const [selectedMonth, setSelectedMonth] = useState(currentKey)
 
-  const [filterCategory, setFilterCategory] = useState('all')
+  const { transactions: monthTransactions, isProjection } = useProjections(selectedMonth)
 
-  const monthLabel = useMemo(
-    () => `${MONTHS_FULL[currentMonth].charAt(0).toUpperCase() + MONTHS_FULL[currentMonth].slice(1)} ${currentYear}`,
-    [currentYear, currentMonth],
-  )
-
-  const expenseCategories = useMemo(
-    () => categories.filter((c) => c.type === 'expense'),
-    [categories],
-  )
+  const selectedDate = new Date(parseInt(selectedMonth.slice(0, 4)), parseInt(selectedMonth.slice(5, 7)) - 1)
+  const monthLabel = formatMonth(selectedDate)
 
   const summary = useMemo(() => {
-    const prevYear = currentMonth === 0 ? currentYear - 1 : currentYear
-    const prevMonth = currentMonth === 0 ? 11 : currentMonth - 1
+    const today = new Date()
+    const prevYear = today.getMonth() === 0 ? today.getFullYear() - 1 : today.getFullYear()
+    const prevMonth = today.getMonth() === 0 ? 11 : today.getMonth() - 1
+    const prevKey = `${prevYear}-${String(prevMonth + 1).padStart(2, '0')}`
 
     let totalIncome = 0
     let totalExpense = 0
@@ -39,101 +35,109 @@ export function Dashboard() {
     let prevMonthSpent = 0
 
     for (const tx of transactions) {
-      const datePart = tx.date.split('T')[0]
-      const [y, m] = datePart.split('-').map(Number)
       if (tx.type === 'income') {
         totalIncome += tx.amount
-        if (y === currentYear && m === currentMonth + 1) {
-          monthIncome += tx.amount
-        }
       } else {
         totalExpense += tx.amount
-        if (y === currentYear && m === currentMonth + 1) {
-          monthSpent += tx.amount
-        }
-        if (y === prevYear && m === prevMonth + 1) {
-          prevMonthSpent += tx.amount
-        }
+      }
+    }
+
+    for (const tx of monthTransactions) {
+      if (tx.type === 'income') {
+        monthIncome += tx.amount
+      } else {
+        monthSpent += tx.amount
+      }
+    }
+
+    for (const tx of transactions) {
+      if (tx.type !== 'expense') continue
+      if (tx.date.startsWith(prevKey)) {
+        prevMonthSpent += tx.amount
       }
     }
 
     return { totalIncome, totalExpense, monthSpent, monthIncome, prevMonthSpent }
-  }, [transactions, currentYear, currentMonth])
+  }, [transactions, monthTransactions])
 
-  const filtered = useMemo(() => {
-    return transactions
-      .filter((t) => filterCategory === 'all' || t.categoryId === filterCategory)
-      .toSorted((a, b) => b.date.localeCompare(a.date))
-  }, [transactions, filterCategory])
+  const sorted = useMemo(() => {
+    return [...monthTransactions].sort((a, b) => b.date.localeCompare(a.date))
+  }, [monthTransactions])
+
+  const groupedByDay = useMemo(() => {
+    const groups = new Map<string, typeof sorted>()
+    for (const tx of sorted) {
+      const day = tx.date.split('T')[0]
+      const existing = groups.get(day)
+      if (existing) {
+        existing.push(tx)
+      } else {
+        groups.set(day, [tx])
+      }
+    }
+    return Array.from(groups.entries())
+  }, [sorted])
 
   return (
     <div className="space-y-4">
-      <header className="pt-2 pb-1">
-        <h1 className="text-4xl font-black tracking-tight leading-none">Gasty</h1>
-        <p className="text-sm text-body mt-2">Tus gastos, simples.</p>
+      <header className="pt-2 pb-1 flex items-center justify-between">
+        <div>
+          <h1 className="text-4xl font-black tracking-tight leading-none">Gasty</h1>
+          <p className="text-sm text-body mt-2">Tus gastos, simples.</p>
+        </div>
       </header>
 
-      <div className={isDesktop ? 'grid grid-cols-2 gap-4' : 'space-y-4'}>
-        <BalanceCard
-          totalIncome={summary.totalIncome}
-          totalExpense={summary.totalExpense}
-          prevMonthExpense={summary.prevMonthSpent}
-        />
+      <MonthSelector
+        selectedMonth={selectedMonth}
+        onChange={setSelectedMonth}
+      />
 
-        <MonthSummary
-          monthSpent={summary.monthSpent}
-          monthIncome={summary.monthIncome}
-          monthLabel={monthLabel}
-        />
-      </div>
-
-      <div className="flex gap-2 overflow-x-auto scrollbar-hide -mx-5 px-5 pb-1">
-        <button
-          onClick={() => setFilterCategory('all')}
-          className={`
-            shrink-0 px-3 py-1.5 rounded-full text-xs font-medium
-            ${filterCategory === 'all'
-              ? 'bg-ink text-canvas'
-              : 'bg-card border border-border text-body'}
-          `}
+      {isProjection && (
+        <div
+          className="rounded-2xl px-4 py-2 text-sm font-medium text-center"
+          style={{
+            background: 'var(--color-proyector-card)',
+            color: 'var(--color-proyector-text)',
+            border: '1px solid var(--color-proyector-accent)',
+          }}
         >
-          Todas
-        </button>
-        {expenseCategories.map((c) => (
-            <button
-              key={c.id}
-              onClick={() => setFilterCategory(c.id)}
-              className={`
-                shrink-0 px-3 py-1.5 rounded-full text-xs font-medium
-                flex items-center gap-1
-                ${filterCategory === c.id
-                  ? 'text-white'
-                  : 'bg-card border border-border text-body'}
-              `}
-              style={
-                filterCategory === c.id
-                  ? { background: c.color }
-                  : undefined
-              }
-            >
-              <span>{c.emoji}</span>
-              <span>{c.name}</span>
-            </button>
-          ))}
-      </div>
+          🚀 Modo proyección — los gastos futuros son estimados según tus recurrentes
+        </div>
+      )}
 
-      {filtered.length === 0 ? (
+      <BalanceCard
+        totalIncome={summary.totalIncome}
+        totalExpense={summary.totalExpense}
+        monthSpent={summary.monthSpent}
+        monthIncome={summary.monthIncome}
+        prevMonthExpense={summary.prevMonthSpent}
+        monthLabel={monthLabel}
+        isProjection={isProjection}
+      />
+
+      {sorted.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 text-center">
           <span className="text-5xl mb-3">🫥</span>
           <p className="text-ink font-medium">Sin movimientos</p>
           <p className="text-sm text-body mt-1">
-            Tocá el botón + para registrar uno
+            {isProjection
+              ? 'No hay recurrentes activos para proyectar este mes'
+              : 'Tocá el botón + para registrar uno'}
           </p>
         </div>
       ) : (
-        <div className="bg-card border border-border rounded-2xl divide-y divide-border">
-          {filtered.map((tx) => (
-            <TransactionItem key={tx.id} transaction={tx} />
+        <div className="space-y-3">
+          {groupedByDay.map(([day, txs]) => (
+            <div key={day}>
+              <p className="text-xs font-medium text-mute uppercase tracking-wide px-1 mb-1.5">
+                {formatDateGroupHeader(day)}
+              </p>
+              <div className="bg-card rounded-2xl">
+                {txs.map((tx) => (
+                  <TransactionItem key={tx.id} transaction={tx} />
+                ))}
+              </div>
+            </div>
           ))}
         </div>
       )}

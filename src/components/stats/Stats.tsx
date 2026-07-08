@@ -1,11 +1,17 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { useAllTransactions } from '../../hooks/useTransactions'
 import { useCategories } from '../../hooks/useCategories'
+import { useProjections } from '../../hooks/useProjections'
 import { useViewport } from '../../hooks/useViewport'
 import { useSettings } from '../../context/SettingsContext'
 import { Card } from '../ui/Card'
 import { CategoryDonutChart } from '../dashboard/CategoryDonutChart'
-import { formatMoney, MONTHS_ES } from '../../lib/format'
+import { MonthSelector } from '../dashboard/MonthSelector'
+import { formatMoney, MONTHS_ES, formatMonth } from '../../lib/format'
+
+function monthKey(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+}
 
 export function Stats() {
   const transactions = useAllTransactions()
@@ -13,8 +19,14 @@ export function Stats() {
   const { settings } = useSettings()
   const { isDesktop } = useViewport()
 
-  const now = new Date()
-  const currentKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+  const now = useMemo(() => new Date(), [])
+  const currentKey = monthKey(now)
+  const [selectedMonth, setSelectedMonth] = useState(currentKey)
+
+  const { transactions: monthTransactions, isProjection } = useProjections(selectedMonth)
+
+  const selectedDate = new Date(parseInt(selectedMonth.slice(0, 4)), parseInt(selectedMonth.slice(5, 7)) - 1)
+  const monthLabel = formatMonth(selectedDate)
 
   const data = useMemo(() => {
     const months: Array<{
@@ -25,8 +37,13 @@ export function Stats() {
       total: number
     }> = []
 
+    // For the 6-month bar chart, use real data + projections for future months
+    const today = new Date()
+    const currentYear = today.getFullYear()
+    const currentMonthNum = today.getMonth()
+
     for (let i = 5; i >= 0; i--) {
-      const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
+      const d = new Date(currentYear, currentMonthNum - i, 1)
       const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
       const total = transactions
         .filter(
@@ -47,9 +64,10 @@ export function Stats() {
     const maxTotal = Math.max(...months.map((m) => m.total), 1)
     const avg = totalLast6 / months.length
 
+    // For the donut chart, use projected/real data for the selected month
     const byCategory: Record<string, number> = {}
-    for (const tx of transactions) {
-      if (tx.type === 'expense' && tx.date.startsWith(currentKey)) {
+    for (const tx of monthTransactions) {
+      if (tx.type === 'expense') {
         byCategory[tx.categoryId] = (byCategory[tx.categoryId] || 0) + tx.amount
       }
     }
@@ -64,12 +82,12 @@ export function Stats() {
     const monthTotal = categoryData.reduce((acc, d) => acc + d.total, 0)
 
     return { months, maxTotal, avg, totalLast6, categoryData, monthTotal }
-  }, [transactions, categories, currentKey])
+  }, [transactions, monthTransactions, categories])
 
   const topCategory = useMemo(() => {
     const totals: Record<string, number> = {}
-    for (const tx of transactions) {
-      if (tx.type === 'expense' && tx.date.startsWith(currentKey)) {
+    for (const tx of monthTransactions) {
+      if (tx.type === 'expense') {
         totals[tx.categoryId] = (totals[tx.categoryId] || 0) + tx.amount
       }
     }
@@ -77,26 +95,7 @@ export function Stats() {
     if (sorted.length === 0) return null
     const [id, total] = sorted[0]
     return { category: categories.find((c) => c.id === id), total }
-  }, [transactions, categories, currentKey])
-
-  if (transactions.length === 0) {
-    return (
-      <div className="space-y-4">
-        <header className="pt-2 pb-1">
-          <h1 className="text-4xl font-black tracking-tight leading-none">Stats</h1>
-        </header>
-        <Card>
-          <div className="flex flex-col items-center justify-center py-10 text-center">
-            <span className="text-5xl mb-3">📈</span>
-            <p className="text-ink font-medium">Sin datos todavía</p>
-            <p className="text-sm text-body mt-1">
-              Empezá a registrar gastos para ver estadísticas
-            </p>
-          </div>
-        </Card>
-      </div>
-    )
-  }
+  }, [monthTransactions, categories])
 
   const WIDTH = isDesktop ? 600 : 320
   const HEIGHT = isDesktop ? 180 : 160
@@ -108,6 +107,25 @@ export function Stats() {
       <header className="pt-2 pb-1">
         <h1 className="text-4xl font-black tracking-tight leading-none">Stats</h1>
       </header>
+
+      {/* Month selector */}
+      <MonthSelector
+        selectedMonth={selectedMonth}
+        onChange={setSelectedMonth}
+      />
+
+      {isProjection && (
+        <div
+          className="rounded-2xl px-4 py-2 text-sm font-medium text-center"
+          style={{
+            background: 'var(--color-proyector-card)',
+            color: 'var(--color-proyector-text)',
+            border: '1px solid var(--color-proyector-accent)',
+          }}
+        >
+          🚀 Proyección — stats basados en gastos estimados
+        </div>
+      )}
 
       <Card>
         <span className="text-xs uppercase tracking-widest text-body font-medium block mb-1">
@@ -132,6 +150,7 @@ export function Stats() {
             const h = (m.total / data.maxTotal) * HEIGHT
             const x = PADDING + i * (BAR_WIDTH + 8)
             const y = HEIGHT - h
+            const isSelectedMonth = m.key === selectedMonth
             return (
               <g key={m.key}>
                 <rect
@@ -140,7 +159,7 @@ export function Stats() {
                   width={BAR_WIDTH}
                   height={h}
                   rx="6"
-                  fill="var(--color-positive)"
+                  fill={isSelectedMonth ? 'var(--color-accent-cyan)' : 'var(--color-positive)'}
                   opacity={m.total > 0 ? 1 : 0.2}
                 />
                 <text
@@ -162,12 +181,13 @@ export function Stats() {
       <CategoryDonutChart
         data={data.categoryData}
         total={data.monthTotal}
+        title={`Por categoría · ${monthLabel}`}
       />
 
       {topCategory && topCategory.category && (
-        <Card>
+        <Card isProjection={isProjection}>
           <span className="text-xs uppercase tracking-widest text-body font-medium block mb-3">
-            Top categoría del mes
+            Top categoría {isProjection ? '(proyectado)' : 'del mes'}
           </span>
           <div className="flex items-center gap-4">
             <div

@@ -8,6 +8,7 @@ import { useSettings } from '../../context/SettingsContext'
 import { formatMoney, formatDateFull } from '../../lib/format'
 import { Button } from '../ui/Button'
 import { Badge } from '../ui/Badge'
+import { FlashChips } from './FlashChips'
 import type { ParsedTransaction, RecurringConfig, Transaction, TransactionType } from '../../types'
 
 interface SmartInputSheetProps {
@@ -180,6 +181,13 @@ export function SmartInputSheet({ open, onClose, editTransaction }: SmartInputSh
         </div>
 
         <form className="px-5 pb-6 space-y-4" >
+          {/* Gasty Flash — contextual suggestions when input is empty */}
+          {!text && !editTransaction && (
+            <div className="mb-1">
+              <FlashChips onSelect={(suggestionText) => setText(suggestionText)} />
+            </div>
+          )}
+
           <div>
             <input
               ref={inputRef}

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { Button } from '../ui/Button'
-import { parseCsvContent, executeImport, type CsvRow } from '../../lib/csv'
+import { parseCsvContent, executeImport, type CsvRow, type CsvPendingCategory } from '../../lib/csv'
 import { useCategories } from '../../hooks/useCategories'
 import { formatMoney } from '../../lib/format'
 import { useSettings } from '../../context/SettingsContext'
@@ -20,6 +20,7 @@ export function CsvImportSheet({ open, onClose }: CsvImportSheetProps) {
   const [step, setStep] = useState<Step>('select')
   const [rows, setRows] = useState<CsvRow[]>([])
   const [parseErrors, setParseErrors] = useState<number[]>([])
+  const [pendingCategories, setPendingCategories] = useState<CsvPendingCategory[]>([])
   const [importResult, setImportResult] = useState<{ imported: number; errors: number } | null>(null)
   const [importing, setImporting] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -46,9 +47,10 @@ export function CsvImportSheet({ open, onClose }: CsvImportSheetProps) {
     const reader = new FileReader()
     reader.onload = (ev) => {
       const content = ev.target?.result as string
-      const { rows: parsed, errors } = parseCsvContent(content, settings.csvFormat)
+      const { rows: parsed, errors, pendingCategories: pending } = parseCsvContent(content, settings.csvFormat)
       setRows(parsed)
       setParseErrors(errors)
+      setPendingCategories(pending)
       setStep('preview')
     }
     reader.readAsText(file)
@@ -56,7 +58,7 @@ export function CsvImportSheet({ open, onClose }: CsvImportSheetProps) {
 
   const handleImport = async () => {
     setImporting(true)
-    const result = await executeImport(rows)
+    const result = await executeImport(rows, pendingCategories)
     setImportResult({ imported: result.imported, errors: result.errors })
     setStep('result')
     setImporting(false)

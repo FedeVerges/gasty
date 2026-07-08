@@ -12,6 +12,7 @@ interface CategoryTotal {
 interface CategoryDonutChartProps {
   data: CategoryTotal[]
   total: number
+  title?: string
 }
 
 function DonutChartSVG({ data, total }: { data: CategoryTotal[]; total: number }) {
@@ -70,7 +71,7 @@ function DonutChartSVG({ data, total }: { data: CategoryTotal[]; total: number }
   )
 }
 
-export function CategoryDonutChart({ data, total }: CategoryDonutChartProps) {
+export function CategoryDonutChart({ data, total, title }: CategoryDonutChartProps) {
 
   if (data.length === 0 || total === 0) {
     return (
@@ -95,7 +96,7 @@ export function CategoryDonutChart({ data, total }: CategoryDonutChartProps) {
   return (
     <Card>
       <span className="text-xs uppercase tracking-widest text-body font-medium block mb-4">
-        Por categoría
+        {title ?? 'Por categoría'}
       </span>
 
       <div className="flex flex-col items-center gap-5">

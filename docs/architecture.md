@@ -1,15 +1,15 @@
-# Documentación de Arquitectura — Gasty
+# Documentación de Arquitectura — Gasty (v2)
 
 ## 1. Principios Arquitecturales
 
 | Principio | Implementación |
 |-----------|----------------|
-| **Mobile-first PWA** | `max-w-[480px]` en `#root`, touch targets ≥ 44px, bottom nav, sheets |
-| **Offline-first** | IndexedDB (Dexie) como única fuente de verdad, sin backend |
-| **Zero-runtime CSS** | Tailwind v4 `@theme` → CSS variables nativas, sin CSS-in-JS |
-| **Reactive data** | `dexie-react-hooks` `useLiveQuery` → auto-subscription` → UI siempre sincronizada |
-| **Bundle budget** | JS < 100KB gz, CSS < 10KB gz → sin deps pesadas, tree-shaking estricto |
-| **Single-source types** | `src/types/index.ts` único para domain models |
+| **Mobile-first PWA + Desktop responsive** | `max-w-[480px]` estricto en `#root` para emular entorno nativo móvil. En pantallas grandes (≥768px), el layout conmuta a `flex-row` expandiendo el área de trabajo hasta `max-w-[960px]` mediante un Sidebar lateral adaptativo. |
+| **Offline-first** | IndexedDB (gestionado a través de **Dexie 4**) como única fuente de verdad absoluta. La aplicación carece por diseño de sincronización síncrona con backend, garantizando operatividad total sin conectividad. |
+| **Zero-runtime CSS** | Compilación nativa mediante **Tailwind v4**. Uso estricto de directivas `@theme` y variables CSS nativas para evitar sobrecostos de procesamiento en hilos de renderizado de dispositivos móviles de gama baja. |
+| **Reactive data** | Enlace reactivo mediante `dexie-react-hooks` (`useLiveQuery`). El ciclo de vida de los componentes se suscribe automáticamente a las mutaciones de las tablas de la base de datos local, eliminando estados redundantes. |
+| **Bundle budget** | JS < 100KB gzipped, CSS < 10KB gzipped. Exclusión absoluta de dependencias de gran envergadura (como Moment.js, date-fns o Framer Motion) mediante la creación de utilidades nativas ligeras. |
+| **Single-source types** | Centralización estricta de todos los modelos de dominio y contratos en un único punto de verdad: `src/types/index.ts`. |
 
 ---
 
@@ -18,38 +18,43 @@
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                      PRESENTATION LAYER                      │
-│  components/  (React 19, functional, hooks-only)             │
-│  ├── layout/      AppShell, BottomNav, FAB                   │
-│  ├── add/         SmartInputSheet                            │
+│  components/  (React 19, funcionales, basados en hooks)       │
+│  ├── layout/      AppShell, BottomNav, Sidebar, FAB           │
+│  ├── add/         SmartInputSheet, CsvImportSheet,           │
+│  │                 FlashChips (Interfaz Gasty Flash)         │
 │  ├── dashboard/   Dashboard, BalanceCard, MonthSummary,      │
-│  │                 CategoryDonutChart                        │
+│  │                 MonthSelector (Controlador Temporal)      │
 │  ├── transactions/ Transactions, TransactionItem             │
-│  ├── stats/       Stats (SVG bars + donut)                   │
-│  ├── settings/    Settings                                   │
-│  └── ui/          Button, Card, Badge (primitives)           │
+│  ├── stats/       Stats (Manejo de SVG puros responsivos)     │
+│  ├── settings/    Settings, CategoryManager                   │
+│  └── ui/          Button, Card, Badge (Primitivas atómicas)  │
 ├─────────────────────────────────────────────────────────────┤
 │                      STATE / CONTEXT                         │
-│  context/SettingsContext.tsx  (theme, currency, persisted)   │
-│  context/EditTransactionContext (AppShell → SmartInputSheet) │
+│  context/SettingsContext.tsx    (Temas, divisas, formato)    │
+│  context/EditTransactionContext (Puente AppShell ↔ Sheet)    │
+│  context/CsvImportContext       (Orquestador de importación) │
 ├─────────────────────────────────────────────────────────────┤
 │                         HOOKS                                │
-│  hooks/useTransactions.ts    (useLiveQuery → Transaction[])  │
-│  hooks/useCategories.ts      (useLiveQuery → Category[])     │
-│  hooks/useRecurringCheck.ts  (side effect on mount)          │
-│  hooks/useKeyboardHeight.ts  (visualViewport API)            │
+│  hooks/useTransactions.ts    (useLiveQuery → Historial real) │
+│  hooks/useProjections.ts     (Simulador reactivo en memoria) │
+│  hooks/useCategories.ts      (useLiveQuery → Categorías DB)  │
+│  hooks/useRecurringCheck.ts  (Side effect estructural)       │
+│  hooks/useKeyboardHeight.ts  (Cálculo vía visualViewport API)│
+│  hooks/useViewport.ts        (MediaQueries de entorno)       │
 ├─────────────────────────────────────────────────────────────┤
 │                        DOMAIN LOGIC                          │
-│  lib/parser.ts       parseInput() → ParsedTransaction        │
-│  lib/recurring.ts    checkAndCloneRecurring(), CRUD sources  │
-│  lib/categories.ts   DEFAULT_CATEGORIES, KEYWORDS, maps      │
-│  lib/format.ts       formatMoney, formatDate, MONTHS_ES      │
-│  lib/csv.ts          importCsv() → reusa parseInput()        │
-│  lib/db.ts           Dexie schema, seed, settings CRUD       │
+│  lib/parser.ts       Pipeline puro de procesamiento NLP      │
+│  lib/flash.ts        getFlashSuggestions() (Lógica pura)     │
+│  lib/recurring.ts    checkAndCloneRecurring() + CRUD sources │
+│  lib/categories.ts   Detección e inyección dinámica de cats  │
+│  lib/format.ts       Formateadores es-AR monetarios/fechas   │
+│  lib/csv.ts          Estrategias de mapeo y lectura de lotes │
+│  lib/db.ts           Instanciación de Dexie, esquemas y seed │
 ├─────────────────────────────────────────────────────────────┤
 │                      DATA LAYER                              │
 │  Dexie 4 (IndexedDB)                                         │
-│  Tables: transactions, categories, settings                  │
-│  Indices: transactions(type, date, categoryId, originalId)  │
+│  Tablas locales: transactions, categories, settings          │
+│  Índices clave: type, date, categoryId, originalId           │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -57,7 +62,11 @@
 
 ## 3. Flujo de Datos (Data Flow)
 
-### 3.1 Lectura (Read Path)
+### 3.1 Ruta de Lectura (Read Path)
+
+**Flujo Convencional (Pasado/Presente Real):**
+Los componentes consumen las transacciones físicas persistidas en la base de datos suscribiéndose a través de consultas reactivas directas que se re-evalúan ante cualquier inserción o mutación.
+
 ```
 User Action / Mount
        │
@@ -71,9 +80,64 @@ React Re-render (subscripción reactiva Dexie)
 UI Components consumen Transaction[] / Category[]
 ```
 
-### 3.2 Escritura (Write Path)
+**Flujo del Proyector de Gastos (Viaje en el Tiempo):**
+Cuando el usuario avanza a un mes posterior al real en el `MonthSelector`, entra en juego un pipeline paralelo en memoria para evitar escrituras espurias en el disco local:
+
 ```
-User Input (SmartInputSheet)
+MonthSelector cambia selectedMonth (ej: '2026-09' > mesActual)
+│
+▼
+useProjections(targetMonthStr) invoca consultas concurrentes
+├── 1. Trae transacciones físicas planificadas para ese mes futuro.
+└── 2. Trae la totalidad de 'sources' recurrentes activos (!originalId).
+│
+▼
+Procesamiento Algorítmico en Memoria
+├── Calcula el delta exacto de meses.
+├── Evalúa el ciclo de vida de cuotas transitorias (fixed_temporary).
+└── Genera clones virtuales agregando un flag identificador único.
+│
+▼
+Emisión Reactiva (Suscripción sin mutación física de IndexedDB)
+│
+▼
+UI renderiza componentes usando tokens de color del Proyector
+```
+
+### 3.2 Ruta de Escritura (Write Path)
+
+**Gasty Flash (Express):**
+Para garantizar un registro instantáneo con fricción cero, la arquitectura intercepta los eventos del sistema nativo reduciendo los ciclos de renderizado:
+
+```
+FAB (+) Tap ──► Apertura de SmartInputSheet con foco imperativo
+│
+▼
+Teclado Nativo Levantado
+│
+▼
+FlashChips calcula contexto temporal de forma síncrona
+│
+▼
+Tap en Chip Contextual ──► Inyección directa en cadena
+│
+▼
+Inserción manual de monto + Tecla Enter/Ir
+│
+▼
+Invocación de parser.ts
+│
+▼
+db.transactions.add()
+│
+▼
+Dexie propaga cambio ──► Cierre automático de Sheet
+```
+
+**Flujo General (Edición / Importación CSV):**
+
+```
+User Input (SmartInputSheet) / CSV Import
        │
        ▼
 parseInput() → ParsedTransaction
@@ -89,6 +153,7 @@ Dexie notifica a useLiveQuery → Re-render automático
 ```
 
 ### 3.3 Recurring Engine (Background)
+
 ```
 useRecurringCheck (mount App)
        │
@@ -112,12 +177,14 @@ checkAndCloneRecurring()
 
 ## 4. Esquema de Base de Datos (Dexie)
 
+El almacenamiento se estructura en torno a tres almacenes optimizados con índices específicos para evitar penalizaciones de búsqueda durante los escaneos secuenciales:
+
 ```typescript
 // src/lib/db.ts
 db.version(1).stores({
   transactions: 'id, type, date, categoryId, originalId',
-  categories:   'id, type',
-  settings:     'id',  // single row: {id: 'app-settings', theme, currency}
+  categories:   'id, type', // Mantiene mapeo dinámico de keywords
+  settings:     'id',       // Registro único para configuraciones globales
 })
 ```
 
@@ -132,9 +199,10 @@ db.version(1).stores({
 
 ---
 
-## 5. Sistema de Temas (Dark Mode)
+## 5. Sistema de Temas & Overrides Semánticos
 
-### 5.1 Implementación
+### 5.1 Implementación (Dark Mode)
+
 ```typescript
 // SettingsContext.tsx
 useEffect(() => {
@@ -154,24 +222,38 @@ useEffect(() => {
 }
 ```
 
-### 5.2 Tokens Semánticos (usar siempre estos, no hex)
-| Uso | Token Light | Token Dark |
-|-----|-------------|------------|
-| Fondo app | `--color-bg` (`canvas`) | `--color-bg` (`canvas-soft`) |
-| Cards | `--color-card` | `--color-card` |
-| Texto principal | `--color-text` (`ink`) | `--color-text` (`ink`) |
-| Texto muted | `--color-text-muted` (`body`) | `--color-text-muted` (`body`) |
-| Bordes | `--color-border` | `--color-border` |
-| Gasto | `--color-expense` (`negative`) | `--color-expense` (`negative`) |
-| Ingreso | `--color-income` (`positive`) | `--color-income` (`positive`) |
-| Recurrente | `--color-recurring` (`warning`) | `--color-recurring` (`warning`) |
-| Primary brand | `--color-primary` | `--color-primary` |
+### 5.2 Mecanismo de Inyección de Estado Temporal (Proyector)
+
+La aplicación no muta el tema de la aplicación al proyectar el futuro; en su lugar, se superpone una capa semántica condicional basada en variables de CSS de Tailwind v4:
+
+```typescript
+// En componentes de presentación (ej: BalanceCard.tsx)
+const isFuture = selectedMonth > currentMonth;
+const componentStyles = isFuture 
+  ? "bg-[--color-proyector-bg] text-[--color-proyector-text] border-[--color-proyector-accent]" 
+  : "bg-[--color-card] text-[--color-text] border-[--color-border]";
+```
+
+### 5.3 Tabla de Equivalencias de Tokens
+
+| Uso / Elemento UI | Token CSS | Light | Dark | Proyectado (Futuro) |
+|---|---|---|---|---|
+| Fondo app | `--color-bg` | `var(--color-canvas)` (#ffffff) | `var(--color-canvas-soft)` (#22261f) | Inalterado (mantiene base) |
+| Fondo tarjeta | `--color-card` | `var(--color-canvas)` (#ffffff) | `var(--color-canvas)` (#1a1e17) | `--color-proyector-bg` (#0c4a6e) |
+| Texto principal | `--color-text` | `var(--color-ink)` (#0e0f0c) | `var(--color-ink)` (#eef0ea) | `--color-proyector-text` (#e0f2fe) |
+| Texto muted | `--color-text-muted` | `var(--color-body)` (#454745) | `var(--color-body)` (#abada7) | — |
+| Bordes | `--color-border` | #d6d9d3 | #2d322a | `--color-proyector-accent` (#22d3ee) |
+| Gasto | `--color-expense` | `var(--color-negative)` (#d03238) | `var(--color-negative)` (#f87171) | Inalterado |
+| Ingreso | `--color-income` | `var(--color-positive)` (#1a7a35) | `var(--color-positive)` (#4ade80) | Inalterado |
+| Recurrente | `--color-recurring` | `var(--color-warning)` (#ffd11a) | `var(--color-warning)` (#fbbf24) | Inalterado |
+| Primary brand | `--color-primary` | #9fe870 | #9fe870 | — |
 
 ---
 
 ## 6. Convenciones de Componentes
 
 ### 6.1 Estructura Estándar
+
 ```tsx
 // ComponentName.tsx
 import { useSomething } from '../../hooks/useSomething'
@@ -192,22 +274,26 @@ export function ComponentName({ transaction }: ComponentNameProps) {
 ```
 
 ### 6.2 Reglas de Estilo (Hard Constraints)
-- **Touch targets**: `py-3` mínimo (`min-h-[44px]`)
+
+- **Touch targets**: `py-3` mínimo (`min-h-[44px]`). Los chips interactivos de Gasty Flash deben cumplir este estándar mínimo dimensional para mitigar falsas pulsaciones accidentales según normativas iOS/Android.
 - **Contenedor**: `max-w-[480px]` en `#root` (ya en CSS)
-- **Animaciones**: Solo `transform` / `opacity` — **nunca** `width`, `height`, `top`, `left`
+- **Animaciones**: Solo `transform` / `opacity` — **nunca** `width`, `height`, `top`, `left`. La hoja deslizable `<SmartInputSheet />` debe valerse de propiedades aceleradas por hardware GPU (`transform: translateY`).
 - **Clases**: Tailwind utilities + CSS variables (`bg-primary`, `text-negative`, `border-border`)
 - **Dark mode**: Cada nuevo color **debe** tener override en `[data-theme="dark"]`
+- **Mapeo de entrada**: Los formularios de inserción rápida deben capturar obligatoriamente el evento `onKeyDown` para canalizar las pulsaciones de la tecla `Enter`, evitando desviar el foco del usuario a controles externos de confirmación.
 
 ### 6.3 Patrones de Composición
+
 - `AppShell` provee `EditTransactionContext` → consumido por `TransactionItem`
 - `SmartInputSheet` controlado por `AppShell` (open/close/editTransaction)
 - `BottomNav` + `FAB` fijos en `AppShell`, contenido en `<main className="flex-1 pb-20">`
 
 ---
 
-## 7. Parsing Architecture
+## 7. Arquitectura de Parsing
 
 ### 7.1 Separación de Responsabilidades
+
 | Archivo | Responsabilidad |
 |---------|-----------------|
 | `parser.ts` | `parseInput()` — pipeline puro, sin side effects, testable |
@@ -215,15 +301,28 @@ export function ComponentName({ transaction }: ComponentNameProps) {
 | `recurring.ts` | Side effects: DB reads/writes, clonación, eliminación cascada |
 
 ### 7.2 Testing Strategy
+
 - `parser.test.ts` — unit tests puros (135 tests), sin DB
 - `recurring.test.ts` — integration con `fake-indexeddb`, testa motor clonación
 - `integration.test.ts` — DB + parser flujo completo
 
 ---
 
-## 8. Build & Release Pipeline
+## 8. Desacoplamiento Analítico (Separación de Responsabilidades)
 
-### 8.1 Comandos Exactos
+| Capa / Módulo | Naturaleza | Responsabilidad Arquitectural |
+| --- | --- | --- |
+| `parser.ts` | Pureza Total | Evaluación sintáctica y semántica de strings de entrada a través de expresiones regulares nativas. |
+| `flash.ts` | Pureza Total | Factoría determinista que infiere intenciones y propone términos de búsqueda contextuales según matrices horarias e hitos de calendario. |
+| `useProjections.ts` | Estado Reactivo | Orquestación, fusión y cálculo aritmético de flujos reales y virtuales en memoria reactiva. |
+| `recurring.ts` | Efecto con Mutación | Operaciones transaccionales ACID de bloque para la instanciación de clones físicos en periodos corrientes. |
+
+---
+
+## 9. Build & Release Pipeline
+
+### 9.1 Comandos Exactos
+
 ```bash
 npm run dev        # vite dev server
 npm run build      # tsc -b && vite build → dist/
@@ -232,11 +331,13 @@ npm test           # vitest run
 npm run preview    # vite preview (serve dist/)
 ```
 
-### 8.2 Build Order (Crítico)
+### 9.2 Build Order (Crítico)
+
 1. `tsc -b` → type-checka **ambos** `tsconfig.app.json` + `tsconfig.node.json`
 2. `vite build` → bundlea, minifica, genera PWA manifest + SW
 
-### 8.3 PWA Config (`vite.config.ts`)
+### 9.3 PWA Config (`vite.config.ts`)
+
 ```typescript
 VitePWA({
   registerType: 'autoUpdate',
@@ -252,37 +353,44 @@ VitePWA({
 })
 ```
 
-### 8.4 Capacitor / Play Store (futuro)
+### 9.4 Capacitor / Play Store (futuro)
+
 - `npm run build` → `dist/`
 - `npx cap copy` → sincroniza `dist/` a `android/app/src/main/assets/public/`
 - `npx cap open android` → Android Studio → signed bundle → Play Console
 
 ---
 
-## 9. Dependencias — Justificación y Budget
+## 10. Presupuesto de Dependencias (Bundle Budget)
 
-| Dep | Tamaño (gz) | Justificación |
-|-----|-------------|---------------|
-| `react` + `react-dom` | ~45KB | Core framework |
-| `dexie` | ~18KB | IndexedDB wrapper, reactive hooks |
-| `dexie-react-hooks` | ~3KB | `useLiveQuery` integration |
-| `tailwindcss` (v4) | ~0KB (CSS-only) | Styling via `@theme` |
-| `@fontsource/inter` | ~15KB (woff2 subset) | Tipografía system |
-| `vite-plugin-pwa` | build-time only | SW + manifest generation |
-| **Total est. JS** | **~81KB** | **< 100KB budget** |
+Para asegurar la carga instantánea como PWA instalable, el árbol de dependencias en producción queda estrictamente restringido a librerías de infraestructura core:
+
+| Librería / Recurso | Peso Aproximado (gzipped) | Propósito Arquitectural |
+| --- | --- | --- |
+| `react` + `react-dom` | ~45KB | Motor de ciclo de vida e interfaz (v19) |
+| `dexie` | ~18KB | Mecanismo de abstracción indexada sobre IndexedDB |
+| `dexie-react-hooks` | ~3KB | Enlace reactivo para flujos asíncronos distribuidos |
+| `tailwindcss` (v4) | ~0KB (build-time) | Inyección estática de estilos en tiempo de compilación |
+| `@fontsource/inter` | ~15KB | Tipografía empaquetada localmente para omitir peticiones de red |
+| `vite-plugin-pwa` | ~0KB (build-time) | Generación de Service Worker + manifest |
+| **Métrica Total** | **~81KB** | **Cumple con holgura el umbral crítico establecido de < 100KB.** |
 
 ### Prohibidas (ADR requerido para agregar)
+
 - Framer Motion (+15KB), Recharts/D3 (+50KB+), react-router (+12KB), Zustand (+2KB), lodash (+25KB), moment (+20KB), date-fns (+15KB)
 
 ---
 
-## 10. Testing Architecture
+## 11. Arquitectura de Testing
 
-### 10.1 Stack
+### 11.1 Stack
+
 - **Vitest** + **jsdom** + **fake-indexeddb**
 - `fake-indexeddb/auto` import en tests de integración/recurring
+- Pruebas unitarias e integración sin perturbar los registros del navegador durante la ejecución del pipeline de CI.
 
-### 10.2 Patrones
+### 11.2 Patrones
+
 ```typescript
 // tests/recurring.test.ts
 import 'fake-indexeddb/auto'
@@ -295,15 +403,18 @@ beforeEach(async () => {
 })
 ```
 
-### 10.3 Cobertura Objetivo
-- Parser: 100% (lógica pura, 135 tests)
-- Recurring engine: 100% (motor crítico, 6 tests)
-- Integración DB+Parser: smoke tests (6 tests)
-- UI: sin tests (componentes simples, visual regression manual)
+### 11.3 Cobertura Objetivo
+
+- **Parser**: 100% (lógica pura, 135 tests)
+- **Recurring engine**: 100% (motor crítico, 6 tests)
+- **Integración DB+Parser**: smoke tests (6 tests)
+- **Gasty Flash** (`src/lib/flash.test.ts`): 100% — debe validar mediante permutaciones completas el correcto retorno de palabras sugeridas cruzando franjas horarias límite (ej: conmutación de las 11:59 AM a las 12:00 PM) junto a la inyección de prioridades de pago durante los primeros diez días de cada ciclo de calendario.
+- **Proyector** (`src/hooks/useProjections.test.ts`): 100% — aserciones asíncronas con `fake-indexeddb` para asegurar la correcta depreciación progresiva de cuotas en periodos simulados a futuro (+3, +6 meses) sin dejar rastros residuales en el almacenamiento físico local.
+- **UI**: sin tests (componentes simples, visual regression manual)
 
 ---
 
-## 11. Migraciones Futuras (Schema Versioning)
+## 12. Migraciones Futuras (Schema Versioning)
 
 ```typescript
 // Cuando se necesite schema bump:
@@ -320,14 +431,16 @@ db.version(2).stores({
 
 ---
 
-## 12. Checklist de Arquitectura (Pre-commit)
+## 13. Checklist de Control Pre-Commit
 
 - [ ] `npm run lint` pasa
-- [ ] `npm test` pasa
-- [ ] `npm run build` pasa (type-check + bundle)
+- [ ] `npm test` pasa (todas las pruebas en `src/lib/flash.test.ts`, `src/lib/parser.test.ts`, `recurring.test.ts` e `integration.test.ts` finalizan con éxito)
+- [ ] `npm run build` pasa (type-check + bundle) sin advertencias de desborde de tamaño de paquete
 - [ ] No nuevas deps sin ADR en `docs/adr/`
 - [ ] Dark mode counterpart para nuevos colores
-- [ ] Touch targets ≥ 44px
+- [ ] Se comprueba el contraste cromático de los nuevos tokens semánticos del Proyector de Gastos para entornos claros y oscuros
+- [ ] Touch targets ≥ 44px — todos los elementos táctiles interactivos de `<FlashChips />` cumplen el estándar
 - [ ] Fechas usan `toLocalISO()` no `toISOString()`
 - [ ] No edición de clones recurrentes (solo source)
+- [ ] Las consultas embebidas en el hook `useProjections` se procesan enteramente de forma reactiva en memoria fuera de disco
 - [ ] Bundle size < 100KB JS / < 10KB CSS (ver `gasty-bundle-budget` skill)

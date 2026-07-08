@@ -30,7 +30,7 @@ export function TransactionItem({ transaction }: TransactionItemProps) {
     <div
       onClick={() => onEdit?.(transaction)}
       className="
-        flex items-center gap-3 px-4 py-3
+        flex items-center gap-3 py-3
         active:bg-card-hover transition-colors cursor-pointer
       "
     >

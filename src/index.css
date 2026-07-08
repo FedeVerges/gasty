@@ -56,6 +56,16 @@
   --color-recurring: var(--color-warning);
   --color-recurring-soft: #fef3c7;
 
+  /* ── Card dark variant ── */
+  --color-card-dark: #0e0f0c;
+  --color-card-dark-text: var(--color-primary);
+
+  /* ── Proyector tokens (future month projection) ── */
+  --color-proyector-bg: #0c4a6e;
+  --color-proyector-text: #e0f2fe;
+  --color-proyector-accent: #22d3ee;
+  --color-proyector-card: #0e3a5c;
+
   /* ── Typography ── */
   --font-display: "Inter", system-ui, sans-serif;
   --font-body: "Inter", system-ui, sans-serif;
@@ -84,6 +94,16 @@
   --color-negative-deep: #ef4444;
   --color-negative-darkest: #fca5a5;
   --color-negative-bg: #3b1a1a;
+
+  /* ── Card dark variant (maintain dark feel) ── */
+  --color-card-dark: #11140e;
+  --color-card-dark-text: var(--color-primary);
+
+  /* ── Proyector tokens (same in dark — keeps the cyan contrast) ── */
+  --color-proyector-bg: #0c4a6e;
+  --color-proyector-text: #e0f2fe;
+  --color-proyector-accent: #22d3ee;
+  --color-proyector-card: #0e3a5c;
 
   /* ── Brand (maintain same green) ── */
   --color-primary: #9fe870;

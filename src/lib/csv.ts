@@ -212,6 +212,12 @@ export interface CsvImportResult {
   errorLines: number[]
 }
 
+export interface CsvPendingCategory {
+  name: string
+  categoryName: string
+  type: 'expense' | 'income'
+}
+
 /**
  * Parse a date string from CSV into YYYY-MM-DD (local ISO).
  * Supports: DD/MM/YYYY, DD-MM-YYYY, DD/MM/YY, YYYY-MM-DD
@@ -240,10 +246,11 @@ function parseCsvDate(dateStr: string): string | null {
 export function parseCsvContent(
   content: string,
   csvFormat?: CsvFormatSettings,
-): { rows: CsvRow[]; errors: number[] } {
+): { rows: CsvRow[]; errors: number[]; pendingCategories: CsvPendingCategory[] } {
   const lines = content.split(/\r?\n/).filter((l) => l.trim().length > 0)
   const rows: CsvRow[] = []
   const errors: number[] = []
+  const pendingCategories: CsvPendingCategory[] = []
   let startLine = 0
 
   const firstCols = parseCSVLine(lines[0])
@@ -296,6 +303,20 @@ export function parseCsvContent(
         categoryName = catRaw
         if (matched) {
           categoryId = matched
+        } else {
+          // Unknown category from CSV — queue for auto-creation
+          const existingPending = pendingCategories.find(
+            (p) => p.categoryName.toLowerCase() === catRaw.toLowerCase()
+          )
+          if (!existingPending) {
+            // Detect type from existing similar categories or default to expense
+            const descType = parsed.type
+            pendingCategories.push({
+              name: catRaw.trim(),
+              categoryName: catRaw.trim(),
+              type: descType === 'income' ? 'income' : 'expense',
+            })
+          }
         }
       }
     }
@@ -315,10 +336,56 @@ export function parseCsvContent(
     })
   }
 
-  return { rows, errors }
+  return { rows, errors, pendingCategories }
 }
 
-export async function executeImport(rows: CsvRow[]): Promise<CsvImportResult> {
+export async function executeImport(
+  rows: CsvRow[],
+  pendingCategories?: CsvPendingCategory[],
+): Promise<CsvImportResult> {
+  // Auto-create any pending categories before importing
+  if (pendingCategories && pendingCategories.length > 0) {
+    const existingCats = await db.categories.toArray()
+    const existingIds = new Set(existingCats.map((c) => c.id))
+    const existingNames = new Set(existingCats.map((c) => c.name.toLowerCase()))
+
+    for (const pending of pendingCategories) {
+      const cleanName = pending.name.trim()
+
+      // Normalize: remove accents for id generation
+      const idBase = cleanName.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, '_')
+      const id = `csv_${idBase}`
+
+      if (existingIds.has(id) || existingNames.has(cleanName.toLowerCase())) continue
+
+      const colors = [
+        '#f59e0b', '#8b5cf6', '#06b6d4', '#3b82f6', '#ec4899',
+        '#f97316', '#10b981', '#6366f1', '#22c55e', '#64748b',
+      ]
+      const color = colors[existingCats.length % colors.length]
+
+      await db.categories.add({
+        id,
+        name: cleanName,
+        emoji: '📂',
+        color,
+        type: pending.type === 'income' ? 'income' : 'expense',
+        keywords: [cleanName.toLowerCase()],
+      })
+
+      // Update existing rows that reference this category
+      for (const row of rows) {
+        if (row.categoryName.toLowerCase() === cleanName.toLowerCase()) {
+          row.categoryId = id
+        }
+      }
+    }
+
+    // Sync keyword maps after adding categories
+    const { syncKeywordMaps } = await import('./categories')
+    const allCats = await db.categories.toArray()
+    syncKeywordMaps(allCats)
+  }
   let imported = 0
   let errors = 0
   const errorLines: number[] = []
