@@ -216,8 +216,8 @@ Internet,8500`
 
     const all = await db.transactions.toArray()
     expect(all).toHaveLength(2)
-    expect(all[0].amount).toBe(45000)
-    expect(all[1].amount).toBe(8500)
+    const amounts = all.map((t) => t.amount).sort((a, b) => a - b)
+    expect(amounts).toEqual([8500, 45000])
   })
 
   it('maneja errores al importar filas inválidas', async () => {
@@ -231,5 +231,46 @@ Internet,8500`
 
     expect(result.imported).toBe(1)
     expect(result.errors).toBe(0)
+  })
+})
+
+describe('csv: parseCSVLine — comas en montos sin comillas', () => {
+  it('no parte el monto "ARS 590,000.00" por las comas internas', () => {
+    const csv = `nombre,importe,fecha,categoria
+Pago Tarjeta Galicia ,ARS 590,000.00,01/07/2026,Finanzas y Deudas ,
+Alquiler + expensas Julio ,ARS 400,000.00,01/07/2026,Hogar,
+Terapia (2),ARS 160,000.00,01/07/2026,Salud,
+Youtube FP ,ARS 1,500.00,01/07/2026,Suscripciones,`
+
+    const format: CsvFormatSettings = {
+      thousandsSeparator: ',',
+      decimalSeparator: '.',
+      stripCurrencyPrefix: true,
+    }
+
+    const { rows, errors } = parseCsvContent(csv, format)
+    expect(errors).toHaveLength(0)
+    expect(rows).toHaveLength(4)
+    expect(rows[0].description).toBe('pago tarjeta galicia')
+    expect(rows[0].amount).toBe(590000)
+    expect(rows[0].categoryId).toBe('other_exp')
+    expect(rows[1].amount).toBe(400000)
+    expect(rows[1].categoryId).toBe('home')
+    expect(rows[2].amount).toBe(160000)
+    expect(rows[2].categoryId).toBe('health')
+    expect(rows[3].amount).toBe(1500)
+    expect(rows[3].categoryId).toBe('services')
+  })
+
+  it('auto-detecta formato de miles/decimal sin configuración explícita', () => {
+    const csv = `nombre,importe,fecha,categoria
+Pago Tarjeta Galicia ,ARS 590,000.00,01/07/2026,Finanzas y Deudas ,
+Alquiler + expensas Julio ,ARS 400,000.00,01/07/2026,Hogar,`
+
+    const { rows, errors } = parseCsvContent(csv)
+    expect(errors).toHaveLength(0)
+    expect(rows).toHaveLength(2)
+    expect(rows[0].amount).toBe(590000)
+    expect(rows[1].amount).toBe(400000)
   })
 })
