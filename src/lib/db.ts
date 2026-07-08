@@ -1,6 +1,6 @@
 import Dexie, { type EntityTable } from 'dexie'
 import type { Transaction, Category, Settings, CsvFormatSettings } from '../types'
-import { DEFAULT_CATEGORIES } from './categories'
+import { DEFAULT_CATEGORIES, syncKeywordMaps } from './categories'
 
 export function generateId(): string {
   const bytes = crypto.getRandomValues(new Uint8Array(16))
@@ -37,6 +37,16 @@ db.version(2).stores({}).upgrade(async (tx) => {
   })
 })
 
+db.version(3).stores({}).upgrade(async (tx) => {
+  // Backfill keywords for existing categories
+  await tx.table('categories').toCollection().modify((row) => {
+    if (!row.keywords) {
+      const defaults = DEFAULT_CATEGORIES.find(c => c.id === row.id)
+      row.keywords = defaults?.keywords ?? []
+    }
+  })
+})
+
 const SETTINGS_ID = 'app-settings'
 
 export async function seedDatabase() {
@@ -44,6 +54,10 @@ export async function seedDatabase() {
   if (catCount === 0) {
     await db.categories.bulkAdd(DEFAULT_CATEGORIES)
   }
+
+  // Ensure in-memory keyword maps reflect DB state
+  const cats = await db.categories.toArray()
+  syncKeywordMaps(cats)
 
   const existing = await db.settings.get(SETTINGS_ID)
   if (!existing) {

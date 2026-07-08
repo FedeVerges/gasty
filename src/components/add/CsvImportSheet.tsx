@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { Button } from '../ui/Button'
 import { parseCsvContent, executeImport, type CsvRow } from '../../lib/csv'
-import { DEFAULT_CATEGORIES } from '../../lib/categories'
+import { useCategories } from '../../hooks/useCategories'
 import { formatMoney } from '../../lib/format'
 import { useSettings } from '../../context/SettingsContext'
 import { useViewport } from '../../hooks/useViewport'
@@ -16,6 +16,7 @@ type Step = 'select' | 'preview' | 'result'
 export function CsvImportSheet({ open, onClose }: CsvImportSheetProps) {
   const { settings } = useSettings()
   const { isDesktop } = useViewport()
+  const categories = useCategories()
   const [step, setStep] = useState<Step>('select')
   const [rows, setRows] = useState<CsvRow[]>([])
   const [parseErrors, setParseErrors] = useState<number[]>([])
@@ -162,7 +163,7 @@ Birra,2500,15/6,Salidas`}
 
               <div className="space-y-2 max-h-[50vh] overflow-y-auto">
                 {rows.map((row) => {
-                  const cat = DEFAULT_CATEGORIES.find((c) => c.id === row.categoryId)
+                  const cat = categories.find((c) => c.id === row.categoryId)
                   return (
                     <div
                       key={row.rawLine}

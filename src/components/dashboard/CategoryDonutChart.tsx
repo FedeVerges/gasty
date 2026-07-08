@@ -1,5 +1,6 @@
 import { Card } from '../ui/Card'
 import { useSettings } from '../../context/SettingsContext'
+import { useViewport } from '../../hooks/useViewport'
 import { formatMoney } from '../../lib/format'
 import type { Category } from '../../types'
 
@@ -13,13 +14,63 @@ interface CategoryDonutChartProps {
   total: number
 }
 
-const SIZE = 180
-const STROKE = 28
-const RADIUS = (SIZE - STROKE) / 2
-const CIRCUMFERENCE = 2 * Math.PI * RADIUS
+function DonutChartSVG({ data, total }: { data: CategoryTotal[]; total: number }) {
+  const { isDesktop } = useViewport()
+  const { settings } = useSettings()
+  const SIZE = isDesktop ? 260 : 180
+  const STROKE = isDesktop ? 36 : 28
+  const RADIUS = (SIZE - STROKE) / 2
+  const CIRCUMFERENCE = 2 * Math.PI * RADIUS
+
+  const segments = data.reduce<Array<CategoryTotal & { fraction: number; length: number; offset: number }>>(
+    (acc, d) => {
+      const fraction = d.total / total
+      const length = fraction * CIRCUMFERENCE
+      const offset = acc.length > 0 ? acc[acc.length - 1].offset + acc[acc.length - 1].length : 0
+      acc.push({ ...d, fraction, length, offset })
+      return acc
+    },
+    []
+  )
+
+  return (
+    <div className="relative" style={{ width: SIZE, height: SIZE }}>
+      <svg width={SIZE} height={SIZE} className="transform -rotate-90">
+        <circle
+          cx={SIZE / 2}
+          cy={SIZE / 2}
+          r={RADIUS}
+          fill="none"
+          stroke="var(--color-border)"
+          strokeWidth={STROKE}
+        />
+        {segments.map((s) => (
+          <circle
+            key={s.category.id}
+            cx={SIZE / 2}
+            cy={SIZE / 2}
+            r={RADIUS}
+            fill="none"
+            stroke={s.category.color}
+            strokeWidth={STROKE}
+            strokeDasharray={`${s.length} ${CIRCUMFERENCE - s.length}`}
+            strokeDashoffset={-s.offset}
+            strokeLinecap="butt"
+            className="transition-all duration-500"
+          />
+        ))}
+      </svg>
+      <div className="absolute inset-0 flex flex-col items-center justify-center">
+        <span className="text-xs text-body">Total</span>
+        <span className="text-lg font-bold text-ink">
+          {formatMoney(total, settings.currency)}
+        </span>
+      </div>
+    </div>
+  )
+}
 
 export function CategoryDonutChart({ data, total }: CategoryDonutChartProps) {
-  const { settings } = useSettings()
 
   if (data.length === 0 || total === 0) {
     return (
@@ -37,16 +88,9 @@ export function CategoryDonutChart({ data, total }: CategoryDonutChartProps) {
     )
   }
 
-  const segments = data.reduce<Array<CategoryTotal & { fraction: number; length: number; offset: number }>>(
-    (acc, d) => {
-      const fraction = d.total / total
-      const length = fraction * CIRCUMFERENCE
-      const offset = acc.length > 0 ? acc[acc.length - 1].offset + acc[acc.length - 1].length : 0
-      acc.push({ ...d, fraction, length, offset })
-      return acc
-    },
-    []
-  )
+  const segments = data
+    .map((d) => ({ ...d, fraction: d.total / total }))
+    .sort((a, b) => b.fraction - a.fraction)
 
   return (
     <Card>
@@ -55,39 +99,7 @@ export function CategoryDonutChart({ data, total }: CategoryDonutChartProps) {
       </span>
 
       <div className="flex flex-col items-center gap-5">
-        <div className="relative" style={{ width: SIZE, height: SIZE }}>
-          <svg width={SIZE} height={SIZE} className="transform -rotate-90">
-            <circle
-              cx={SIZE / 2}
-              cy={SIZE / 2}
-              r={RADIUS}
-              fill="none"
-              stroke="var(--color-border)"
-              strokeWidth={STROKE}
-            />
-            {segments.map((s) => (
-              <circle
-                key={s.category.id}
-                cx={SIZE / 2}
-                cy={SIZE / 2}
-                r={RADIUS}
-                fill="none"
-                stroke={s.category.color}
-                strokeWidth={STROKE}
-                strokeDasharray={`${s.length} ${CIRCUMFERENCE - s.length}`}
-                strokeDashoffset={-s.offset}
-                strokeLinecap="butt"
-                className="transition-all duration-500"
-              />
-            ))}
-          </svg>
-          <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <span className="text-xs text-body">Total</span>
-            <span className="text-lg font-bold text-ink">
-              {formatMoney(total, settings.currency)}
-            </span>
-          </div>
-        </div>
+        <DonutChartSVG data={data} total={total} />
 
         <div className="w-full space-y-2">
           {segments.slice(0, 5).map((s) => (

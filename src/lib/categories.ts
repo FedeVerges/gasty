@@ -1,131 +1,126 @@
 import type { Category } from '../types'
 
 export const DEFAULT_CATEGORIES: Category[] = [
-  { id: 'food', name: 'Comida', emoji: '🍔', color: '#f59e0b', type: 'expense' },
-  { id: 'home', name: 'Vivienda', emoji: '🏠', color: '#8b5cf6', type: 'expense' },
-  { id: 'services', name: 'Servicios', emoji: '💡', color: '#06b6d4', type: 'expense' },
-  { id: 'transport', name: 'Transporte', emoji: '🚗', color: '#3b82f6', type: 'expense' },
-  { id: 'leisure', name: 'Salidas', emoji: '🎉', color: '#ec4899', type: 'expense' },
-  { id: 'repair', name: 'Reparaciones', emoji: '🛠️', color: '#f97316', type: 'expense' },
-  { id: 'health', name: 'Salud', emoji: '💊', color: '#10b981', type: 'expense' },
-  { id: 'education', name: 'Educación', emoji: '📚', color: '#6366f1', type: 'expense' },
-  { id: 'supermarket', name: 'Supermercado', emoji: '🛒', color: '#22c55e', type: 'expense' },
-  { id: 'other_exp', name: 'Otros', emoji: '📦', color: '#64748b', type: 'expense' },
-  { id: 'salary', name: 'Sueldo', emoji: '💼', color: '#22c55e', type: 'income' },
-  { id: 'other_inc', name: 'Otros ingresos', emoji: '💰', color: '#10b981', type: 'income' },
+  {
+    id: 'food', name: 'Comida', emoji: '🍔', color: '#f59e0b', type: 'expense',
+    keywords: [
+      'lomito', 'hamburguesa', 'pancho', 'choripan', 'helado', 'sushi',
+      'pollo', 'carne', 'pescado', 'ensalada', 'fruta', 'verdura', 'kiosco',
+      'almuerzo', 'cena', 'desayuno', 'merienda',
+      'verdulería', 'verduleria', 'carnicería', 'carniceria',
+      'panaderia', 'panadería',
+    ],
+  },
+  {
+    id: 'home', name: 'Vivienda', emoji: '🏠', color: '#8b5cf6', type: 'expense',
+    keywords: [
+      'alquiler', 'expensas', 'crédito hipotecario', 'credito hipotecario',
+      'hipoteca',
+    ],
+  },
+  {
+    id: 'services', name: 'Servicios', emoji: '💡', color: '#06b6d4', type: 'expense',
+    keywords: [
+      'luz', 'gas', 'internet', 'agua', 'cable', 'celular',
+      'teléfono', 'telefono',
+    ],
+  },
+  {
+    id: 'transport', name: 'Transporte', emoji: '🚗', color: '#3b82f6', type: 'expense',
+    keywords: [
+      'nafta', 'taxi', 'uber', 'sube', 'peaje', 'colectivo', 'subte',
+      'estacionamiento', 'cuota auto', 'patente', 'seguro auto',
+    ],
+  },
+  {
+    id: 'leisure', name: 'Salidas', emoji: '🎉', color: '#ec4899', type: 'expense',
+    keywords: [
+      'birra', 'cerveza', 'pizza', 'empanada', 'empanadas',
+      'restaurant', 'restaurante', 'café', 'cafe', 'bar',
+      'recital', 'cine', 'teatro', 'boliche', 'viaje', 'salida', 'fiesta',
+      'delivery', 'pedidosya', 'pedidos ya', 'rappi', 'uber eats',
+      'netflix', 'spotify', 'disney', 'hbomax', 'hbo', 'prime',
+    ],
+  },
+  {
+    id: 'repair', name: 'Reparaciones', emoji: '🛠️', color: '#f97316', type: 'expense',
+    keywords: [
+      'arreglo', 'reparación', 'reparacion', 'instalación', 'instalacion',
+      'termotanque', 'plomero', 'electricista', 'mecánico', 'mecanico',
+    ],
+  },
+  {
+    id: 'health', name: 'Salud', emoji: '💊', color: '#10b981', type: 'expense',
+    keywords: [
+      'farmacia', 'remedio', 'medicamento', 'médico', 'medico',
+      'consulta', 'análisis', 'analisis', 'dentista', 'óptica', 'optica',
+      'obra social', 'prepaga', 'mutual', 'seguro medico', 'seguro médico',
+      'oftalmologo', 'oftalmólogo', 'psicologo', 'psicólogo',
+      'kinesiologo', 'kinesiólogo',
+    ],
+  },
+  {
+    id: 'education', name: 'Educación', emoji: '📚', color: '#6366f1', type: 'expense',
+    keywords: [
+      'curso', 'libro', 'universidad', 'colegio', 'matrícula', 'matricula',
+    ],
+  },
+  {
+    id: 'supermarket', name: 'Supermercado', emoji: '🛒', color: '#22c55e', type: 'expense',
+    keywords: [
+      'super', 'supermercado', 'carrefour', 'disco', 'día', 'coto',
+      'jumbo', 'chino', 'almacen', 'almacén',
+    ],
+  },
+  {
+    id: 'other_exp', name: 'Otros', emoji: '📦', color: '#64748b', type: 'expense',
+    keywords: ['ropa', 'zapatillas', 'indumentaria'],
+  },
+  {
+    id: 'salary', name: 'Sueldo', emoji: '💼', color: '#22c55e', type: 'income',
+    keywords: [
+      'sueldo', 'salario', 'sueldo básico', 'sueldo basico', 'sueldo neto',
+      'aguinaldo', 'bonificación', 'bonificacion', 'bono',
+    ],
+  },
+  {
+    id: 'other_inc', name: 'Otros ingresos', emoji: '💰', color: '#10b981', type: 'income',
+    keywords: [
+      'honorarios', 'venta', 'cobro', 'cobré', 'freelance', 'facturé',
+      'recibí', 'ingreso', 'pago recibido', 'devolución', 'devolucion',
+      'transferencia recibida', 'comisión', 'comision', 'propina',
+      'dividendo', 'interés cobrado', 'interes cobrado', 'ganancia',
+      'alquiler cobrado', 'alquiler recibido',
+    ],
+  },
 ]
 
-export const KEYWORDS: Array<[string, string]> = [
-  ['sueldo', 'salary'],
-  ['salario', 'salary'],
-  ['honorarios', 'other_inc'],
-  ['venta', 'other_inc'],
-  ['cobro', 'other_inc'],
-  ['cobré', 'other_inc'],
-  ['freelance', 'other_inc'],
-  ['facturé', 'other_inc'],
-  ['recibí', 'other_inc'],
-  ['ingreso', 'other_inc'],
-  ['pago recibido', 'other_inc'],
-  ['devolución', 'other_inc'],
-  ['devolucion', 'other_inc'],
-  ['alquiler', 'home'],
-  ['expensas', 'home'],
-  ['crédito hipotecario', 'home'],
-  ['credito hipotecario', 'home'],
-  ['hipoteca', 'home'],
-  ['luz', 'services'],
-  ['gas', 'services'],
-  ['internet', 'services'],
-  ['agua', 'services'],
-  ['cable', 'services'],
-  ['celular', 'services'],
-  ['teléfono', 'services'],
-  ['telefono', 'services'],
-  ['nafta', 'transport'],
-  ['taxi', 'transport'],
-  ['uber', 'transport'],
-  ['sube', 'transport'],
-  ['peaje', 'transport'],
-  ['colectivo', 'transport'],
-  ['subte', 'transport'],
-  ['estacionamiento', 'transport'],
-  ['cuota auto', 'transport'],
-  ['patente', 'transport'],
-  ['seguro auto', 'transport'],
-  ['birra', 'leisure'],
-  ['cerveza', 'leisure'],
-  ['pizza', 'leisure'],
-  ['empanada', 'leisure'],
-  ['empanadas', 'leisure'],
-  ['restaurant', 'leisure'],
-  ['restaurante', 'leisure'],
-  ['café', 'leisure'],
-  ['cafe', 'leisure'],
-  ['bar', 'leisure'],
-  ['recital', 'leisure'],
-  ['cine', 'leisure'],
-  ['teatro', 'leisure'],
-  ['boliche', 'leisure'],
-  ['viaje', 'leisure'],
-  ['salida', 'leisure'],
-  ['fiesta', 'leisure'],
-  ['arreglo', 'repair'],
-  ['reparación', 'repair'],
-  ['reparacion', 'repair'],
-  ['instalación', 'repair'],
-  ['instalacion', 'repair'],
-  ['termotanque', 'repair'],
-  ['plomero', 'repair'],
-  ['electricista', 'repair'],
-  ['mecánico', 'repair'],
-  ['mecanico', 'repair'],
-  ['farmacia', 'health'],
-  ['remedio', 'health'],
-  ['medicamento', 'health'],
-  ['médico', 'health'],
-  ['medico', 'health'],
-  ['consulta', 'health'],
-  ['análisis', 'health'],
-  ['analisis', 'health'],
-  ['dentista', 'health'],
-  ['óptica', 'health'],
-  ['optica', 'health'],
-  ['curso', 'education'],
-  ['libro', 'education'],
-  ['universidad', 'education'],
-  ['colegio', 'education'],
-  ['matrícula', 'education'],
-  ['matricula', 'education'],
-  ['super', 'supermarket'],
-  ['supermercado', 'supermarket'],
-  ['carrefour', 'supermarket'],
-  ['disco', 'supermarket'],
-  ['día', 'supermarket'],
-  ['coto', 'supermarket'],
-  ['jumbo', 'supermarket'],
-  ['verdulería', 'food'],
-  ['verduleria', 'food'],
-  ['carnicería', 'food'],
-  ['carniceria', 'food'],
-  ['almuerzo', 'food'],
-  ['cena', 'food'],
-  ['desayuno', 'food'],
-  ['merienda', 'food'],
-  ['lomito', 'food'],
-  ['hamburguesa', 'food'],
-  ['sushi', 'food'],
-]
+// ── Dynamic lookup maps (mutated by syncKeywordMaps) ──
 
-const INCOME_KEYWORDS = [
-  'sueldo', 'salario', 'honorarios', 'venta', 'cobro', 'cobré',
-  'freelance', 'facturé', 'recibí', 'ingreso', 'pago recibido',
-  'devolución', 'devolucion', 'transferencia recibida',
-]
-
-const RECURRING_KEYWORDS = [
+export let KEYWORDS: Array<[string, string]> = []
+export let INCOME_KEYWORDS: string[] = []
+export const RECURRING_KEYWORDS: string[] = [
   'alquiler', 'expensas', 'cuota', 'crédito', 'credito', 'servicio',
   'suscripcion', 'suscripción', 'patente', 'seguro', 'impuesto',
+  'sueldo', 'salario',
 ]
 
-export { INCOME_KEYWORDS, RECURRING_KEYWORDS }
+// Initialize from defaults
+syncKeywordMaps(DEFAULT_CATEGORIES)
+
+export function syncKeywordMaps(categories: Category[]): void {
+  const kw: Array<[string, string]> = []
+  const income: string[] = []
+
+  for (const cat of categories) {
+    for (const word of cat.keywords) {
+      kw.push([word, cat.id])
+      if (cat.type === 'income') {
+        income.push(word)
+      }
+    }
+  }
+
+  KEYWORDS = kw
+  INCOME_KEYWORDS = income
+}

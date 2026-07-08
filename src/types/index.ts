@@ -29,6 +29,7 @@ export interface Category {
   emoji: string
   color: string
   type: CategoryType
+  keywords: string[]
 }
 
 export type Theme = 'light' | 'dark'

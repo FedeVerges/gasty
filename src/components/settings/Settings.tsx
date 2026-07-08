@@ -5,13 +5,17 @@ import { getRecurringSources, deleteRecurringSource } from '../../lib/recurring'
 import { useCategories } from '../../hooks/useCategories'
 import { formatMoney, formatDate } from '../../lib/format'
 import { CsvImportContext } from '../../context/CsvImportContext'
+import { CategoryManager } from './CategoryManager'
 import type { Transaction } from '../../types'
+
+type SettingsView = 'main' | 'categories'
 
 export function Settings() {
   const { settings, setTheme, setCurrency, setCsvFormat } = useSettings()
   const categories = useCategories()
   const openCsvImport = useContext(CsvImportContext)
   const [recurring, setRecurring] = useState<Transaction[]>([])
+  const [view, setView] = useState<SettingsView>('main')
 
   useEffect(() => {
     getRecurringSources().then(setRecurring)
@@ -24,6 +28,24 @@ export function Settings() {
       await deleteRecurringSource(id)
       await refresh()
     }
+  }
+
+  if (view === 'categories') {
+    return (
+      <div className="space-y-4">
+        <header className="pt-2 pb-1 flex items-center gap-3">
+          <button
+            onClick={() => setView('main')}
+            className="w-9 h-9 rounded-xl bg-canvas-soft flex items-center justify-center text-lg active:scale-[0.95] transition-transform shrink-0"
+            aria-label="Volver"
+          >
+            ←
+          </button>
+          <h1 className="text-4xl font-black tracking-tight leading-none">Categorías</h1>
+        </header>
+        <CategoryManager />
+      </div>
+    )
   }
 
   return (
@@ -174,6 +196,25 @@ export function Settings() {
             />
           </button>
         </div>
+      </Card>
+
+      <Card>
+        <span className="text-xs uppercase tracking-widest text-body font-medium block mb-3">
+          Categorías
+        </span>
+        <p className="text-xs text-body mb-3">
+          Administrá las categorías y las palabras clave para detección automática al cargar gastos.
+        </p>
+        <button
+          onClick={() => setView('categories')}
+          className="
+            w-full py-3 px-4 rounded-2xl
+            bg-primary text-on-primary font-semibold
+            active:scale-[0.98] transition-transform
+          "
+        >
+          Editar
+        </button>
       </Card>
 
       <Card>

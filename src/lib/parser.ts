@@ -244,7 +244,7 @@ function detectCategory(text: string, type: 'income' | 'expense'): string {
 function detectRecurring(text: string): { recurring: RecurringConfig; remaining: string } {
   const lower = text.toLowerCase()
 
-  const cuotasMatch = lower.match(/(\d+)\s*\/\s*(\d+)/)
+  const cuotasMatch = lower.match(/(\d+)\s*\/\s*(\d+)(?!\s*\/\s*\d{2,4})/)
   if (cuotasMatch) {
     const current = parseInt(cuotasMatch[1], 10)
     const total = parseInt(cuotasMatch[2], 10)

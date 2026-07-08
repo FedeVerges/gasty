@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import { useAllTransactions } from '../../hooks/useTransactions'
 import { useCategories } from '../../hooks/useCategories'
+import { useViewport } from '../../hooks/useViewport'
 import { useSettings } from '../../context/SettingsContext'
 import { Card } from '../ui/Card'
 import { CategoryDonutChart } from '../dashboard/CategoryDonutChart'
@@ -10,6 +11,7 @@ export function Stats() {
   const transactions = useAllTransactions()
   const categories = useCategories()
   const { settings } = useSettings()
+  const { isDesktop } = useViewport()
 
   const now = new Date()
   const currentKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
@@ -96,8 +98,8 @@ export function Stats() {
     )
   }
 
-  const WIDTH = 320
-  const HEIGHT = 160
+  const WIDTH = isDesktop ? 600 : 320
+  const HEIGHT = isDesktop ? 180 : 160
   const PADDING = 8
   const BAR_WIDTH = (WIDTH - PADDING * 2) / data.months.length - 8
 
@@ -120,11 +122,12 @@ export function Stats() {
           </span>
         </div>
 
-        <svg
-          viewBox={`0 0 ${WIDTH} ${HEIGHT + 20}`}
-          className="w-full h-auto"
-          preserveAspectRatio="xMidYMid meet"
-        >
+        <div className={isDesktop ? 'max-w-lg mx-auto' : ''}>
+          <svg
+            viewBox={`0 0 ${WIDTH} ${HEIGHT + 20}`}
+            className="w-full h-auto"
+            preserveAspectRatio="xMidYMid meet"
+          >
           {data.months.map((m, i) => {
             const h = (m.total / data.maxTotal) * HEIGHT
             const x = PADDING + i * (BAR_WIDTH + 8)
@@ -153,6 +156,7 @@ export function Stats() {
             )
           })}
         </svg>
+        </div>
       </Card>
 
       <CategoryDonutChart

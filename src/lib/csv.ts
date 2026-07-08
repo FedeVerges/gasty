@@ -1,4 +1,4 @@
-import { parseInput, createTransactionFromParsed, parseAmountFromText } from './parser'
+import { parseInput, createTransactionFromParsed, parseAmountFromText, toLocalISO } from './parser'
 import { db } from './db'
 import { DEFAULT_CATEGORIES } from './categories'
 import type { CsvFormatSettings } from '../types'
@@ -19,8 +19,25 @@ function parseCSVLine(line: string): string[] {
     } else if (ch === '"') {
       inQuotes = true
     } else if (ch === ',') {
-      result.push(current.trim())
-      current = ''
+      // A comma between two digits is ambiguous: it could be a thousands
+      // separator (e.g. "590,000.00") or a field delimiter followed by a
+      // date (e.g. "...000.00,01/07/2026").  Look ahead: if the next token
+      // looks like a DD/MM/YYYY date it's a field delimiter.
+      const prev = i > 0 ? line[i - 1] : ''
+      const next = i < line.length - 1 ? line[i + 1] : ''
+      if (/\d/.test(prev) && /\d/.test(next)) {
+        const remaining = line.slice(i + 1)
+        const isDate = /^\d{1,2}\/\d{1,2}\/\d{2,4}/.test(remaining)
+        if (!isDate) {
+          current += ch
+        } else {
+          result.push(current.trim())
+          current = ''
+        }
+      } else {
+        result.push(current.trim())
+        current = ''
+      }
     } else {
       current += ch
     }
@@ -29,7 +46,7 @@ function parseCSVLine(line: string): string[] {
   return result
 }
 
-const HEADER_PATTERN = /^(desc|description|monto|amount|importe|fecha|date|categor)/i
+const HEADER_PATTERN = /^(desc|description|monto|amount|importe|nombre|fecha|date|categor)/i
 
 function isHeaderRow(cols: string[]): boolean {
   return cols.length > 0 && HEADER_PATTERN.test(cols[0])
@@ -195,6 +212,31 @@ export interface CsvImportResult {
   errorLines: number[]
 }
 
+/**
+ * Parse a date string from CSV into YYYY-MM-DD (local ISO).
+ * Supports: DD/MM/YYYY, DD-MM-YYYY, DD/MM/YY, YYYY-MM-DD
+ */
+function parseCsvDate(dateStr: string): string | null {
+  const trimmed = dateStr.trim()
+  if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+    // Already YYYY-MM-DD
+    return trimmed
+  }
+  const match = trimmed.match(/^(\d{1,2})[/-](\d{1,2})(?:[/-](\d{2,4}))?$/)
+  if (match) {
+    const day = parseInt(match[1], 10)
+    const month = parseInt(match[2], 10) - 1
+    let year = new Date().getFullYear()
+    if (match[3]) {
+      year = match[3].length === 2 ? 2000 + parseInt(match[3], 10) : parseInt(match[3], 10)
+    }
+    if (day >= 1 && day <= 31 && month >= 0 && month <= 11) {
+      return toLocalISO(new Date(year, month, day))
+    }
+  }
+  return null
+}
+
 export function parseCsvContent(
   content: string,
   csvFormat?: CsvFormatSettings,
@@ -230,11 +272,13 @@ export function parseCsvContent(
       continue
     }
 
-    const date = map.dateIdx >= 0 ? cols[map.dateIdx]?.trim() : ''
-    // Build text for parseInput: "description AMOUNT DATE"
+    // Parse date directly from CSV column (supports DD/MM/YYYY)
+    const dateRaw = map.dateIdx >= 0 ? cols[map.dateIdx]?.trim() ?? '' : ''
+    const parsedDate = dateRaw ? parseCsvDate(dateRaw) : null
+
+    // Build text for parseInput (exclude date to avoid ambiguity)
     const amountStr = String(amount)
-    let text = `${desc} ${amountStr}`
-    if (date) text += ` ${date}`
+    const text = `${desc} ${amountStr}`
 
     const parsed = parseInput(text)
     if (!parsed) {
@@ -264,7 +308,7 @@ export function parseCsvContent(
     rows.push({
       description: parsed.description,
       amount: parsed.amount,
-      date: parsed.date,
+      date: parsedDate ?? parsed.date,
       categoryId,
       categoryName,
       rawLine: i + 1,
