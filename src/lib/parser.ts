@@ -271,6 +271,18 @@ function detectRecurring(text: string): { recurring: RecurringConfig; remaining:
   return { recurring: { kind: 'none' }, remaining: text }
 }
 
+/**
+ * Normaliza un nombre de categoría para matching:
+ * lower case, trim, NFKD + remover diacríticos.
+ */
+export function normalizeCategory(name: string): string {
+  return name
+    .trim()
+    .toLowerCase()
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+}
+
 function cleanDescription(text: string): string {
   return text
     .replace(/\s+/g, ' ')

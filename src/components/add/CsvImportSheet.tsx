@@ -47,7 +47,7 @@ export function CsvImportSheet({ open, onClose }: CsvImportSheetProps) {
     const reader = new FileReader()
     reader.onload = (ev) => {
       const content = ev.target?.result as string
-      const { rows: parsed, errors, pendingCategories: pending } = parseCsvContent(content, settings.csvFormat)
+      const { rows: parsed, errors, pendingCategories: pending } = parseCsvContent(content, settings.csvFormat, categories)
       setRows(parsed)
       setParseErrors(errors)
       setPendingCategories(pending)
