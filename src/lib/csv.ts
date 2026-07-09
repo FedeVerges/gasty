@@ -1,7 +1,7 @@
-import { parseInput, createTransactionFromParsed, parseAmountFromText, toLocalISO } from './parser'
+import { createTransactionFromParsed, parseAmountFromText, toLocalISO, normalizeCategory } from './parser'
 import { db } from './db'
 import { DEFAULT_CATEGORIES } from './categories'
-import type { CsvFormatSettings } from '../types'
+import type { CsvFormatSettings, Category } from '../types'
 
 function parseCSVLine(line: string): string[] {
   const result: string[] = []
@@ -52,119 +52,182 @@ function isHeaderRow(cols: string[]): boolean {
   return cols.length > 0 && HEADER_PATTERN.test(cols[0])
 }
 
-function matchCategory(name: string): string | null {
-  const lower = name.toLowerCase().trim()
-  for (const cat of DEFAULT_CATEGORIES) {
-    if (cat.name.toLowerCase() === lower || cat.id === lower) {
-      return cat.id
+/**
+ * Simple Levenshtein distance for fuzzy category matching.
+ */
+function levenshtein(a: string, b: string): number {
+  const m = a.length
+  const n = b.length
+  const dp: number[][] = Array.from({ length: m + 1 }, () => Array(n + 1).fill(0))
+  for (let i = 0; i <= m; i++) dp[i][0] = i
+  for (let j = 0; j <= n; j++) dp[0][j] = j
+  for (let i = 1; i <= m; i++) {
+    for (let j = 1; j <= n; j++) {
+      dp[i][j] = a[i - 1] === b[j - 1]
+        ? dp[i - 1][j - 1]
+        : 1 + Math.min(dp[i - 1][j], dp[i][j - 1], dp[i - 1][j - 1])
     }
   }
-  const aliases: Record<string, string> = {
-    // ── Core category names ──
-    comida: 'food',
-    vivienda: 'home',
-    servicios: 'services',
-    transporte: 'transport',
-    salidas: 'leisure',
-    reparaciones: 'repair',
-    salud: 'health',
-    educacion: 'education',
-    educación: 'education',
-    supermercado: 'supermarket',
-    otros: 'other_exp',
-    sueldo: 'salary',
-    'otros ingresos': 'other_inc',
+  return dp[m][n]
+}
 
-    // ── Common sub-aliases ──
-    alquiler: 'home',
-    luz: 'services',
-    gas: 'services',
-    internet: 'services',
-    celular: 'services',
-    super: 'supermarket',
-    nafta: 'transport',
-    taxi: 'transport',
-    uber: 'transport',
+/**
+ * Alias map for CSV category names → canonical category IDs.
+ * Keys are lowercase, NFKD-normalized (no diacritics).
+ */
+const CATEGORY_ALIASES: Record<string, string> = {
+  // ── Core category names ──
+  comida: 'food',
+  vivienda: 'home',
+  servicios: 'services',
+  transporte: 'transport',
+  salidas: 'leisure',
+  reparaciones: 'repair',
+  salud: 'health',
+  educacion: 'education',
+  supermercado: 'supermarket',
+  otros: 'other_exp',
+  sueldo: 'salary',
+  'otros ingresos': 'other_inc',
 
-    // ── Real CSV export categories (bancos, apps financieras) ──
-    hogar: 'home',
-    'vivienda y hogar': 'home',
-    'finanzas y deudas': 'other_exp',
-    finanzas: 'other_exp',
-    deudas: 'other_exp',
-    ahorros: 'other_exp',
-    ahorro: 'other_exp',
-    deporte: 'leisure',
-    deportes: 'leisure',
-    'servicios públicos': 'services',
-    'servicios publicos': 'services',
-    alimentación: 'food',
-    alimentacion: 'food',
-    'entretenimiento y salidas a comer': 'leisure',
-    entretenimiento: 'leisure',
-    suscripciones: 'services',
-    suscripción: 'services',
-    ocio: 'leisure',
-    'salud y bienestar': 'health',
-    'belleza y cuidado personal': 'health',
-    'educación y formación': 'education',
-    'compras y retail': 'other_exp',
-    compras: 'other_exp',
-    'impuestos y tasas': 'other_exp',
-    impuestos: 'other_exp',
-    'seguros': 'other_exp',
-    'transferencias': 'other_exp',
-    'cuotas': 'other_exp',
-    'préstamos': 'other_exp',
-    prestamos: 'other_exp',
-    'créditos': 'other_exp',
-    creditos: 'other_exp',
-    'inversiones': 'other_exp',
-    'donaciones': 'other_exp',
-    'mascotas': 'other_exp',
-    'regalos': 'other_exp',
-    'baby': 'other_exp',
-    'tecnología': 'other_exp',
-    tecnologia: 'other_exp',
-    'hogar y muebles': 'home',
-    'electrodomésticos': 'home',
-    electrodomesticos: 'home',
-    'ropa y calzado': 'other_exp',
-    'farmacia': 'health',
-    'gimnasio': 'leisure',
-    'streaming': 'services',
-    'combustible': 'transport',
-    'estacionamiento': 'transport',
-    'peaje': 'transport',
-    'taxi / uber': 'transport',
-    'delivery': 'food',
-    'supermercado / mercado': 'supermarket',
-    'restaurante': 'leisure',
-    'café': 'leisure',
-    cafe: 'leisure',
-    'bar': 'leisure',
-    'cine': 'leisure',
-    'teatro': 'leisure',
-    'viaje': 'leisure',
-    'hotel': 'leisure',
-    'alojamiento': 'leisure',
-    'farmacia / medicamentos': 'health',
-    'médico': 'health',
-    medico: 'health',
-    'dentista': 'health',
-    'hospital': 'health',
-    'análisis': 'health',
-    analisis: 'health',
-    'colegio': 'education',
-    'universidad': 'education',
-    'curso': 'education',
-    'libro': 'education',
-    'matrícula': 'education',
-    matricula: 'education',
-    'útiles': 'education',
-    utiles: 'education',
+  // ── Common sub-aliases ──
+  alquiler: 'home',
+  luz: 'services',
+  gas: 'services',
+  internet: 'services',
+  celular: 'services',
+  super: 'supermarket',
+  nafta: 'transport',
+  taxi: 'transport',
+  uber: 'transport',
+
+  // ── Real CSV export categories (bancos, apps financieras) ──
+  hogar: 'home',
+  'vivienda y hogar': 'home',
+  'finanzas y deudas': 'other_exp',
+  finanzas: 'other_exp',
+  deudas: 'other_exp',
+  ahorros: 'other_exp',
+  ahorro: 'other_exp',
+  deporte: 'leisure',
+  deportes: 'leisure',
+  'servicios publicos': 'services',
+  alimentacion: 'food',
+  'entretenimiento y salidas a comer': 'leisure',
+  entretenimiento: 'leisure',
+  suscripciones: 'services',
+  suscripcion: 'services',
+  ocio: 'leisure',
+  'salud y bienestar': 'health',
+  'belleza y cuidado personal': 'health',
+  'educacion y formacion': 'education',
+  'compras y retail': 'other_exp',
+  compras: 'other_exp',
+  'impuestos y tasas': 'other_exp',
+  impuestos: 'other_exp',
+  seguros: 'other_exp',
+  transferencias: 'other_exp',
+  cuotas: 'other_exp',
+  prestamos: 'other_exp',
+  creditos: 'other_exp',
+  inversiones: 'other_exp',
+  donaciones: 'other_exp',
+  mascotas: 'other_exp',
+  regalos: 'other_exp',
+  baby: 'other_exp',
+  tecnologia: 'other_exp',
+  'hogar y muebles': 'home',
+  electrodomesticos: 'home',
+  'ropa y calzado': 'other_exp',
+  farmacia: 'health',
+  gimnasio: 'leisure',
+  streaming: 'services',
+  combustible: 'transport',
+  estacionamiento: 'transport',
+  peaje: 'transport',
+  'taxi / uber': 'transport',
+  delivery: 'food',
+  'supermercado / mercado': 'supermarket',
+  restaurante: 'leisure',
+  cafe: 'leisure',
+  bar: 'leisure',
+  cine: 'leisure',
+  teatro: 'leisure',
+  viaje: 'leisure',
+  hotel: 'leisure',
+  alojamiento: 'leisure',
+  'farmacia / medicamentos': 'health',
+  medico: 'health',
+  dentista: 'health',
+  hospital: 'health',
+  analisis: 'health',
+  colegio: 'education',
+  universidad: 'education',
+  curso: 'education',
+  libro: 'education',
+  matricula: 'education',
+  utiles: 'education',
+}
+
+/**
+ * Match a CSV category name to a Category.
+ *
+ * Strategy (in order):
+ * 1. Exact match on normalized name or id (user categories first, then defaults)
+ * 2. Alias map lookup (normalized)
+ * 3. Partial match — all normalized words in input appear in category name
+ * 4. Contains match — one normalized string contains the other
+ * 5. Levenshtein distance ≤ 2
+ */
+function matchCategory(
+  name: string,
+  existingCategories?: Category[],
+): Category | null {
+  const normalized = normalizeCategory(name)
+  const cats = existingCategories ?? DEFAULT_CATEGORIES
+
+  // 1. Exact match on normalized name or id
+  for (const cat of cats) {
+    if (normalizeCategory(cat.name) === normalized || cat.id === normalized) {
+      return cat
+    }
   }
-  return aliases[lower] ?? null
+
+  // 2. Alias map
+  const aliasId = CATEGORY_ALIASES[normalized]
+  if (aliasId) {
+    const cat = cats.find((c) => c.id === aliasId)
+    if (cat) return cat
+  }
+
+  // 3. Partial match — all normalized words in input appear in category name
+  const words = normalized.split(/\s+/).filter(Boolean)
+  if (words.length > 1) {
+    for (const cat of cats) {
+      const catNorm = normalizeCategory(cat.name)
+      if (words.every((w) => catNorm.includes(w))) {
+        return cat
+      }
+    }
+  }
+
+  // 4. Contains match (one contains the other)
+  for (const cat of cats) {
+    const catNorm = normalizeCategory(cat.name)
+    if ((catNorm.includes(normalized) || normalized.includes(catNorm)) && normalized.length > 2) {
+      return cat
+    }
+  }
+
+  // 5. Levenshtein distance ≤ 2
+  for (const cat of cats) {
+    const catNorm = normalizeCategory(cat.name)
+    if (levenshtein(normalized, catNorm) <= 2) {
+      return cat
+    }
+  }
+
+  return null
 }
 
 interface CsvColumnMap {
@@ -246,7 +309,11 @@ function parseCsvDate(dateStr: string): string | null {
 export function parseCsvContent(
   content: string,
   csvFormat?: CsvFormatSettings,
+  existingCategories?: Category[],
 ): { rows: CsvRow[]; errors: number[]; pendingCategories: CsvPendingCategory[] } {
+  // Strip UTF-8 BOM
+  content = content.replace(/^\ufeff/, '')
+
   const lines = content.split(/\r?\n/).filter((l) => l.trim().length > 0)
   const rows: CsvRow[] = []
   const errors: number[] = []
@@ -261,6 +328,8 @@ export function parseCsvContent(
     startLine = 1
     map = determineCols(firstCols)
   }
+
+  const cats = existingCategories ?? DEFAULT_CATEGORIES
 
   for (let i = startLine; i < lines.length; i++) {
     const cols = parseCSVLine(lines[i])
@@ -282,39 +351,35 @@ export function parseCsvContent(
     // Parse date directly from CSV column (supports DD/MM/YYYY)
     const dateRaw = map.dateIdx >= 0 ? cols[map.dateIdx]?.trim() ?? '' : ''
     const parsedDate = dateRaw ? parseCsvDate(dateRaw) : null
+    const date = parsedDate ?? toLocalISO(new Date())
 
-    // Build text for parseInput (exclude date to avoid ambiguity)
-    const amountStr = String(amount)
-    const text = `${desc} ${amountStr}`
+    // Determine type: default to expense, override if matched category is income
+    let type: 'expense' | 'income' = 'expense'
 
-    const parsed = parseInput(text)
-    if (!parsed) {
-      errors.push(i + 1)
-      continue
-    }
-
-    let categoryId = parsed.categoryId
+    // Match category via enhanced matching (fuzzy, user cats, aliases)
+    let categoryId = 'other_exp'
     let categoryName = ''
 
     if (map.catIdx >= 0) {
       const catRaw = cols[map.catIdx]?.trim()
       if (catRaw) {
-        const matched = matchCategory(catRaw)
+        const matched = matchCategory(catRaw, cats)
         categoryName = catRaw
         if (matched) {
-          categoryId = matched
+          categoryId = matched.id
+          if (matched.type === 'income' || matched.type === 'both') {
+            type = 'income'
+          }
         } else {
           // Unknown category from CSV — queue for auto-creation
           const existingPending = pendingCategories.find(
-            (p) => p.categoryName.toLowerCase() === catRaw.toLowerCase()
+            (p) => p.name.toLowerCase() === catRaw.toLowerCase()
           )
           if (!existingPending) {
-            // Detect type from existing similar categories or default to expense
-            const descType = parsed.type
             pendingCategories.push({
               name: catRaw.trim(),
               categoryName: catRaw.trim(),
-              type: descType === 'income' ? 'income' : 'expense',
+              type: 'expense',
             })
           }
         }
@@ -322,14 +387,16 @@ export function parseCsvContent(
     }
 
     if (!categoryName) {
-      const cat = DEFAULT_CATEGORIES.find((c) => c.id === categoryId)
+      const cat = cats.find((c) => c.id === categoryId)
       categoryName = cat?.name ?? categoryId
     }
 
+    const description = desc || (type === 'income' ? 'Ingreso' : 'Gasto')
+
     rows.push({
-      description: parsed.description,
-      amount: parsed.amount,
-      date: parsedDate ?? parsed.date,
+      description,
+      amount,
+      date,
       categoryId,
       categoryName,
       rawLine: i + 1,
