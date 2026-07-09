@@ -30,3 +30,7 @@ cert-key.pem
 package-lock.json
 pnpm-lock.yaml
 skills-lock.json
+
+# Playwright
+test-results/
+playwright-report/
