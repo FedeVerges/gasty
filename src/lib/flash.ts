@@ -99,10 +99,5 @@ export function getFlashSuggestions(now?: Date): FlashSuggestion[] {
   // ── Always include income suggestion ──
   suggestions.push({ text: 'sueldo 150000', label: 'Sueldo', emoji: '💼' })
 
-  // ── Income early-month ──
-  if (isEarlyMonth) {
-    suggestions.push({ text: 'sueldo 150000', label: 'Cobro', emoji: '💰' })
-  }
-
   return suggestions
 }

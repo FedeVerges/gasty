@@ -42,7 +42,7 @@ export function parseAmountFromText(
   }
 
   // 2. Find all number-like tokens (word-boundary delimited)
-  const tokenPattern = /\d[\d.,]*/g
+  const tokenPattern = /-?\d[\d.,]*/g
   const tokens: Array<{ value: string; start: number; end: number }> = []
   let m: RegExpExecArray | null
   while ((m = tokenPattern.exec(cleaned)) !== null) {
@@ -194,7 +194,8 @@ function parseDate(text: string): { date: string; remaining: string } {
     }
     const re2 = new RegExp(`\\b${name}\\b`)
     if (re2.test(working)) {
-      const d = new Date(now.getFullYear(), monthIdx, 1)
+      const year = monthIdx < now.getMonth() ? now.getFullYear() + 1 : now.getFullYear()
+      const d = new Date(year, monthIdx, 1)
       working = working.replace(re2, '').trim()
       return { date: toLocalISO(d), remaining: working }
     }
@@ -245,11 +246,12 @@ function detectRecurring(text: string): { recurring: RecurringConfig; remaining:
   const lower = text.toLowerCase()
 
   const cuotasMatch = lower.match(/(\d+)\s*\/\s*(\d+)(?!\s*\/\s*\d{2,4})/)
-  if (cuotasMatch) {
+  if (cuotasMatch && /\bcuota\b/.test(lower)) {
     const current = parseInt(cuotasMatch[1], 10)
     const total = parseInt(cuotasMatch[2], 10)
+    const remaining = text.replace(cuotasMatch[0], '').trim()
+
     if (current >= 1 && current <= total && total < 240) {
-      const remaining = text.replace(cuotasMatch[0], '').trim()
       return {
         recurring: {
           kind: 'fixed_temporary',
@@ -258,6 +260,11 @@ function detectRecurring(text: string): { recurring: RecurringConfig; remaining:
         },
         remaining,
       }
+    }
+
+    return {
+      recurring: { kind: 'none' },
+      remaining,
     }
   }
 

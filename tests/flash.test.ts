@@ -1,5 +1,9 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi, afterEach } from 'vitest'
 import { getFlashSuggestions } from '../src/lib/flash'
+
+afterEach(() => {
+  vi.useRealTimers()
+})
 
 describe('flash: time-of-day', () => {
   it('sugiere cafe y desayuno en la mañana (6-8:59)', () => {
@@ -123,5 +127,12 @@ describe('flash: deduplication', () => {
     const texts = suggestions.map((s) => s.text)
     const unique = new Set(texts)
     expect(unique.size).toBe(texts.length)
+  })
+
+  it('no duplica el sueldo en primeros 10 días', () => {
+    const early = new Date(2026, 5, 5, 10, 0)
+    const suggestions = getFlashSuggestions(early)
+    const sueldos = suggestions.filter((s) => s.text === 'sueldo 150000')
+    expect(sueldos).toHaveLength(1)
   })
 })

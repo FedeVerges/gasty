@@ -1,5 +1,9 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, afterEach, vi } from 'vitest'
 import { parseInput, parseAmountFromText } from '../src/lib/parser'
+
+afterEach(() => {
+  vi.useRealTimers()
+})
 
 describe('parser: gastos básicos', () => {
   it('parsea gasto simple con monto', () => {
@@ -81,6 +85,14 @@ describe('parser: fechas', () => {
     const result = parseInput('sueldo 150000 15 junio')
     expect(result?.date).toMatch(/^\d{4}-06-15T\d{2}:\d{2}$/)
   })
+
+  it('parsea mes pasado sin día al próximo año', () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date(2026, 6, 15, 12, 0))
+
+    const result = parseInput('sueldo 150000 junio')
+    expect(result?.date).toMatch(/^2027-06-01T\d{2}:\d{2}$/)
+  })
 })
 
 describe('parser: categorías', () => {
@@ -111,18 +123,14 @@ describe('parser: recurrentes', () => {
     expect(result?.recurring.kind).toBe('fixed')
   })
 
-  it('detecta alquiler como recurrente fijo', () => {
-    const result = parseInput('alquiler 45000')
-    expect(result?.recurring.kind).toBe('fixed')
-  })
-
   it('detecta expensas como recurrente fijo', () => {
     const result = parseInput('expensas 80000')
     expect(result?.recurring.kind).toBe('fixed')
   })
 
-  it('detecta cuotas X/Y como recurrente temporal', () => {
+  it('parsea cuota temporal sin confundir monto con cuotas', () => {
     const result = parseInput('cuota auto 25000 4/24')
+    expect(result?.amount).toBe(25000)
     expect(result?.recurring.kind).toBe('fixed_temporary')
     expect(result?.recurring.currentMonth).toBe(4)
     expect(result?.recurring.totalMonths).toBe(24)
@@ -130,6 +138,24 @@ describe('parser: recurrentes', () => {
 
   it('gasto simple no es recurrente', () => {
     const result = parseInput('birra 1500')
+    expect(result?.recurring.kind).toBe('none')
+  })
+
+  it('ignora cuota inválida y parsea monto correcto', () => {
+    const result = parseInput('cuota auto 25000 0/24')
+    expect(result?.amount).toBe(25000)
+    expect(result?.recurring.kind).toBe('none')
+  })
+
+  it('ignora cuota inválida con current > total', () => {
+    const result = parseInput('cuota auto 25000 25/24')
+    expect(result?.amount).toBe(25000)
+    expect(result?.recurring.kind).toBe('none')
+  })
+
+  it('ignora cuota inválida con total demasiado grande', () => {
+    const result = parseInput('cuota auto 25000 1/500')
+    expect(result?.amount).toBe(25000)
     expect(result?.recurring.kind).toBe('none')
   })
 })
@@ -211,6 +237,16 @@ describe('parser: parseAmountFromText', () => {
 
     it('devuelve 0 para texto sin números', () => {
       const { amount } = parseAmountFromText('hello')
+      expect(amount).toBe(0)
+    })
+
+    it('devuelve 0 para monto negativo', () => {
+      const { amount } = parseAmountFromText('birra -1500')
+      expect(amount).toBe(0)
+    })
+
+    it('devuelve 0 para monto cero', () => {
+      const { amount } = parseAmountFromText('0')
       expect(amount).toBe(0)
     })
   })

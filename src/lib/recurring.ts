@@ -10,9 +10,8 @@ function toLocalISO(d: Date): string {
   return `${y}-${m}-${day}T${h}:${min}`
 }
 
-export async function checkAndCloneRecurring(): Promise<number> {
+export async function checkAndCloneRecurring(now: Date = new Date()): Promise<number> {
   const allTransactions = await db.transactions.toArray()
-  const now = new Date()
   const currentYear = now.getFullYear()
   const currentMonth = now.getMonth()
 
@@ -56,6 +55,15 @@ export async function checkAndCloneRecurring(): Promise<number> {
     const newDate = toLocalISO(new Date(currentYear, currentMonth, day))
 
     const currentMonthNum = source.recurring.currentMonth ?? 1
+    const cloneCount = months.size
+    let recurring = source.recurring
+
+    if (source.recurring.kind === 'fixed_temporary') {
+      const nextCurrentMonth = currentMonthNum + cloneCount + 1
+      const total = source.recurring.totalMonths ?? 0
+      if (total > 0 && nextCurrentMonth > total) continue
+      recurring = { ...source.recurring, currentMonth: nextCurrentMonth }
+    }
 
     await db.transactions.add({
       id: generateId(),
@@ -64,10 +72,7 @@ export async function checkAndCloneRecurring(): Promise<number> {
       description: source.description,
       categoryId: source.categoryId,
       date: newDate,
-      recurring: {
-        ...source.recurring,
-        currentMonth: currentMonthNum + 1,
-      },
+      recurring,
       originalId,
       createdAt: new Date().toISOString(),
     })

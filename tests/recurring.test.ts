@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import 'fake-indexeddb/auto'
 import { db, seedDatabase } from '../src/lib/db'
 import { parseInput, createTransactionFromParsed } from '../src/lib/parser'
@@ -9,6 +9,10 @@ describe('recurring: auto-clonado', () => {
     await db.delete()
     await db.open()
     await seedDatabase()
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
   })
 
   it('clona un gasto recurrente fijo para el mes actual', async () => {
@@ -47,6 +51,25 @@ describe('recurring: auto-clonado', () => {
     const clone = all.find((t) => t.originalId)
     expect(clone).toBeDefined()
     expect(clone?.recurring.currentMonth).toBe(2)
+  })
+
+  it('clona cuota temporal con currentMonth incrementado en mes siguiente', async () => {
+    const sourceDate = new Date(2026, 5, 15, 10, 0)
+
+    const parsed = parseInput('cuota auto 25000 1/24')
+    const tx = createTransactionFromParsed(parsed!)
+    await db.transactions.add(tx)
+
+    const firstCloned = await checkAndCloneRecurring(sourceDate)
+    expect(firstCloned).toBe(1)
+
+    const secondCloned = await checkAndCloneRecurring(new Date(2026, 6, 15, 10, 0))
+    expect(secondCloned).toBe(1)
+
+    const clones = (await db.transactions.where('originalId').equals(tx.id).toArray()).sort((a, b) => a.date.localeCompare(b.date))
+    expect(clones).toHaveLength(2)
+    expect(clones[0]?.recurring.currentMonth).toBe(2)
+    expect(clones[1]?.recurring.currentMonth).toBe(3)
   })
 
   it('no clona cuando currentMonth supera totalMonths', async () => {
