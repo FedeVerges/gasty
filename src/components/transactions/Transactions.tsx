@@ -1,75 +1,20 @@
 import { useState, useMemo } from 'react'
-import { useAllTransactions } from '../../hooks/useTransactions'
 import { useCategories } from '../../hooks/useCategories'
+import { useAllTransactions } from '../../hooks/useTransactions'
+import { useProjections } from '../../hooks/useProjections'
 import { TransactionItem } from './TransactionItem'
-import { formatMoney, formatDateGroupHeader, MONTHS_FULL } from '../../lib/format'
+import { MonthSelector } from '../dashboard/MonthSelector'
+import { formatMoney, formatDateGroupHeader } from '../../lib/format'
 import { useSettings } from '../../context/SettingsContext'
 
-type DateFilter = 'this_month' | 'last_month' | 'quarter' | 'this_year'
-
-function toLocalISO(d: Date): string {
-  const y = d.getFullYear()
-  const m = String(d.getMonth() + 1).padStart(2, '0')
-  const day = String(d.getDate()).padStart(2, '0')
-  return `${y}-${m}-${day}`
+function monthKey(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
 }
 
 function parseSearchAmount(text: string): number | null {
   const normalized = text.replace(/[^0-9.,]/g, '').replace(/\./g, '')
   const num = parseFloat(normalized.replace(',', '.'))
   return isNaN(num) ? null : num
-}
-
-function computeDateRange(filter: DateFilter): { from: string; to: string } {
-  const now = new Date()
-  const y = now.getFullYear()
-  const m = now.getMonth()
-
-  switch (filter) {
-    case 'this_month':
-      return {
-        from: `${y}-${String(m + 1).padStart(2, '0')}-01`,
-        to: toLocalISO(now),
-      }
-    case 'last_month': {
-      const ly = m === 0 ? y - 1 : y
-      const lm = m === 0 ? 11 : m - 1
-      const lastDay = new Date(ly, lm + 1, 0).getDate()
-      return {
-        from: `${ly}-${String(lm + 1).padStart(2, '0')}-01`,
-        to: `${ly}-${String(lm + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`,
-      }
-    }
-    case 'quarter': {
-      const qStartMonth = Math.floor(m / 3) * 3
-      return {
-        from: `${y}-${String(qStartMonth + 1).padStart(2, '0')}-01`,
-        to: toLocalISO(now),
-      }
-    }
-    case 'this_year':
-      return {
-        from: `${y}-01-01`,
-        to: toLocalISO(now),
-      }
-  }
-}
-
-function filterLabel(filter: DateFilter): string {
-  const now = new Date()
-  const m = now.getMonth()
-  switch (filter) {
-    case 'this_month':
-      return 'Este mes'
-    case 'last_month': {
-      const lm = m === 0 ? 11 : m - 1
-      return `${MONTHS_FULL[lm].charAt(0).toUpperCase() + MONTHS_FULL[lm].slice(1)} pasado`
-    }
-    case 'quarter':
-      return 'Trimestre'
-    case 'this_year':
-      return 'Este año'
-  }
 }
 
 interface CategorySummary {
@@ -82,25 +27,21 @@ interface CategorySummary {
 }
 
 export function Transactions() {
-  const transactions = useAllTransactions()
   const categories = useCategories()
+  const allTransactions = useAllTransactions()
   const { settings } = useSettings()
 
-  const [dateFilter, setDateFilter] = useState<DateFilter>('this_month')
+  const now = useMemo(() => new Date(), [])
+  const [selectedMonth, setSelectedMonth] = useState(monthKey(now))
   const [searchText, setSearchText] = useState('')
 
-  const dateRange = useMemo(() => computeDateRange(dateFilter), [dateFilter])
+  const { transactions: monthTransactions, isProjection } = useProjections(selectedMonth)
 
   const filtered = useMemo(() => {
     const search = searchText.toLowerCase().trim()
     const searchAmount = parseSearchAmount(search)
 
-    return transactions
-      .filter((t) => {
-        const day = t.date.slice(0, 10)
-        if (day < dateRange.from || day > dateRange.to) return false
-        return true
-      })
+    return monthTransactions
       .filter((t) => {
         if (!search) return true
         const cat = categories.find((c) => c.id === t.categoryId)
@@ -110,7 +51,7 @@ export function Transactions() {
         return false
       })
       .sort((a, b) => b.date.localeCompare(a.date))
-  }, [transactions, dateRange, searchText, categories])
+  }, [monthTransactions, searchText, categories])
 
   const monthTotal = useMemo(
     () => filtered.reduce((acc, t) => acc + (t.type === 'income' ? t.amount : -t.amount), 0),
@@ -142,10 +83,47 @@ export function Transactions() {
       .slice(0, 5)
   }, [filtered, categories])
 
-  const maxCategoryTotal = useMemo(
-    () => Math.max(...categorySummary.map((c) => c.total), 1),
-    [categorySummary],
-  )
+  const prevMonthKey = useMemo(() => {
+    const [y, m] = selectedMonth.split('-').map(Number)
+    const d = new Date(y, m - 2, 1)
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+  }, [selectedMonth])
+
+  const topCategory = useMemo(() => {
+    if (categorySummary.length === 0) return null
+    return categorySummary[0]
+  }, [categorySummary])
+
+  const growthCategory = useMemo(() => {
+    const prevTotals: Record<string, number> = {}
+    for (const tx of allTransactions) {
+      if (tx.type !== 'expense' || !tx.date.startsWith(prevMonthKey)) continue
+      prevTotals[tx.categoryId] = (prevTotals[tx.categoryId] || 0) + tx.amount
+    }
+
+    const currentTotals: Record<string, number> = {}
+    for (const tx of monthTransactions) {
+      if (tx.type !== 'expense') continue
+      currentTotals[tx.categoryId] = (currentTotals[tx.categoryId] || 0) + tx.amount
+    }
+
+    const allIds = new Set([...Object.keys(currentTotals), ...Object.keys(prevTotals)])
+    let best: { category: typeof categories[0]; current: number; previous: number; growth: number } | null = null
+
+    for (const id of allIds) {
+      const current = currentTotals[id] || 0
+      const previous = prevTotals[id] || 0
+      const growth = current - previous
+      if (growth <= 0) continue
+      const cat = categories.find((c) => c.id === id)
+      if (!cat) continue
+      if (!best || growth > best.growth) {
+        best = { category: cat, current, previous, growth }
+      }
+    }
+
+    return best
+  }, [allTransactions, monthTransactions, prevMonthKey, categories])
 
   const groupedByDay = useMemo(() => {
     const groups = new Map<string, typeof filtered>()
@@ -167,6 +145,68 @@ export function Transactions() {
         <h1 className="text-4xl font-black tracking-tight leading-none">Movimientos</h1>
       </header>
 
+      {/* Month selector */}
+      <MonthSelector
+        selectedMonth={selectedMonth}
+        onChange={setSelectedMonth}
+      />
+
+      {/* Category info cards */}
+      <div className="grid grid-cols-2 gap-3">
+        {/* Top categoría del mes */}
+        {topCategory && (
+          <div className="bg-card border border-border rounded-2xl p-4">
+            <p className="text-[10px] text-body uppercase tracking-wide font-medium mb-3">
+              Top del mes
+            </p>
+            <div className="flex items-center gap-2.5">
+              <div
+                className="w-11 h-11 rounded-xl flex items-center justify-center text-xl shrink-0"
+                style={{ background: `${topCategory.color}25` }}
+              >
+                {topCategory.emoji}
+              </div>
+              <div className="min-w-0">
+                <p className="text-sm font-bold text-ink truncate">
+                  {formatMoney(topCategory.total, settings.currency)}
+                </p>
+                <p className="text-[10px] text-body truncate">{topCategory.name}</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Categoría que más creció */}
+        {growthCategory ? (
+          <div className="bg-card border border-border rounded-2xl p-4">
+            <p className="text-[10px] text-body uppercase tracking-wide font-medium mb-3">
+              Mayor crecimiento
+            </p>
+            <div className="flex items-center gap-2.5">
+              <div
+                className="w-11 h-11 rounded-xl flex items-center justify-center text-xl shrink-0"
+                style={{ background: `${growthCategory.category.color}25` }}
+              >
+                {growthCategory.category.emoji}
+              </div>
+              <div className="min-w-0">
+                <p className="text-sm font-bold text-ink truncate">
+                  +{formatMoney(growthCategory.growth, settings.currency)}
+                </p>
+                <p className="text-[10px] text-body truncate">{growthCategory.category.name}</p>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="bg-card border border-border rounded-2xl p-4">
+            <p className="text-[10px] text-body uppercase tracking-wide font-medium mb-3">
+              Mayor crecimiento
+            </p>
+            <p className="text-sm text-mute">Sin variación</p>
+          </div>
+        )}
+      </div>
+
       {/* Balance */}
       <div className="bg-card border border-border rounded-2xl px-4 py-3 flex justify-between items-center">
         <span className="text-sm text-body">Balance</span>
@@ -177,37 +217,6 @@ export function Transactions() {
           {monthTotal >= 0 ? '+' : '−'} {formatMoney(Math.abs(monthTotal), settings.currency)}
         </span>
       </div>
-
-      {/* Top Categorías */}
-      {categorySummary.length > 0 && (
-        <div className="bg-card border border-border rounded-2xl p-4 space-y-3">
-          <p className="text-xs text-body uppercase tracking-wide font-medium">
-            Top categorías
-          </p>
-          {categorySummary.map((cat) => (
-            <div key={cat.id} className="flex items-center gap-3">
-              <span className="text-lg w-7 text-center shrink-0">{cat.emoji}</span>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-sm font-medium text-ink truncate">{cat.name}</span>
-                  <span className="text-sm font-bold text-ink shrink-0 ml-2">
-                    {formatMoney(cat.total, settings.currency)}
-                  </span>
-                </div>
-                <div className="h-1.5 bg-canvas-soft rounded-full overflow-hidden">
-                  <div
-                    className="h-full rounded-full transition-all duration-300"
-                    style={{
-                      width: `${(cat.total / maxCategoryTotal) * 100}%`,
-                      background: cat.color,
-                    }}
-                  />
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
 
       {/* Search bar */}
       <div className="relative">
@@ -251,24 +260,18 @@ export function Transactions() {
         )}
       </div>
 
-      {/* Date filter badges */}
-      <div className="flex gap-2 overflow-x-auto scrollbar-hide -mx-5 px-5 pb-1">
-        {(['this_month', 'last_month', 'quarter', 'this_year'] as DateFilter[]).map((f) => (
-          <button
-            key={f}
-            onClick={() => setDateFilter(f)}
-            className={`
-              shrink-0 px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap
-              transition-colors
-              ${dateFilter === f
-                ? 'bg-ink text-canvas'
-                : 'bg-card border border-border text-body'}
-            `}
-          >
-            {filterLabel(f)}
-          </button>
-        ))}
-      </div>
+      {isProjection && (
+        <div
+          className="rounded-2xl px-4 py-2 text-sm font-medium text-center"
+          style={{
+            background: 'var(--color-proyector-card)',
+            color: 'var(--color-proyector-text)',
+            border: '1px solid var(--color-proyector-accent)',
+          }}
+        >
+          Modo proyección — los gastos futuros son estimados según tus recurrentes
+        </div>
+      )}
 
 
       {filtered.length === 0 ? (

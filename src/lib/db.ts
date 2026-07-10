@@ -101,3 +101,14 @@ export async function saveSettings(partial: Partial<Settings>) {
   const current = await getSettings()
   await db.settings.put({ id: SETTINGS_ID, ...current, ...partial })
 }
+
+/**
+ * Clears all user data (transactions, categories, settings) and re-seeds
+ * with default categories and settings. Use with caution.
+ */
+export async function clearDatabase(): Promise<void> {
+  await db.transactions.clear()
+  await db.categories.clear()
+  await db.settings.clear()
+  await seedDatabase()
+}

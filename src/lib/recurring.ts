@@ -89,9 +89,26 @@ export async function getRecurringSources(): Promise<Transaction[]> {
 }
 
 export async function deleteRecurringSource(id: string): Promise<void> {
+  const today = toLocalISO(new Date()).slice(0, 10) // 'YYYY-MM-DD'
+
   await db.transaction('rw', db.transactions, async () => {
-    const all = await db.transactions.toArray()
-    const toDelete = all.filter((t) => t.id === id || t.originalId === id)
-    await db.transactions.bulkDelete(toDelete.map((t) => t.id))
+    const source = await db.transactions.get(id)
+    if (!source) return
+
+    // Convert source into a normal (non-recurring) transaction
+    await db.transactions.update(id, {
+      recurring: { kind: 'none' },
+    })
+
+    // Delete only FUTURE clones (date >= today), preserve historical data
+    const clones = await db.transactions
+      .where('originalId')
+      .equals(id)
+      .toArray()
+
+    const futureClones = clones.filter((c) => c.date >= today)
+    if (futureClones.length > 0) {
+      await db.transactions.bulkDelete(futureClones.map((c) => c.id))
+    }
   })
 }

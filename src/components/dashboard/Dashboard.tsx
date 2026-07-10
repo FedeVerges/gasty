@@ -1,8 +1,7 @@
-import { useState, useMemo } from 'react'
+import { useMemo } from 'react'
 import { useAllTransactions } from '../../hooks/useTransactions'
 import { useProjections } from '../../hooks/useProjections'
 import { BalanceCard } from './BalanceCard'
-import { MonthSelector } from './MonthSelector'
 import { TransactionItem } from '../transactions/TransactionItem'
 import { formatMonth, formatDateGroupHeader } from '../../lib/format'
 
@@ -14,8 +13,7 @@ export function Dashboard() {
   const transactions = useAllTransactions()
 
   const now = useMemo(() => new Date(), [])
-  const currentKey = monthKey(now)
-  const [selectedMonth, setSelectedMonth] = useState(currentKey)
+  const selectedMonth = monthKey(now)
 
   const { transactions: monthTransactions, isProjection } = useProjections(selectedMonth)
 
@@ -86,11 +84,6 @@ export function Dashboard() {
           <p className="text-sm text-body mt-2">Tus gastos, simples.</p>
         </div>
       </header>
-
-      <MonthSelector
-        selectedMonth={selectedMonth}
-        onChange={setSelectedMonth}
-      />
 
       {isProjection && (
         <div

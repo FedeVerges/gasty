@@ -4,6 +4,7 @@ import { useSettings } from '../../context/SettingsContext'
 import { getRecurringSources, deleteRecurringSource } from '../../lib/recurring'
 import { useCategories } from '../../hooks/useCategories'
 import { formatMoney, formatDate } from '../../lib/format'
+import { clearDatabase } from '../../lib/db'
 import { CsvImportContext } from '../../context/CsvImportContext'
 import { CategoryManager } from './CategoryManager'
 import type { Transaction } from '../../types'
@@ -16,6 +17,7 @@ export function Settings() {
   const openCsvImport = useContext(CsvImportContext)
   const [recurring, setRecurring] = useState<Transaction[]>([])
   const [view, setView] = useState<SettingsView>('main')
+  const [clearing, setClearing] = useState(false)
 
   useEffect(() => {
     getRecurringSources().then(setRecurring)
@@ -24,9 +26,21 @@ export function Settings() {
   const refresh = () => getRecurringSources().then(setRecurring)
 
   const handleDeleteRecurring = async (id: string) => {
-    if (confirm('¿Eliminar este gasto recurrente y todos sus movimientos generados?')) {
+    if (confirm('¿Eliminar este movimiento recurrente? Se cancelarán las repeticiones futuras, pero el historial se mantiene.')) {
       await deleteRecurringSource(id)
       await refresh()
+    }
+  }
+
+  const handleClearDatabase = async () => {
+    if (confirm('¿Borrar TODOS los datos? Esta acción no se puede deshacer.')) {
+      setClearing(true)
+      try {
+        await clearDatabase()
+        await refresh()
+      } finally {
+        setClearing(false)
+      }
     }
   }
 
@@ -239,7 +253,7 @@ export function Settings() {
       <Card>
         <div className="flex items-center justify-between mb-3">
           <span className="text-xs uppercase tracking-widest text-body font-medium">
-            Gastos recurrentes
+            Movimientos recurrentes
           </span>
           <span className="text-xs text-body">
             {recurring.length} activos
@@ -248,9 +262,9 @@ export function Settings() {
 
         {recurring.length === 0 ? (
           <div className="text-center py-6">
-            <p className="text-sm text-body">No tenés gastos recurrentes</p>
+            <p className="text-sm text-body">No tenés movimientos recurrentes</p>
             <p className="text-xs text-body mt-1">
-              Al crear un gasto, marcá la opción 🔄
+              Al crear un movimiento, marcá la opción 🔄
             </p>
           </div>
         ) : (
@@ -295,6 +309,27 @@ export function Settings() {
           </div>
         )}
       </Card>
+
+      <div className="border-2 border-negative rounded-2xl p-4">
+        <span className="text-xs uppercase tracking-widest text-negative font-medium block mb-3">
+          Zona de peligro
+        </span>
+        <p className="text-sm text-body mb-3">
+          Borrar todos los datos de la aplicación. Esta acción no se puede deshacer.
+        </p>
+        <button
+          onClick={handleClearDatabase}
+          disabled={clearing}
+          className="
+            w-full py-3 px-4 rounded-2xl
+            bg-negative text-white font-semibold
+            active:scale-[0.98] transition-transform
+            disabled:opacity-50 disabled:pointer-events-none
+          "
+        >
+          {clearing ? 'Borrando...' : 'Borrar todos los datos'}
+        </button>
+      </div>
 
       <Card>
         <span className="text-xs uppercase tracking-widest text-body font-medium block mb-3">
