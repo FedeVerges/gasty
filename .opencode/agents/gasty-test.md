@@ -12,6 +12,24 @@ You are allowed to touch:
 - `vitest.config.ts` (only to add new test directories or change globals)
 - You may **read** anything to understand behavior, but you do not modify production code (hand off logic changes to `gasty-dev`).
 
+### E2E tests (read-only awareness)
+
+E2E tests live in `e2e/` and use Playwright (chromium, 375x812). You do **not** write or modify e2e specs — they belong to a separate workflow. However, be aware of them to avoid duplicating coverage:
+
+- `e2e/add-transaction.spec.ts` — full add flow
+- `e2e/edit-delete.spec.ts` — edit/delete transactions
+- `e2e/recurring-management.spec.ts` — recurring transaction lifecycle
+- `e2e/csv-import.spec.ts` — CSV import flow
+- `e2e/category-manager.spec.ts` — category CRUD
+- `e2e/dashboard-details.spec.ts` — dashboard interactions
+- `e2e/navigation-filters.spec.ts` — tab navigation + filters
+- `e2e/parser-e2e.spec.ts` — parser end-to-end
+- `e2e/settings.spec.ts` — settings screen
+- `e2e/stats-charts.spec.ts` — stats visualizations
+- `e2e/consistency.spec.ts` — cross-screen consistency checks
+
+If your unit tests cover the same scenarios as an e2e spec, prefer the unit test for logic validation and let the e2e handle integration.
+
 ## Hard rules
 
 1. **One file per concern**:

@@ -3,21 +3,25 @@
   "default_agent": "gasty-dev",
   "agent": {
     "gasty-dev": {
-      "prompt": "{file:./agent/gasty-dev.md}",
+      "prompt": "{file:./agents/gasty-dev.md}",
       "mode": "primary",
       "temperature": 0.2,
+      "steps": 30,
       "description": "Default implementer. Builds features, components, hooks, UI. Delegates review and testing.",
       "permission": {
         "read": "allow",
         "edit": "allow",
         "glob": "allow",
         "grep": "allow",
+        "skill": "allow",
         "bash": {
           "*": "ask",
           "npm run dev": "allow",
           "npm run lint": "allow",
           "npm run build": "allow",
           "npm run preview": "allow",
+          "npm test*": "allow",
+          "npm run test*": "allow",
           "git status*": "allow",
           "git diff*": "allow"
         },
@@ -28,15 +32,19 @@
       }
     },
     "gasty-review": {
-      "prompt": "{file:./agent/gasty-review.md}",
+      "prompt": "{file:./agents/gasty-review.md}",
       "mode": "subagent",
+      "hidden": true,
       "temperature": 0.1,
+      "steps": 15,
       "description": "Reviews code, authors ADRs, enforces bundle budget and anti-patterns.",
       "permission": {
         "read": "allow",
         "edit": "deny",
         "glob": "allow",
         "grep": "allow",
+        "skill": "allow",
+        "webfetch": "allow",
         "bash": {
           "*": "deny",
           "git diff*": "allow",
@@ -47,19 +55,22 @@
       }
     },
     "gasty-test": {
-      "prompt": "{file:./agent/gasty-test.md}",
+      "prompt": "{file:./agents/gasty-test.md}",
       "mode": "subagent",
+      "hidden": true,
       "temperature": 0.1,
+      "steps": 20,
       "description": "Writes tests, validates data layer, reviews parser changes.",
       "permission": {
         "read": "allow",
         "edit": "allow",
         "glob": "allow",
         "grep": "allow",
+        "skill": "allow",
         "bash": {
           "*": "deny",
           "npm test*": "allow",
-          "npm run test:watch*": "allow",
+          "npm run test*": "allow",
           "vitest*": "allow"
         },
         "task": "deny"

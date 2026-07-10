@@ -64,16 +64,16 @@ Take a user request and ship working code that:
 ```
 src/
 ├── components/
-│   ├── add/         # input sheets (SmartInputSheet)
-│   ├── dashboard/   # BalanceCard, MonthSummary, CategoryDonutChart, Dashboard
-│   ├── layout/      # AppShell, BottomNav, FAB
-│   ├── settings/    # Settings
+│   ├── add/         # SmartInputSheet, FlashChips, CsvImportSheet
+│   ├── dashboard/   # Dashboard, BalanceCard, CategoryDonutChart, MonthSelector
+│   ├── layout/      # AppShell (EditTransactionContext, CsvImportContext), BottomNav, FAB, Sidebar
+│   ├── settings/    # Settings, CategoryManager
 │   ├── stats/       # Stats (bars + donut)
-│   ├── transactions/# Transactions, TransactionItem
-│   └── ui/          # Card, Button, Badge (primitive)
-├── context/         # SettingsContext
-├── hooks/           # useTransactions, useCategories, useRecurringCheck
-├── lib/             # db, parser, recurring, format, categories
+│   ├── transactions/# Transactions, TransactionItem, EmojiEditor
+│   └── ui/          # Card, Button, Badge (primitives)
+├── context/         # SettingsContext, EditTransactionContext, CsvImportContext
+├── hooks/           # useTransactions, useCategories, useRecurringCheck, useProjections, useViewport, useKeyboardHeight
+├── lib/             # db, parser, recurring, format, categories, csv, flash
 └── types/           # shared types (single file)
 ```
 
@@ -98,16 +98,19 @@ const items = useLiveQuery(() => db.transactions.toArray(), [], []) ?? []
 
 ### Writing data
 ```tsx
+import { toLocalISO } from '../lib/parser'
+
 await db.transactions.add({
   id: crypto.randomUUID(),
   // ... fields
-  createdAt: new Date().toISOString(),
+  date: toLocalISO(new Date()),  // NEVER toISOString() for date
+  createdAt: new Date().toISOString(),  // createdAt IS a full ISO timestamp
 })
 ```
 
 ### Money / dates
 ```tsx
-import { formatMoney, formatDate } from '../lib/format'
+import { formatMoney, formatDate, formatDateFull, formatMonth, formatDateGroupHeader } from '../lib/format'
 import { useSettings } from '../context/SettingsContext'
 
 const { settings } = useSettings()

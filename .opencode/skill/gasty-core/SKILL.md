@@ -1,5 +1,7 @@
+---
 name: gasty-core
-description: Project-wide constraints and always-on rules for every Gasty agent.
+description: Project-wide always-on constraints for every Gasty agent. No banned libs, no localStorage, design tokens, dark mode, touch targets, safe area, local ISO dates, recurring clone rules.
+---
 
 Gasty is a mobile-first PWA for personal expense tracking in es-AR. This skill captures the shared project rules that every agent must obey.
 
