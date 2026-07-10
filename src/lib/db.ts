@@ -1,6 +1,6 @@
 import Dexie, { type EntityTable } from 'dexie'
 import type { Transaction, Category, Settings, CsvFormatSettings } from '../types'
-import { DEFAULT_CATEGORIES, syncKeywordMaps } from './categories'
+import { DEFAULT_CATEGORIES, syncKeywordMaps, getPaletteColor } from './categories'
 
 export function generateId(): string {
   const bytes = crypto.getRandomValues(new Uint8Array(16))
@@ -43,6 +43,28 @@ db.version(3).stores({}).upgrade(async (tx) => {
     if (!row.keywords) {
       const defaults = DEFAULT_CATEGORIES.find(c => c.id === row.id)
       row.keywords = defaults?.keywords ?? []
+    }
+  })
+})
+
+db.version(4).stores({}).upgrade(async (tx) => {
+  // Deduplicate category colors — ensure every category has a unique color
+  // from the CHART_COLORS palette for consistent chart rendering.
+  const seen = new Set<string>()
+  let colorIndex = 0
+  await tx.table('categories').toCollection().sortBy('id').then(async (rows: Array<{ id: string; color: string }>) => {
+    for (const row of rows) {
+      if (seen.has(row.color)) {
+        // Find the next unused palette color
+        let newColor: string
+        do {
+          newColor = getPaletteColor(colorIndex++)
+        } while (seen.has(newColor))
+        seen.add(newColor)
+        await tx.table('categories').update(row.id, { color: newColor })
+      } else {
+        seen.add(row.color)
+      }
     }
   })
 })

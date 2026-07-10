@@ -123,6 +123,10 @@ export function SmartInputSheet({ open, onClose, editTransaction }: SmartInputSh
       })
       tx.id = editTransaction.id
       tx.createdAt = editTransaction.createdAt
+      // Preserve custom emoji if present
+      if (editTransaction.emoji) {
+        tx.emoji = editTransaction.emoji
+      }
       await db.transactions.put(tx)
     } else {
       const tx = createTransactionFromParsed({

@@ -6,36 +6,30 @@ test.describe('Gestión de recurrencias', () => {
     await resetDb(page)
   })
 
-  test('delete cascada elimina fuente y todos sus clones', async ({ page }) => {
-    // Crear fuente recurrente — usar keyword que detecta recurrencia (ej: alquiler)
+  test('delete recurrente: elimina fuente desde Settings y desaparece', async ({ page }) => {
+    // PRECONDITION: Crear gasto recurrente (keyword "alquiler" → recurrente auto)
     await addTransaction(page, 'alquiler 45000')
 
-    // Ir a Settings y scroll down para ver la sección de recurrentes
+    // Ir a Settings → sección Gastos recurrentes
     await navigateTo(page, 'settings')
 
-    // Scroll down to the recurring section
-    await page.getByText('Gastos recurrentes', { exact: true }).scrollIntoViewIfNeeded()
-    await page.waitForTimeout(500)
+    // Verificar que la fuente recurrente aparece en la lista
+    await expect(page.getByText('Gastos recurrentes')).toBeVisible()
+    await expect(page.getByText('alquiler').first()).toBeVisible()
 
-    // Verificar que la fuente recurrente aparece
-    await expect(page.getByText('Alquiler').first()).toBeVisible({ timeout: 5000 })
-
-    // Eliminar fuente recurrente — el confirm lo aceptamos
+    // Eliminar la fuente (aceptar confirm del browser)
     page.once('dialog', (dialog) => dialog.accept())
+    await page.getByRole('button', { name: 'Eliminar' }).click()
 
-    // Click the specific "Eliminar" text button
-    await page.locator('button:text("Eliminar")').first().click()
-    await page.waitForTimeout(1000)
-
-    // Verificar que ya no hay recurrentes
+    // Verificar que desapareció
     await expect(page.getByText('No tenés gastos recurrentes')).toBeVisible()
   })
 
   test('ciclo de vida fixed_temporary: no crea clones si totalMonths completado', async ({ page }) => {
     // Crear cuota 12/12 (ya casi completada)
-    await addTransaction(page, 'auto 25000 12/12')
+    await addTransaction(page, 'cuota auto 25000 12/12')
 
-    // Verificar badge
+    // Verificar badge de cuotas
     await expect(page.getByText('12/12').first()).toBeVisible()
 
     // Ir a Settings — la fuente debería existir

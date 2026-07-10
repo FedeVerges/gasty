@@ -165,7 +165,10 @@ Birra,2500,15/6,Salidas`}
 
               <div className="space-y-2 max-h-[50vh] overflow-y-auto">
                 {rows.map((row) => {
-                  const cat = categories.find((c) => c.id === row.categoryId)
+                  const isPending = pendingCategories.some(
+                    (p) => p.name.toLowerCase() === row.categoryName.toLowerCase()
+                  )
+                  const cat = !isPending ? categories.find((c) => c.id === row.categoryId) : undefined
                   return (
                     <div
                       key={row.rawLine}
@@ -177,20 +180,22 @@ Birra,2500,15/6,Salidas`}
                             className="w-8 h-8 rounded-lg flex items-center justify-center text-sm shrink-0"
                             style={{ background: `${cat?.color ?? '#888'}25` }}
                           >
-                            {cat?.emoji ?? '📦'}
+                            {isPending ? '🆕' : (cat?.emoji ?? '📦')}
                           </span>
                           <span className="text-sm font-medium truncate">
                             {row.description}
                           </span>
                         </div>
-                        <span className="text-sm font-bold text-negative shrink-0 ml-2">
-                          − {formatMoney(row.amount, settings.currency)}
+                        <span className={`text-sm font-bold shrink-0 ml-2 ${row.type === 'income' ? 'text-income' : 'text-negative'}`}>
+                          {row.type === 'income' ? '+ ' : '− '}{formatMoney(row.amount, settings.currency)}
                         </span>
                       </div>
                       <div className="flex items-center gap-2 mt-1 ml-10">
                         <span className="text-xs text-mute">{row.date}</span>
                         <span className="text-xs text-mute">·</span>
-                        <span className="text-xs text-body">{row.categoryName}</span>
+                        <span className={`text-xs ${isPending ? 'text-accent font-medium' : 'text-body'}`}>
+                          {row.categoryName}{isPending ? ' (nueva)' : ''}
+                        </span>
                       </div>
                     </div>
                   )

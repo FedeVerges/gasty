@@ -1,10 +1,11 @@
-import { useContext } from 'react'
+import { useContext, useState } from 'react'
 import { Badge } from '../ui/Badge'
 import { useSettings } from '../../context/SettingsContext'
 import { useCategory } from '../../hooks/useCategories'
 import { formatMoney, formatDate } from '../../lib/format'
 import { db } from '../../lib/db'
 import { EditTransactionContext } from '../../context/EditTransactionContext'
+import { EmojiEditor } from './EmojiEditor'
 import type { Transaction } from '../../types'
 
 interface TransactionItemProps {
@@ -15,9 +16,20 @@ export function TransactionItem({ transaction }: TransactionItemProps) {
   const { settings } = useSettings()
   const category = useCategory(transaction.categoryId)
   const onEdit = useContext(EditTransactionContext)
+  const [emojiEditorOpen, setEmojiEditorOpen] = useState(false)
 
   const isIncome = transaction.type === 'income'
   const color = category?.color ?? 'var(--color-mute)'
+  const displayEmoji = transaction.emoji ?? category?.emoji ?? '💸'
+
+  const handleEmojiClick = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    setEmojiEditorOpen(true)
+  }
+
+  const handleEmojiSave = async (emoji: string) => {
+    await db.transactions.update(transaction.id, { emoji })
+  }
 
   const handleDelete = async (e: React.MouseEvent) => {
     e.stopPropagation()
@@ -27,19 +39,22 @@ export function TransactionItem({ transaction }: TransactionItemProps) {
   }
 
   return (
-    <div
-      onClick={() => onEdit?.(transaction)}
-      className="
-        flex items-center gap-3 py-3
-        active:bg-card-hover transition-colors cursor-pointer
-      "
-    >
+    <>
       <div
-        className="w-11 h-11 rounded-2xl flex items-center justify-center text-xl shrink-0"
-        style={{ background: `${color}20` }}
+        onClick={() => onEdit?.(transaction)}
+        className="
+          flex items-center gap-3 py-3
+          active:bg-card-hover transition-colors cursor-pointer
+        "
       >
-        {category?.emoji ?? '💸'}
-      </div>
+        <button
+          onClick={handleEmojiClick}
+          className="w-11 h-11 rounded-2xl flex items-center justify-center text-xl shrink-0 active:scale-90 transition-transform"
+          style={{ background: `${color}20` }}
+          aria-label="Cambiar emoji"
+        >
+          {displayEmoji}
+        </button>
 
       <div className="flex-1 min-w-0">
         <p className="font-medium text-ink truncate">
@@ -93,6 +108,15 @@ export function TransactionItem({ transaction }: TransactionItemProps) {
           <line x1="14" y1="11" x2="14" y2="17" />
         </svg>
       </button>
-    </div>
+      </div>
+
+      {emojiEditorOpen && (
+        <EmojiEditor
+          current={transaction.emoji ?? category?.emoji ?? '💸'}
+          onSave={handleEmojiSave}
+          onClose={() => setEmojiEditorOpen(false)}
+        />
+      )}
+    </>
   )
 }

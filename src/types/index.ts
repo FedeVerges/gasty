@@ -18,6 +18,8 @@ export interface Transaction {
   date: string
   recurring: RecurringConfig
   originalId?: string
+  /** Optional per-transaction emoji override. When set, displayed instead of the category emoji. */
+  emoji?: string
   createdAt: string
 }
 
