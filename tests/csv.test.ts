@@ -67,59 +67,58 @@ Uber,5000,Transporte`
       expect(pendingCategories).toHaveLength(0)
     })
 
-    it('genera pending category para "Alimentación" (no existe como categoría)', () => {
+    it('matchea "Alimentación" por nombre exacto contra categoría default', () => {
       const csv = `Description,Amount,Category
 Super,12000,Alimentación`
 
       const { rows, pendingCategories } = parseCsvContent(csv)
       expect(rows).toHaveLength(1)
-      expect(pendingCategories).toHaveLength(1)
-      expect(pendingCategories[0].name).toBe('Alimentación')
+      expect(rows[0].categoryId).toBe('food_exp')
+      expect(rows[0].categoryName).toBe('Alimentación')
+      expect(pendingCategories).toHaveLength(0)
     })
 
-    it('genera pending category para "alimentacion" (sin acento, no existe)', () => {
+    it('matchea "alimentacion" (sin acento) por normalización', () => {
       const csv = 'Description,Amount,Category\nSuper,12000,alimentacion'
 
       const { rows, pendingCategories } = parseCsvContent(csv)
       expect(rows).toHaveLength(1)
-      expect(pendingCategories).toHaveLength(1)
-      expect(pendingCategories[0].name).toBe('alimentacion')
+      expect(rows[0].categoryId).toBe('food_exp')
+      expect(pendingCategories).toHaveLength(0)
     })
 
-    it('genera pending category para "Finanzas y Deudas" (no existe como categoría)', () => {
+    it('matchea "Finanzas y Deudas" por nombre exacto contra categoría default', () => {
       const csv = `Description,Amount,Category
 Pago tarjeta,15000,Finanzas y Deudas`
 
       const { rows, pendingCategories } = parseCsvContent(csv)
       expect(rows).toHaveLength(1)
-      expect(pendingCategories).toHaveLength(1)
-      expect(pendingCategories[0].name).toBe('Finanzas y Deudas')
-      expect(rows[0].categoryId).toBe('other_exp')  // fallback until created
+      expect(rows[0].categoryId).toBe('debts')
       expect(rows[0].categoryName).toBe('Finanzas y Deudas')
+      expect(pendingCategories).toHaveLength(0)
     })
 
-    it('genera pending category para "Hogar" (no existe como categoría)', () => {
+    it('matchea "Hogar" por nombre exacto contra categoría default', () => {
       const csv = `Description,Amount,Category
 Muebles,25000,Hogar`
 
       const { rows, pendingCategories } = parseCsvContent(csv)
       expect(rows).toHaveLength(1)
-      expect(pendingCategories).toHaveLength(1)
-      expect(pendingCategories[0].name).toBe('Hogar')
-      expect(rows[0].categoryId).toBe('other_exp')
+      expect(rows[0].categoryId).toBe('household')
+      expect(pendingCategories).toHaveLength(0)
     })
 
-    it('genera pending category para "Deporte" (no existe como categoría)', () => {
+    it('matchea "Deporte" por nombre exacto contra categoría default', () => {
       const csv = `Description,Amount,Category
 Gimnasio,5000,Deporte`
 
       const { rows, pendingCategories } = parseCsvContent(csv)
       expect(rows).toHaveLength(1)
-      expect(pendingCategories).toHaveLength(1)
-      expect(pendingCategories[0].name).toBe('Deporte')
+      expect(rows[0].categoryId).toBe('deportes')
+      expect(pendingCategories).toHaveLength(0)
     })
 
-    it('genera pending category para "Servicios Públicos" (no existe)', () => {
+    it('genera pending category para "Servicios Públicos" (no coincide con "Servicios")', () => {
       const csv = `Description,Amount,Category
 Luz,3200,Servicios Públicos`
 
@@ -129,16 +128,16 @@ Luz,3200,Servicios Públicos`
       expect(pendingCategories[0].name).toBe('Servicios Públicos')
     })
 
-    it('genera pending category para "Suscripciones" (no existe)', () => {
+    it('matchea "Suscripciones" por nombre exacto contra categoría default', () => {
       const csv = 'nombre,importe,fecha,categoria\nYouTube,1500,01/07/2026,Suscripciones'
 
       const { rows, pendingCategories } = parseCsvContent(csv)
       expect(rows).toHaveLength(1)
-      expect(pendingCategories).toHaveLength(1)
-      expect(pendingCategories[0].name).toBe('Suscripciones')
+      expect(rows[0].categoryId).toBe('subscriptions')
+      expect(pendingCategories).toHaveLength(0)
     })
 
-    it('genera pending category para "Entretenimiento y Salidas a Comer"', () => {
+    it('genera pending category para "Entretenimiento y Salidas a Comer" (no coincide con "Entretenimiento")', () => {
       const csv = 'nombre,importe,fecha,categoria\nEntrada,30000,01/07/2026,Entretenimiento y Salidas a Comer'
 
       const format: CsvFormatSettings = {
@@ -152,13 +151,13 @@ Luz,3200,Servicios Públicos`
       expect(pendingCategories[0].name).toBe('Entretenimiento y Salidas a Comer')
     })
 
-    it('genera pending category para "AHORROS" (no existe)', () => {
+    it('matchea "AHORROS" por normalización contra categoría default', () => {
       const csv = 'Description,Amount,Category\nAhorro,10000,AHORROS'
 
       const { rows, pendingCategories } = parseCsvContent(csv)
       expect(rows).toHaveLength(1)
-      expect(pendingCategories).toHaveLength(1)
-      expect(pendingCategories[0].name).toBe('AHORROS')
+      expect(rows[0].categoryId).toBe('savings')
+      expect(pendingCategories).toHaveLength(0)
     })
 
     it('genera pending category para "transport" en inglés (no es nombre exacto)', () => {
@@ -332,40 +331,47 @@ Internet,8500`
     expect(result.errors).toBe(0)
   })
 
-  it('crea categorías pendientes con descripciones como keywords', async () => {
+  it('crea categorías pendientes para categorías no existentes y asigna keywords', async () => {
     const csv = `Description,Amount,Category
 Compra Galicia,50000,Finanzas y Deudas
 Pago Naranja,30000,Finanzas y Deudas
 Alquiler julio,100000,Hogar`
 
     const { rows, pendingCategories } = parseCsvContent(csv)
-    expect(pendingCategories).toHaveLength(2)
+    // "Finanzas y Deudas" y "Hogar" ahora son defaults → no pending
+    expect(pendingCategories).toHaveLength(0)
 
     const result = await executeImport(rows, pendingCategories)
     expect(result.imported).toBe(3)
     expect(result.errors).toBe(0)
 
-    const allCats = await db.categories.toArray()
-    const finanzasCat = allCats.find((c) => c.id === 'csv_finanzas_y_deudas')
-    const hogarCat = allCats.find((c) => c.id === 'csv_hogar')
-
-    expect(finanzasCat).toBeDefined()
-    expect(finanzasCat!.name).toBe('Finanzas y Deudas')
-    expect(finanzasCat!.keywords).toContain('finanzas y deudas')
-    expect(finanzasCat!.keywords).toContain('compra galicia')
-    expect(finanzasCat!.keywords).toContain('pago naranja')
-    expect(finanzasCat!.keywords).toHaveLength(3)
-
-    expect(hogarCat).toBeDefined()
-    expect(hogarCat!.name).toBe('Hogar')
-    expect(hogarCat!.keywords).toContain('hogar')
-    expect(hogarCat!.keywords).toContain('alquiler julio')
-
     const transactions = await db.transactions.toArray()
-    const finanzasTxs = transactions.filter((t) => t.categoryId === 'csv_finanzas_y_deudas')
-    const hogarTxs = transactions.filter((t) => t.categoryId === 'csv_hogar')
+    const finanzasTxs = transactions.filter((t) => t.categoryId === 'debts')
+    const hogarTxs = transactions.filter((t) => t.categoryId === 'household')
     expect(finanzasTxs).toHaveLength(2)
     expect(hogarTxs).toHaveLength(1)
+  })
+
+  it('crea pending categories para nombres que no coinciden con defaults', async () => {
+    const csv = `Description,Amount,Category
+Luz,5000,Servicios Públicos
+Gas,3000,Servicios Públicos`
+
+    const { rows, pendingCategories } = parseCsvContent(csv)
+    // "Servicios Públicos" no coincide con "Servicios" → pending
+    expect(pendingCategories).toHaveLength(1)
+    expect(pendingCategories[0].name).toBe('Servicios Públicos')
+
+    const result = await executeImport(rows, pendingCategories)
+    expect(result.imported).toBe(2)
+
+    const allCats = await db.categories.toArray()
+    const serviciosCat = allCats.find((c) => c.id === 'csv_servicios_publicos')
+    expect(serviciosCat).toBeDefined()
+    expect(serviciosCat!.name).toBe('Servicios Públicos')
+    expect(serviciosCat!.keywords).toContain('servicios públicos')
+    expect(serviciosCat!.keywords).toContain('luz')
+    expect(serviciosCat!.keywords).toContain('gas')
   })
 
   it('usa row.type para determinar tipo de transacción', async () => {
@@ -404,21 +410,16 @@ Youtube FP ,ARS 1,500.00,01/07/2026,Suscripciones,`
     expect(rows).toHaveLength(4)
     expect(rows[0].description).toBe('Pago Tarjeta Galicia')
     expect(rows[0].amount).toBe(590000)
-    // "Finanzas y Deudas" no existe como categoría → pending
-    expect(rows[0].categoryId).toBe('other_exp')
+    expect(rows[0].categoryId).toBe('debts')     // "Finanzas y Deudas" → default
     expect(rows[1].amount).toBe(400000)
-    // "Hogar" no existe → pending
-    expect(rows[1].categoryId).toBe('other_exp')
+    expect(rows[1].categoryId).toBe('household') // "Hogar" → default
     expect(rows[2].amount).toBe(160000)
-    expect(rows[2].categoryId).toBe('health')  // "Salud" existe
+    expect(rows[2].categoryId).toBe('health')    // "Salud" existe
     expect(rows[3].amount).toBe(1500)
-    // "Suscripciones" no existe → pending
-    expect(rows[3].categoryId).toBe('other_exp')
+    expect(rows[3].categoryId).toBe('subscriptions') // "Suscripciones" → default
 
-    expect(pendingCategories).toHaveLength(3)
-    expect(pendingCategories.map((p) => p.name)).toContain('Finanzas y Deudas')
-    expect(pendingCategories.map((p) => p.name)).toContain('Hogar')
-    expect(pendingCategories.map((p) => p.name)).toContain('Suscripciones')
+    // Todas son defaults, no hay pending
+    expect(pendingCategories).toHaveLength(0)
   })
 
   it('auto-detecta formato de miles/decimal sin configuración explícita', () => {
@@ -467,23 +468,22 @@ Youtube FP ,"ARS 1,500.00",01/07/2026,Suscripciones,`
     expect(rows[0].date).toBe('2026-07-01T00:00')
     expect(rows[0].description).toBe('Pago Tarjeta Galicia')
     expect(rows[0].amount).toBe(590000)
-    expect(rows[0].categoryId).toBe('other_exp')  // pending
+    expect(rows[0].categoryId).toBe('debts')          // "Finanzas y Deudas" → default
 
     // Categorías que existen por nombre → matched
-    expect(rows[3].categoryId).toBe('health')      // Salud ✓
-    expect(rows[9].categoryId).toBe('transport')   // Transporte ✓
+    expect(rows[2].categoryId).toBe('savings')        // Ahorros → default
+    expect(rows[3].categoryId).toBe('health')         // Salud ✓
+    expect(rows[5].categoryId).toBe('deportes')       // Deporte → default
+    expect(rows[9].categoryId).toBe('transport')      // Transporte ✓
+    expect(rows[10].categoryId).toBe('food_exp')      // Alimentación → default
+    expect(rows[15].categoryId).toBe('subscriptions') // Suscripciones → default
 
-    // Categorías que NO existen → pending
-    expect(pendingCategories.length).toBeGreaterThan(0)
+    // Solo "Servicios Públicos" y "Entretenimiento y Salidas a Comer" son pending
+    // (no coinciden exactamente con defaults existentes)
+    expect(pendingCategories).toHaveLength(2)
     const pendingNames = pendingCategories.map((p) => p.name)
-    expect(pendingNames).toContain('Finanzas y Deudas')
-    expect(pendingNames).toContain('Hogar')
-    expect(pendingNames).toContain('Ahorros')
-    expect(pendingNames).toContain('Deporte')
     expect(pendingNames).toContain('Servicios Públicos')
-    expect(pendingNames).toContain('Alimentación')
     expect(pendingNames).toContain('Entretenimiento y Salidas a Comer')
-    expect(pendingNames).toContain('Suscripciones')
 
     expect(rows[1].amount).toBe(400000)
     expect(rows[2].amount).toBe(300000)
@@ -493,10 +493,11 @@ Youtube FP ,"ARS 1,500.00",01/07/2026,Suscripciones,`
 
   it('colecciona descripciones únicas como keywords en pending categories', () => {
     const csv = `nombre,importe,fecha,categoria
-Pago Tarjeta Galicia ,"ARS 590,000.00",01/07/2026,Finanzas y Deudas ,
-Tarjeta Naranja ,"ARS 120,000.00",01/07/2026,Finanzas y Deudas ,
-Tenis ,"ARS 92,000.00",01/07/2026,Deporte,
-Club Junio ,"ARS 80,000.00",01/07/2026,Deporte,`
+Luz ,"ARS 60,000.00",01/07/2026,Servicios Públicos,
+Gas ,"ARS 23,000.00",01/07/2026,Servicios Públicos ,
+Internet ,"ARS 35,000.00",01/07/2026,Servicios Públicos,
+Entrada Gorillaz ,"ARS 30,000.00",01/07/2026,Entretenimiento y Salidas a Comer,
+Cena amigos ,"ARS 22,000.00",01/07/2026,Entretenimiento y Salidas a Comer,`
 
     const format: CsvFormatSettings = {
       thousandsSeparator: ',',
@@ -506,17 +507,18 @@ Club Junio ,"ARS 80,000.00",01/07/2026,Deporte,`
 
     const { pendingCategories } = parseCsvContent(csv, format)
 
-    const finanzas = pendingCategories.find((p) => p.name === 'Finanzas y Deudas')
-    expect(finanzas).toBeDefined()
-    expect(finanzas!.descriptions).toHaveLength(2)
-    expect(finanzas!.descriptions).toContain('Pago Tarjeta Galicia')
-    expect(finanzas!.descriptions).toContain('Tarjeta Naranja')
+    const servicios = pendingCategories.find((p) => p.name === 'Servicios Públicos')
+    expect(servicios).toBeDefined()
+    expect(servicios!.descriptions).toHaveLength(3)
+    expect(servicios!.descriptions).toContain('Luz')
+    expect(servicios!.descriptions).toContain('Gas')
+    expect(servicios!.descriptions).toContain('Internet')
 
-    const deporte = pendingCategories.find((p) => p.name === 'Deporte')
-    expect(deporte).toBeDefined()
-    expect(deporte!.descriptions).toHaveLength(2)
-    expect(deporte!.descriptions).toContain('Tenis')
-    expect(deporte!.descriptions).toContain('Club Junio')
+    const entretenimiento = pendingCategories.find((p) => p.name === 'Entretenimiento y Salidas a Comer')
+    expect(entretenimiento).toBeDefined()
+    expect(entretenimiento!.descriptions).toHaveLength(2)
+    expect(entretenimiento!.descriptions).toContain('Entrada Gorillaz')
+    expect(entretenimiento!.descriptions).toContain('Cena amigos')
   })
 })
 

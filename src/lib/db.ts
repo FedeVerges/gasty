@@ -69,6 +69,22 @@ db.version(4).stores({}).upgrade(async (tx) => {
   })
 })
 
+db.version(5).stores({}).upgrade(async (tx) => {
+  // Insert any missing default categories for existing users.
+  // New categories added to DEFAULT_CATEGORIES won't be in old DBs
+  // because seedDatabase() only inserts when catCount === 0.
+  const existingIds = new Set<string>()
+  await tx.table('categories').toCollection().each((row: { id: string }) => {
+    existingIds.add(row.id)
+  })
+
+  for (const cat of DEFAULT_CATEGORIES) {
+    if (!existingIds.has(cat.id)) {
+      await tx.table('categories').add(cat)
+    }
+  }
+})
+
 const SETTINGS_ID = 'app-settings'
 
 export async function seedDatabase() {

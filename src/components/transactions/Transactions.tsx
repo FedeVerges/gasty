@@ -152,7 +152,7 @@ export function Transactions() {
       />
 
       {/* Category info cards */}
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-2 gap-3 max-w-lg mx-auto">
         {/* Top categoría del mes */}
         {topCategory && (
           <div className="bg-card border border-border rounded-2xl p-4">

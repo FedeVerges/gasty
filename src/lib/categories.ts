@@ -95,8 +95,68 @@ export const DEFAULT_CATEGORIES: Category[] = [
     ],
   },
   {
+    id: 'food_exp', name: 'Alimentación', emoji: '🍽️', color: C(12), type: 'expense',
+    keywords: [
+      'alimentación', 'alimentacion', 'carne', 'parrilla', 'parr',
+      'verdulería', 'verduleria', 'carnicería', 'carniceria',
+    ],
+  },
+  {
+    id: 'deportes', name: 'Deporte', emoji: '⚽', color: C(13), type: 'expense',
+    keywords: ['deporte', 'gimnasio', 'tenis', 'club', 'fútbol', 'futbol', 'running'],
+  },
+  {
+    id: 'subscriptions', name: 'Suscripciones', emoji: '📱', color: C(14), type: 'expense',
+    keywords: [
+      'suscripción', 'suscripcion', 'youtube', 'netflix', 'spotify',
+      'streaming', 'hbo', 'disney', 'prime video',
+    ],
+  },
+  {
+    id: 'entertainment', name: 'Entretenimiento', emoji: '🎭', color: C(15), type: 'expense',
+    keywords: [
+      'entretenimiento', 'gorillaz', 'recital', 'cine', 'teatro',
+      'boliche', 'salida', 'fiesta', 'regalo', 'cumpleaños', 'cumpleanos',
+      'cena', 'heladera', 'helado',
+    ],
+  },
+  {
+    id: 'savings', name: 'Ahorros', emoji: '🐖', color: C(16), type: 'expense',
+    keywords: ['ahorro', 'ahorros', 'reserva'],
+  },
+  {
+    id: 'debts', name: 'Finanzas y Deudas', emoji: '💳', color: C(17), type: 'expense',
+    keywords: [
+      'tarjeta', 'pago tarjeta', 'financiera', 'deuda', 'cuota tarjeta',
+      'galicia', 'naranja', 'bna', 'visa', 'mastercard',
+    ],
+  },
+  {
+    id: 'household', name: 'Hogar', emoji: '🏡', color: C(18), type: 'expense',
+    keywords: [
+      'hogar', 'mueble', 'electrodoméstico', 'electrodomestico',
+      'heladera', 'lavarropa', 'expensas',
+    ],
+  },
+  {
+    id: 'trips', name: 'Viajes', emoji: '✈️', color: C(19), type: 'expense',
+    keywords: ['viaje', 'vacaciones', 'pasaje', 'hotel', 'vuelo', 'ezeiza'],
+  },
+  {
+    id: 'insurance', name: 'Seguros', emoji: '🛡️', color: C(20), type: 'expense',
+    keywords: ['seguro', 'seguro auto', 'seguro viaje', 'seguro médico', 'seguro medico'],
+  },
+  {
+    id: 'car_maint', name: 'Mantenimiento', emoji: '🔧', color: C(21), type: 'expense',
+    keywords: ['mantenimiento', 'service', 'aceite', 'neumático', 'neumatico', 'cambio'],
+  },
+  {
+    id: 'clothing', name: 'Vestimenta', emoji: '👕', color: C(22), type: 'expense',
+    keywords: ['ropa', 'zapatillas', 'indumentaria', 'vestimenta'],
+  },
+  {
     id: 'other_exp', name: 'Otros', emoji: '📦', color: C(9), type: 'expense',
-    keywords: ['ropa', 'zapatillas', 'indumentaria'],
+    keywords: ['otros'],
   },
   {
     id: 'salary', name: 'Sueldo', emoji: '💼', color: C(10), type: 'income',

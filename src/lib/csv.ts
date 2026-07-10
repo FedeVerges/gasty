@@ -1,4 +1,4 @@
-import { createTransactionFromParsed, parseAmountFromText, toLocalISO, normalizeCategory } from './parser'
+import { createTransactionFromParsed, parseAmountFromText, toLocalISO, normalizeCategory, parseInput } from './parser'
 import { db } from './db'
 import { DEFAULT_CATEGORIES, getPaletteColor } from './categories'
 import type { CsvFormatSettings, Category } from '../types'
@@ -181,13 +181,23 @@ export function parseCsvContent(
     const parsedDate = dateRaw ? parseCsvDate(dateRaw) : null
     const date = parsedDate ?? toLocalISO(new Date())
 
-    // Determine type: default to expense, override if matched category is income
-    let type: 'expense' | 'income' = 'expense'
+    // ── Run through the same parser the manual input uses ──
+    // Reconstruct a natural-language-style string from CSV columns
+    // (description + amount only — no date, because the ISO date format
+    // YYYY-MM-DDTHH:mm confuses the parser's DD/MM date detection).
+    // Same engine as SmartInputSheet: detectRecurring → parseAmount →
+    // detectType → detectCategory → cleanDescription.
+    const parserInput = `${desc} ${Math.round(amount)}`
+    const parsed = parseInput(parserInput)
 
-    // Match category by name only — no alias/fuzzy matching.
-    // If a CSV category name doesn't match an existing category by
-    // normalized name, treat it as pending (will be created during import).
-    let categoryId = 'other_exp'
+    // Parser-derived fields (fallback to CSV-extracted values if parser returns null)
+    let type: 'expense' | 'income' = parsed?.type ?? 'expense'
+    let categoryId = parsed?.categoryId ?? 'other_exp'
+
+    // ── Category override from CSV column ──
+    // If the CSV has an explicit category column, match it against existing
+    // categories. This takes priority over the parser's keyword detection
+    // because the CSV carries explicit user-provided classification.
     let categoryName = ''
 
     if (map.catIdx >= 0) {
@@ -198,9 +208,12 @@ export function parseCsvContent(
 
         categoryName = catRaw
         if (matched) {
+          // CSV category matches an existing one — override parser result
           categoryId = matched.id
           if (matched.type === 'income' || matched.type === 'both') {
             type = 'income'
+          } else {
+            type = 'expense'
           }
         } else {
           // Unknown category from CSV — queue for auto-creation
@@ -208,7 +221,6 @@ export function parseCsvContent(
             (p) => p.name.toLowerCase() === catRaw.toLowerCase()
           )
           if (existingPending) {
-            // Collect unique descriptions from all rows for keywords
             if (!existingPending.descriptions.includes(desc)) {
               existingPending.descriptions.push(desc)
             }
@@ -229,10 +241,8 @@ export function parseCsvContent(
       categoryName = cat?.name ?? categoryId
     }
 
-    const description = desc || (type === 'income' ? 'Ingreso' : 'Gasto')
-
     rows.push({
-      description,
+      description: desc || (type === 'income' ? 'Ingreso' : 'Gasto'),
       amount,
       date,
       categoryId,

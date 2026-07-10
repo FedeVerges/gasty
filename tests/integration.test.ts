@@ -10,9 +10,9 @@ describe('integration: db + parser', () => {
     await seedDatabase()
   })
 
-  it('seed crea 12 categorías', async () => {
+  it('seed crea 23 categorías', async () => {
     const count = await db.categories.count()
-    expect(count).toBe(12)
+    expect(count).toBe(23)
   })
 
   it('seed crea configuración por defecto', async () => {
