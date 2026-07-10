@@ -2,7 +2,7 @@
 
 ## 1. Visión General
 
-**Gasty** es una PWA mobile-first con soporte desktop responsive para seguimiento personal de gastos (locale es-AR), lista para Capacitor → Play Store. Entrada inteligente en lenguaje natural ("alquiler 45000", "cuota auto 25000 4/24"), auto-clonado de transacciones recurrentes, importación CSV con configuración de formato, dark mode, sin backend.
+**Gasty** es una PWA mobile-first con soporte desktop responsive para seguimiento personal de gastos (locale es-AR), lista para Capacitor → Play Store. Entrada inteligente en lenguaje natural ("alquiler 45000", "cuota auto 25000 4/24"), auto-clonado de transacciones recurrentes, Gasty Flash (sugerencias contextuales de pago rápido), proyección de gastos a meses futuros, importación CSV con auto-creación de categorías, personalización de emojis por transacción, dark mode, sin backend.
 
 ---
 
@@ -10,22 +10,25 @@
 
 ### 2.1 Agregar Transacción (Smart Input)
 1. Usuario toca **FAB (+)** → se abre `SmartInputSheet` (bottom sheet)
-2. Escribe en lenguaje natural: `"birra 1500"`, `"sueldo 150000"`, `"cuota auto 25000 4/24"`
-3. Parser (`parseInput`) extrae:
+2. **Gasty Flash**: si el input está vacío y no es edición, aparecen `FlashChips` — chips horizontales con sugerencias contextuales (ej: "café 1500" a la mañana, "super 8000" fin de mes). Tap en chip → inyecta texto en el input
+3. Escribe en lenguaje natural: `"birra 1500"`, `"sueldo 150000"`, `"cuota auto 25000 4/24"`
+4. Parser (`parseInput`) extrae:
    - **Tipo**: gasto/ingreso (keywords)
    - **Monto**: regex `$`, miles, decimales
    - **Fecha**: hoy/ayer/mañana, `DD-MM`, `DD/MM/YYYY`, `DD mes`, `mes`
-   - **Categoría**: ~120 keywords → 13 categorías
+   - **Categoría**: ~120 keywords → 12 categorías
    - **Recurrencia**: `X/Y` (cuotas) o keywords (`alquiler`, `expensas`, `cuota`, `suscripción`...)
-4. Preview en tiempo real: emoji, color, categoría, monto formateado, fecha
-5. Selector recurrencia: **No** / **🔄 Todos los meses** / **⏱️ Por un tiempo** (con input meses 1-240)
-6. **Confirmar** → `createTransactionFromParsed` → `db.transactions.add()`
+5. Preview en tiempo real: emoji, color, categoría, monto formateado, fecha
+6. **Selector de categoría inline**: pills horizontales con emoji filtrados por tipo de transacción
+7. Selector recurrencia: **No** / **🔄 Todos los meses** / **⏱️ Por un tiempo** (con input meses 1-240)
+8. **Confirmar** → `createTransactionFromParsed` → `db.transactions.add()`
 
 > **Safari / iOS**: `SmartInputSheet` usa `useKeyboardHeight` (visualViewport API) para evitar que el teclado virtual tape el input. El sheet también fija `body position` para evitar scroll detrás del modal.
 
 ### 2.2 Editar Transacción
 - Tap en cualquier `TransactionItem` → `EditTransactionContext` → `SmartInputSheet` en modo edición (`editTransaction` prop)
 - Mantiene `id` y `createdAt` original
+- **EmojiEditor**: tap en el emoji del `TransactionItem` abre un modal para personalizar el emoji de esa transacción específica (no afecta la categoría)
 
 ### 2.3 Eliminar Transacción
 - Botón 🗑️ en `TransactionItem` → confirm → `db.transactions.delete(id)`
@@ -36,10 +39,10 @@
 
 | Tab | Ruta | Componentes Clave | Funcionalidad |
 |-----|------|-------------------|---------------|
-| **🏠 Inicio** | `Dashboard` | `BalanceCard`, `MonthSummary`, filtros categoría, lista tx mes actual | Resumen financiero + lista filtrada (responsive) |
-| **📋 Movimientos** | `Transactions` | Selector mes, filtros fecha (`this_month`/`last_7d`/`last_month`/`this_year`), group headers por día, filtro categoría, balance mes, lista completa | Historial con filtros rápidos + agrupación por fecha |
-| **📊 Stats** | `Stats` | Barras SVG 6 meses, Donut SVG categorías mes actual, Top categoría (responsive) | Visualización sin deps externas |
-| **⚙️ Ajustes** | `Settings` | Theme toggle, Currency (ARS/USD), Configuración formato CSV, CategoryManager (CRUD categorías + keywords), Lista recurrentes con delete cascada | Configuración + gestión categorías y recurrencias |
+| **🏠 Inicio** | `Dashboard` | `BalanceCard`, `MonthSelector`, `CategoryDonutChart`, filtros categoría, lista tx mes actual | Resumen financiero + proyección a futuro + lista filtrada (responsive) |
+| **📋 Movimientos** | `Transactions` | Selector mes, barra de búsqueda, filtros fecha (`este_mes`/`mes_pasado`/`trimestre`/`este_anio`), group headers por día, top categorías con barra horizontal, balance mes, lista completa | Historial con búsqueda + filtros rápidos + agrupación por fecha |
+| **📊 Stats** | `Stats` | `MonthSelector`, barras SVG 6 meses, Donut SVG categorías mes actual, Top categoría (responsive) | Visualización sin deps externas, navegable por mes |
+| **⚙️ Ajustes** | `Settings` | Theme toggle, Currency (ARS/USD), Configuración formato CSV, CategoryManager (CRUD categorías + keywords), Lista recurrentes con delete cascada, Botón Importar CSV | Configuración + gestión categorías, recurrencias e importación |
 
 ---
 
@@ -102,7 +105,7 @@ ParsedTransaction
 
 **Recurrentes**: `alquiler`, `expensas`, `cuota`, `crédito`, `credito`, `servicio`, `suscripcion`, `suscripción`, `patente`, `seguro`, `impuesto`, `sueldo`, `salario`
 
-**Categorías (160+ keywords → 12 cats)**:
+**Categorías (120+ keywords → 12 cats)**:
 | Cat ID | Nombre | Emoji | Keywords Ejemplo |
 |--------|--------|-------|------------------|
 | `food` | Comida | 🍔 | lomito, hamburguesa, pancho, choripan, helado, sushi, pollo, carne, pescado, ensalada, fruta, verdura, kiosco, almuerzo, cena, desayuno, merienda, verdulería, carnicería, panadería |
@@ -147,7 +150,7 @@ interface Category {
 ```
 
 ### 6.2 Defaults (12 categorías)
-- **Gastos (9)**: food, home, services, transport, leisure, repair, health, education, supermarket, other_exp
+- **Gastos (10)**: food, home, services, transport, leisure, repair, health, education, supermarket, other_exp
 - **Ingresos (2)**: salary, other_inc
 
 ### 6.3 Persistencia
@@ -223,34 +226,39 @@ interface CsvImportResult {
 ## 9. Acciones de Usuario por Pantalla
 
 ### Dashboard (Inicio)
-- Ver balance histórico (ingresos - gastos totales)
-- Ver diff % vs mes anterior
-- Ver gastado/ingresado/restante mes actual + barra progreso
+- Ver balance histórico (ingresos - gastos totales) en `BalanceCard` dark
+- Ver diff % vs mes anterior con indicador verde/rojo
+- Ver gastado/ingresado/restante mes actual + barra progreso (verde <80%, rojo ≥80%)
+- **MonthSelector**: navegar meses prev/next, badge "Proy." para meses futuros
+- **Modo proyección**: banner indicando que los datos son estimaciones en meses futuros
 - Filtrar lista por categoría (chips horizontales)
-- Tap tx → editar | Botón 🗑️ → eliminar
+- Tap tx → editar | Tap emoji → EmojiEditor | Botón 🗑️ → eliminar
 - Layout responsive: se adapta a desktop
 
 ### Movimientos
-- Filtros rápidos de fecha: **Este mes** / **Últimos 7d** / **Mes pasado** / **Este año** / selector mes específico
+- **Barra de búsqueda**: buscar por texto o monto
+- **Top categorías**: sección con barra horizontal mostrando las categorías con más gasto
+- Filtros rápidos de fecha: **Este mes** / **Mes pasado** / **Trimestre** / **Este año**
 - Group headers por día: `Hoy`, `Ayer`, `Hace N días`, `DD de mes`
-- Filtro categoría (chips)
 - Balance del mes (ingresos - gastos)
 - Lista completa con edit/delete
 - Layout responsive
 
 ### Stats
+- **MonthSelector**: navegar meses para ver stats de cualquier período
+- **Modo proyección**: banner para meses futuros
 - Barras SVG: últimos 6 meses (gastos) — dimensiones responsivas
-- Donut SVG: categorías mes actual — responsivo
+- Donut SVG: categorías mes actual — responsivo (180px mobile, 260px desktop)
 - Top categoría del mes
 
 ### Ajustes
 - Theme: Light / Dark (persiste en `db.settings` + `data-theme` en `<html>`)
 - Currency: ARS / USD
 - **Formato CSV**: configuración de separadores de miles, decimales y prefijo moneda
-- **CategoryManager**: CRUD completo de categorías + keywords
+- **CategoryManager**: CRUD completo de categorías + keywords (sub-vista con navegación)
 - Lista recurrentes activos con delete cascada
-- Botón **Importar CSV** (abre `CsvImportSheet`)
-- Version info
+- Botón **Importar CSV** (abre `CsvImportSheet` via `CsvImportContext`)
+- Version info (v0.1.0)
 
 ---
 
@@ -262,3 +270,62 @@ interface CsvImportResult {
 4. **Touch targets ≥ 44px** — `py-3` mínimo en botones/inputs.
 5. **Container max-w-[480px] (mobile)** — mobile-first, centrado en `#root`. En desktop (≥768px) `#root` pasa a `flex-row` sin límite de ancho y el contenido usa `max-w-[960px]`.
 6. **Bundle budgets** — JS < 100KB gz, CSS < 10KB gz. Sin deps pesadas.
+
+---
+
+## 11. Gasty Flash (Sugerencias Contextuales)
+
+### 11.1 Concepto
+Gasty Flash es un motor de sugerencias de pago rápido que aparece cuando el usuario abre el `SmartInputSheet` con el input vacío (y no es modo edición). Propone transacciones frecuentes basándose en la hora del día, el día del mes y el día de la semana.
+
+### 11.2 Motor de Sugerencias (`src/lib/flash.ts`)
+- Función pura `getFlashSuggestions(now?)` — determinística (acepta parámetro `now` para testing)
+- **Franjas horarias** (7 buckets):
+  | Horario | Sugerencias típicas |
+  |---------|---------------------|
+  | 6-9 AM | café, Bondi |
+  | 9-12 PM | café, lunch |
+  | 12-2 PM | almuerzo, Mc |
+  | 2-5 PM | snacks, café |
+  | 5-8 PM | birra, Cena |
+  | 8-11 PM | Cena, delivery |
+  | 11 PM-6 AM | Taxi, Uber |
+- **Día de mes**: días 1-10 (alquiler, expensas, internet, luz), 11-20 (celular, gas), 21+ (super, nafta)
+- **Fines de semana**: "Salida" y almuerzo de domingo
+- **Siempre incluye**: "sueldo 150000"
+
+### 11.3 UI — FlashChips (`src/components/add/FlashChips.tsx`)
+- Chips horizontales scrollables con emoji + label
+- Deduplicados por texto, limitados a `maxChips` (default 6)
+- Tap en chip → inyecta texto completo en el input del parser
+- Touch target ≥ 44px
+
+### 11.4 Tests
+- `tests/flash.test.ts` (138 líneas): cobertura de todas las franjas horarias, límites de día de mes, deduplicación, ingreso siempre incluido
+
+---
+
+## 12. Proyección de Gastos (Future Months)
+
+### 12.1 Concepto
+Cuando el usuario navega a un mes futuro con `MonthSelector`, la app entra en "modo proyección". No se escriben transacciones a la DB; en su lugar, se generan **clones virtuales en memoria** que simulan qué transacciones recurrentes ocurrirían en ese mes.
+
+### 12.2 Hook `useProjections` (`src/hooks/useProjections.ts`)
+- `useProjections(month: string)` → `{ transactions, isProjection, virtualCount }`
+- **Mes actual/pasado**: filtra transacciones reales de DB por prefijo de mes
+- **Mes futuro**: genera clones virtuales:
+  - ID virtual: `virtual-{sourceId}-{year}-{month}` (nunca persistido)
+  - Para `fixed`: crea clon indefinido
+  - Para `fixed_temporary`: valida `currentMonth ≤ totalMonths` antes de crear
+  - Fusiona transacciones reales planificadas + clones virtuales
+  - Deduplica por `originalId`
+
+### 12.3 UI
+- **MonthSelector**: badge "Proy." en cyan para meses futuros, label "pasado" para meses anteriores
+- **Dashboard**: banner "Modo proyección" cuando `isProjection` es true
+- **Stats**: mismo banner + MonthSelector para navegar meses
+- Navegación hacia adelante limitada a ~1 año en el futuro
+- Los datos de BalanceCard, transacciones y charts se renderizan con tokens del Proyector (`--color-proyector-*`)
+
+### 12.4 Tests
+- `tests/useProjections.test.ts` (170 líneas): mes actual con datos reales, mes futuro sin datos físicos, expiración de `fixed_temporary`, verificación de fuentes `fixed`, eliminación en cascada

@@ -32,6 +32,7 @@ test.describe('Agregar transacciones', () => {
     await expect(page.getByText('Auto').first()).toBeVisible()
     await expect(page.getByText('4/24').first()).toBeVisible()
 
+    await navigateTo(page, 'transactions')
     const nextBtn = page.locator('[aria-label="Mes siguiente"]')
     if (await nextBtn.isEnabled()) {
       await nextBtn.click()

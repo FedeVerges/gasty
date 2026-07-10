@@ -7,7 +7,8 @@
 
 A **mobile-first PWA** for personal expense tracking (locale es-AR), ready for Capacitor → Play
 Store. Smart input in natural Spanish ("alquiler 45000", "cuota auto 25000 4/24"), recurring
-transaction auto-cloning, dark mode, no backend.
+transaction auto-cloning, contextual quick-input (Gasty Flash), expense projections for future
+months, CSV import with auto-created categories, dark mode, no backend.
 
 ## Stack (locked)
 
@@ -37,30 +38,48 @@ npm run lint           # eslint .  (flat config)
 npm test               # vitest run
 npm run test:watch     # vitest watch
 npm run preview        # vite preview (serve dist/)
+npm run test:e2e       # playwright test (chromium, 375x812)
+npm run test:e2e:ui    # playwright test --ui
+npm run test:e2e:debug # playwright test --debug
 ```
 
-After any non-trivial change, run **both** `npm run lint` and `npm test`.
+After any non-trivial change, run `npm run lint`, `npm test`. For UI-breaking changes also run `npm run test:e2e`.
 
 ## File layout (do not reorganize)
 
 ```
 src/
 ├── components/
-│   ├── add/         # SmartInputSheet (input + recurrency selector)
-│   ├── dashboard/   # BalanceCard, MonthSummary, CategoryDonutChart, Dashboard
-│   ├── layout/      # AppShell (EditTransactionContext), BottomNav, FAB
-│   ├── settings/    # Theme, currency, recurring manager
-│   ├── stats/       # Custom SVG bars + donut (0KB deps)
-│   ├── transactions/# Transactions list, TransactionItem
+│   ├── add/         # SmartInputSheet, FlashChips, CsvImportSheet
+│   ├── dashboard/   # Dashboard, BalanceCard, CategoryDonutChart, MonthSelector
+│   ├── layout/      # AppShell (EditTransactionContext, CsvImportContext), BottomNav, FAB, Sidebar
+│   ├── settings/    # Settings, CategoryManager
+│   ├── stats/       # Stats (custom SVG bars + donut, 0KB deps)
+│   ├── transactions/# Transactions, TransactionItem, EmojiEditor
 │   └── ui/          # Card, Button, Badge (primitives)
-├── context/         # SettingsContext (drives data-theme on <html>)
-├── hooks/           # useTransactions, useCategories, useRecurringCheck
-├── lib/             # db (Dexie), parser, recurring, format, categories
+├── context/         # SettingsContext, EditTransactionContext, CsvImportContext
+├── hooks/           # useTransactions, useCategories, useRecurringCheck, useProjections, useViewport, useKeyboardHeight
+├── lib/             # db (Dexie), parser, recurring, format, categories, csv, flash
 └── types/           # single index.ts
 tests/
 ├── parser.test.ts
 ├── recurring.test.ts
-└── integration.test.ts
+├── integration.test.ts
+├── csv.test.ts
+├── flash.test.ts
+└── useProjections.test.ts
+e2e/
+├── add-transaction.spec.ts
+├── category-manager.spec.ts
+├── consistency.spec.ts
+├── csv-import.spec.ts
+├── dashboard-details.spec.ts
+├── edit-delete.spec.ts
+├── navigation-filters.spec.ts
+├── parser-e2e.spec.ts
+├── recurring-management.spec.ts
+├── settings.spec.ts
+└── stats-charts.spec.ts
 ```
 
 No `src/utils/`, `src/store/`, `src/router/`, `src/pages/` allowed.

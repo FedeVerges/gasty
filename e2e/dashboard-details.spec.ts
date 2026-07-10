@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test'
-import { resetDb, addTransaction } from './helpers'
+import { resetDb, addTransaction, navigateTo } from './helpers'
 
 test.describe('Dashboard detalles', () => {
   test.beforeEach(async ({ page }) => {
@@ -22,9 +22,10 @@ test.describe('Dashboard detalles', () => {
     await expect(page.getByText('% de los ingresos')).toBeVisible()
   })
 
-  test('MonthSelector funciona en Dashboard', async ({ page }) => {
+  test('MonthSelector funciona en Movimientos', async ({ page }) => {
     await addTransaction(page, 'super 15000')
 
+    await navigateTo(page, 'transactions')
     const monthLabel = page.locator('.text-base.font-bold').first()
     const initialText = await monthLabel.textContent()
 
@@ -43,18 +44,20 @@ test.describe('Dashboard detalles', () => {
     await expect(page.locator('text=Hoy').first()).toBeVisible()
   })
 
-  test('Dashboard muestra badge "· pasado" para mes anterior', async ({ page }) => {
+  test('Movimientos muestra badge "· pasado" para mes anterior', async ({ page }) => {
     await addTransaction(page, 'gasto 5000')
 
+    await navigateTo(page, 'transactions')
     await page.locator('[aria-label="Mes anterior"]').click()
     await page.waitForTimeout(300)
 
     await expect(page.getByText('· pasado')).toBeVisible()
   })
 
-  test('Dashboard muestra proyección para mes futuro con recurrentes', async ({ page }) => {
+  test('Movimientos muestra proyección para mes futuro con recurrentes', async ({ page }) => {
     await addTransaction(page, 'alquiler 45000')
 
+    await navigateTo(page, 'transactions')
     const nextBtn = page.locator('[aria-label="Mes siguiente"]')
     if (await nextBtn.isEnabled()) {
       await nextBtn.click()

@@ -33,7 +33,7 @@ test.describe('Importación CSV', () => {
     await page.getByRole('button', { name: 'Cerrar' }).last().click()
     await page.waitForTimeout(300)
 
-    await navigateTo(page, 'dashboard')
+    await navigateTo(page, 'transactions')
 
     const prevBtn = page.locator('[aria-label="Mes anterior"]')
     await prevBtn.click()

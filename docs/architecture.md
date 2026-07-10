@@ -177,15 +177,26 @@ checkAndCloneRecurring()
 
 ## 4. Esquema de Base de Datos (Dexie)
 
-El almacenamiento se estructura en torno a tres almacenes optimizados con índices específicos para evitar penalizaciones de búsqueda durante los escaneos secuenciales:
+El almacenamiento se estructura en torno a tres almacenes optimizados con índices específicos para evitar penalizaciones de búsqueda durante los escaneos secuenciales. El schema ha evolucionado a través de 4 versiones:
 
 ```typescript
-// src/lib/db.ts
+// src/lib/db.ts — Versión actual: 4
+
+// v1: Esquema base
 db.version(1).stores({
   transactions: 'id, type, date, categoryId, originalId',
-  categories:   'id, type', // Mantiene mapeo dinámico de keywords
-  settings:     'id',       // Registro único para configuraciones globales
+  categories:   'id, type',
+  settings:     'id',
 })
+
+// v2: Agrega csvFormat a settings (backfill con defaults)
+db.version(2).stores({ ... }).upgrade(async (tx) => { /* backfill csvFormat */ })
+
+// v3: Agrega keywords a categories (backfill desde DEFAULT_CATEGORIES)
+db.version(3).stores({ ... }).upgrade(async (tx) => { /* backfill keywords */ })
+
+// v4: Deduplica colores de categorías (asegura paleta única)
+db.version(4).stores({ ... }).upgrade(async (tx) => { /* deduplicate colors */ })
 ```
 
 ### Índices y Consultas Típicas
@@ -296,15 +307,20 @@ export function ComponentName({ transaction }: ComponentNameProps) {
 
 | Archivo | Responsabilidad |
 |---------|-----------------|
-| `parser.ts` | `parseInput()` — pipeline puro, sin side effects, testable |
-| `categories.ts` | Data: `DEFAULT_CATEGORIES`, `KEYWORDS[]`, `INCOME_KEYWORDS[]`, `RECURRING_KEYWORDS[]` |
-| `recurring.ts` | Side effects: DB reads/writes, clonación, eliminación cascada |
+| `parser.ts` | `parseInput()` — pipeline puro NLP, `parseAmountFromText()`, `toLocalISO()`, `createTransactionFromParsed()` |
+| `categories.ts` | Data: `DEFAULT_CATEGORIES`, `KEYWORDS[]`, `INCOME_KEYWORDS[]`, `RECURRING_KEYWORDS[]`, `syncKeywordMaps()` |
+| `flash.ts` | `getFlashSuggestions()` — sugerencias contextuales por hora/día (pureza total) |
+| `csv.ts` | `parseCsvContent()`, `executeImport()` — parsing CSV con auto-creación de categorías |
+| `recurring.ts` | Side effects: `checkAndCloneRecurring()`, `getRecurringSources()`, `deleteRecurringSource()` |
 
 ### 7.2 Testing Strategy
 
-- `parser.test.ts` — unit tests puros (135 tests), sin DB
-- `recurring.test.ts` — integration con `fake-indexeddb`, testa motor clonación
-- `integration.test.ts` — DB + parser flujo completo
+- `tests/parser.test.ts` — unit tests puros (287 líneas), sin DB
+- `tests/recurring.test.ts` — integration con `fake-indexeddb` (93 líneas), motor clonación
+- `tests/csv.test.ts` — CSV parsing + importación (578 líneas), format detection, pending categories
+- `tests/flash.test.ts` — sugerencias contextuales (138 líneas), todas las franjas horarias
+- `tests/integration.test.ts` — DB + parser flujo completo (38 líneas)
+- `tests/useProjections.test.ts` — proyecciones con `fake-indexeddb` (170 líneas)
 
 ---
 
@@ -392,7 +408,7 @@ Para asegurar la carga instantánea como PWA instalable, el árbol de dependenci
 ### 11.2 Patrones
 
 ```typescript
-// tests/recurring.test.ts
+// tests/recurring.test.ts (y todos los tests que usan DB)
 import 'fake-indexeddb/auto'
 import { db, seedDatabase } from '../src/lib/db'
 
@@ -405,42 +421,97 @@ beforeEach(async () => {
 
 ### 11.3 Cobertura Objetivo
 
-- **Parser**: 100% (lógica pura, 135 tests)
-- **Recurring engine**: 100% (motor crítico, 6 tests)
-- **Integración DB+Parser**: smoke tests (6 tests)
-- **Gasty Flash** (`src/lib/flash.test.ts`): 100% — debe validar mediante permutaciones completas el correcto retorno de palabras sugeridas cruzando franjas horarias límite (ej: conmutación de las 11:59 AM a las 12:00 PM) junto a la inyección de prioridades de pago durante los primeros diez días de cada ciclo de calendario.
-- **Proyector** (`src/hooks/useProjections.test.ts`): 100% — aserciones asíncronas con `fake-indexeddb` para asegurar la correcta depreciación progresiva de cuotas en periodos simulados a futuro (+3, +6 meses) sin dejar rastros residuales en el almacenamiento físico local.
-- **UI**: sin tests (componentes simples, visual regression manual)
+- **Parser** (`tests/parser.test.ts`): 100% — lógica pura, 287 líneas
+- **Recurring engine** (`tests/recurring.test.ts`): 100% — motor crítico, 93 líneas
+- **CSV** (`tests/csv.test.ts`): 100% — parsing, format detection, pending categories, 578 líneas
+- **Flash** (`tests/flash.test.ts`): 100% — todas las franjas horarias, límites de día, 138 líneas
+- **Integración DB+Parser** (`tests/integration.test.ts`): smoke tests, 38 líneas
+- **Proyector** (`tests/useProjections.test.ts`): 100% — aserciones asíncronas con `fake-indexeddb`, depreciación de cuotas en periodos futuros, 170 líneas
+- **UI**: sin tests unitarios (componentes simples, validación visual manual + E2E Playwright)
+- **Total**: 6 archivos, ~1304 líneas de tests
 
 ---
 
 ## 12. Migraciones Futuras (Schema Versioning)
 
 ```typescript
-// Cuando se necesite schema bump:
-db.version(2).stores({
+// La última versión de schema es 4. Ejemplo de cómo agregar v5:
+db.version(5).stores({
   transactions: 'id, type, date, categoryId, originalId, newField',
   categories: 'id, type',
   settings: 'id',
 }).upgrade(tx => {
-  // tx.table('transactions').modify(...)
+  // tx.table('transactions').modify(record => {
+  //   record.newField = defaultValue
+  // })
 })
 ```
 
-**Regla**: Nunca editar `version(1)`. Agregar `version(N)` con `.upgrade()`.
+**Regla**: Nunca editar versiones existentes (`version(N)`). Siempre agregar `version(N+1)` con `.upgrade()` para backfills.
 
 ---
 
 ## 13. Checklist de Control Pre-Commit
 
 - [ ] `npm run lint` pasa
-- [ ] `npm test` pasa (todas las pruebas en `src/lib/flash.test.ts`, `src/lib/parser.test.ts`, `recurring.test.ts` e `integration.test.ts` finalizan con éxito)
+- [ ] `npm test` pasa (todos los tests en `tests/` finalizan con éxito)
 - [ ] `npm run build` pasa (type-check + bundle) sin advertencias de desborde de tamaño de paquete
+- [ ] Para cambios UI críticos: `npm run test:e2e` pasa
 - [ ] No nuevas deps sin ADR en `docs/adr/`
 - [ ] Dark mode counterpart para nuevos colores
 - [ ] Se comprueba el contraste cromático de los nuevos tokens semánticos del Proyector de Gastos para entornos claros y oscuros
-- [ ] Touch targets ≥ 44px — todos los elementos táctiles interactivos de `<FlashChips />` cumplen el estándar
+- [ ] Touch targets ≥ 44px — todos los elementos táctiles interactivos cumplen el estándar
 - [ ] Fechas usan `toLocalISO()` no `toISOString()`
 - [ ] No edición de clones recurrentes (solo source)
 - [ ] Las consultas embebidas en el hook `useProjections` se procesan enteramente de forma reactiva en memoria fuera de disco
 - [ ] Bundle size < 100KB JS / < 10KB CSS (ver `gasty-bundle-budget` skill)
+
+---
+
+## 14. E2E Testing (Playwright)
+
+### 14.1 Stack
+
+- **Playwright** con Chromium, viewport 375x812 (iPhone-like)
+- Locale: `es-AR`, Timezone: `America/Argentina/Buenos_Aires`
+- Ejecución secuencial (`workers: 1`, `fullyParallel: false`)
+- Timeout: 30s por test, 10s por `expect`
+
+### 14.2 Configuración (`playwright.config.ts`)
+
+```typescript
+webServer: {
+  command: 'pnpm dev',  // Inconsistente con npm en docs — nota conocida
+  url: 'http://localhost:5173',
+  reuseExistingServer: !process.env.CI,
+}
+```
+
+### 14.3 Spec Files (11)
+
+| Archivo | Cobertura |
+|---------|-----------|
+| `add-transaction.spec.ts` | Flujo completo de agregar transacción |
+| `edit-delete.spec.ts` | Edición y eliminación de transacciones |
+| `csv-import.spec.ts` | Flujo de importación CSV |
+| `parser-e2e.spec.ts` | Parser integrado con UI |
+| `stats-charts.spec.ts` | Verificación de gráficos Stats |
+| `settings.spec.ts` | Pantalla de ajustes |
+| `category-manager.spec.ts` | CRUD de categorías |
+| `recurring-management.spec.ts` | Gestión de transacciones recurrentes |
+| `navigation-filters.spec.ts` | Navegación entre tabs y filtros |
+| `dashboard-details.spec.ts` | Detalles del dashboard |
+| `consistency.spec.ts` | Verificación de consistencia de datos |
+
+### 14.4 Helpers y Fixtures
+
+- `e2e/helpers.ts` — funciones compartidas (wait for DB, seed, etc.)
+- `e2e/fixtures/test.csv` — archivo CSV de prueba
+
+### 14.5 Ejecución
+
+```bash
+npm run test:e2e       # Ejecuta todos los specs
+npm run test:e2e:ui    # Abre UI interactiva de Playwright
+npm run test:e2e:debug # Modo debug con步进
+```

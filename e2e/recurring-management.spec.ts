@@ -10,11 +10,11 @@ test.describe('Gestión de recurrencias', () => {
     // PRECONDITION: Crear gasto recurrente (keyword "alquiler" → recurrente auto)
     await addTransaction(page, 'alquiler 45000')
 
-    // Ir a Settings → sección Gastos recurrentes
+    // Ir a Settings → sección Movimientos recurrentes
     await navigateTo(page, 'settings')
 
     // Verificar que la fuente recurrente aparece en la lista
-    await expect(page.getByText('Gastos recurrentes')).toBeVisible()
+    await expect(page.getByText('Movimientos recurrentes')).toBeVisible()
     await expect(page.getByText('alquiler').first()).toBeVisible()
 
     // Eliminar la fuente (aceptar confirm del browser)
@@ -22,7 +22,7 @@ test.describe('Gestión de recurrencias', () => {
     await page.getByRole('button', { name: 'Eliminar' }).click()
 
     // Verificar que desapareció
-    await expect(page.getByText('No tenés gastos recurrentes')).toBeVisible()
+    await expect(page.getByText('No tenés movimientos recurrentes')).toBeVisible()
   })
 
   test('ciclo de vida fixed_temporary: no crea clones si totalMonths completado', async ({ page }) => {
@@ -34,7 +34,7 @@ test.describe('Gestión de recurrencias', () => {
 
     // Ir a Settings — la fuente debería existir
     await navigateTo(page, 'settings')
-    await expect(page.getByText('Gastos recurrentes')).toBeVisible()
+    await expect(page.getByText('Movimientos recurrentes')).toBeVisible()
     await expect(page.getByText('Auto').first()).toBeVisible()
   })
 
@@ -45,7 +45,8 @@ test.describe('Gestión de recurrencias', () => {
     // Ir al dashboard — debería ver el gasto
     await expect(page.getByText('Expensas').first()).toBeVisible()
 
-    // Navegar al mes siguiente
+    // Navegar al mes siguiente en Movimientos (MonthSelector está ahí)
+    await navigateTo(page, 'transactions')
     const nextBtn = page.locator('[aria-label="Mes siguiente"]')
     if (await nextBtn.isEnabled()) {
       await nextBtn.click()
@@ -61,7 +62,7 @@ test.describe('Gestión de recurrencias', () => {
     await addTransaction(page, 'suscripcion netflix 3500')
 
     await navigateTo(page, 'settings')
-    await expect(page.getByText('Gastos recurrentes')).toBeVisible()
+    await expect(page.getByText('Movimientos recurrentes')).toBeVisible()
     await expect(page.getByText('Alquiler').first()).toBeVisible()
     await expect(page.getByText('Netflix').first()).toBeVisible()
   })

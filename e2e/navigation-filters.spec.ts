@@ -6,9 +6,10 @@ test.describe('Navegación y filtros', () => {
     await resetDb(page)
   })
 
-  test('MonthSelector navega entre meses', async ({ page }) => {
+  test('MonthSelector navega entre meses en Movimientos', async ({ page }) => {
     await addTransaction(page, 'gasto hoy 5000')
 
+    await navigateTo(page, 'transactions')
     const monthLabel = page.locator('.text-base.font-bold').first()
     const initialText = await monthLabel.textContent()
 
@@ -30,6 +31,7 @@ test.describe('Navegación y filtros', () => {
   test('MonthSelector muestra "· pasado" para meses anteriores', async ({ page }) => {
     await addTransaction(page, 'gasto 5000')
 
+    await navigateTo(page, 'transactions')
     await page.locator('[aria-label="Mes anterior"]').click()
     await page.waitForTimeout(300)
 
@@ -39,6 +41,7 @@ test.describe('Navegación y filtros', () => {
   test('MonthSelector muestra "Proy." para meses futuros', async ({ page }) => {
     await addTransaction(page, 'alquiler 45000')
 
+    await navigateTo(page, 'transactions')
     const nextBtn = page.locator('[aria-label="Mes siguiente"]')
     if (await nextBtn.isEnabled()) {
       await nextBtn.click()
@@ -46,24 +49,6 @@ test.describe('Navegación y filtros', () => {
 
       await expect(page.getByText('Proy.')).toBeVisible()
     }
-  })
-
-  test('filtro fecha "Este mes" muestra transacciones del mes actual', async ({ page }) => {
-    await addTransaction(page, 'cafe 800')
-
-    await navigateTo(page, 'transactions')
-    await expect(page.getByText('Este mes')).toBeVisible()
-    await expect(page.getByText('Cafe').first()).toBeVisible()
-  })
-
-  test('filtro fecha "Este año" muestra transacciones del año', async ({ page }) => {
-    await addTransaction(page, 'super 15000')
-
-    await navigateTo(page, 'transactions')
-    await page.getByRole('button', { name: 'Este año' }).click()
-    await page.waitForTimeout(300)
-
-    await expect(page.getByText('Super').first()).toBeVisible()
   })
 
   test('búsqueda por descripción filtra transacciones', async ({ page }) => {
