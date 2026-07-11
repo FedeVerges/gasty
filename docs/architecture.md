@@ -39,14 +39,13 @@
 │  hooks/useTransactions.ts    (useLiveQuery → Historial real) │
 │  hooks/useProjections.ts     (Simulador reactivo en memoria) │
 │  hooks/useCategories.ts      (useLiveQuery → Categorías DB)  │
-│  hooks/useRecurringCheck.ts  (Side effect estructural)       │
 │  hooks/useKeyboardHeight.ts  (Cálculo vía visualViewport API)│
 │  hooks/useViewport.ts        (MediaQueries de entorno)       │
 ├─────────────────────────────────────────────────────────────┤
 │                        DOMAIN LOGIC                          │
 │  lib/parser.ts       Pipeline puro de procesamiento NLP      │
 │  lib/flash.ts        getFlashSuggestions() (Lógica pura)     │
-│  lib/recurring.ts    checkAndCloneRecurring() + CRUD sources │
+│  lib/recurring.ts    createFutureClones(), edit/deleteRecurring │
 │  lib/categories.ts   Detección e inyección dinámica de cats  │
 │  lib/format.ts       Formateadores es-AR monetarios/fechas   │
 │  lib/csv.ts          Estrategias de mapeo y lectura de lotes │
@@ -156,10 +155,10 @@ Dexie notifica a useLiveQuery → Re-render automático
 ### 3.3 Recurring Engine (Background)
 
 ```
-useRecurringCheck (mount App)
+SmartInputSheet confirma tx recurrente
        │
        ▼
-checkAndCloneRecurring()
+createFutureClones(source)
        │
        ├── Lee all tx → sources (recurring + !originalId)
        ├── Agrupa clones por originalId + mes
@@ -323,11 +322,11 @@ export function ComponentName({ transaction }: ComponentNameProps) {
 ### 7.2 Testing Strategy
 
 - `tests/parser.test.ts` — unit tests puros (287 líneas), sin DB
-- `tests/recurring.test.ts` — integration con `fake-indexeddb` (93 líneas), motor clonación
-- `tests/csv.test.ts` — CSV parsing + importación (578 líneas), format detection, pending categories
+- `tests/recurring.test.ts` — integration con `fake-indexeddb` (631 líneas), motor clonación + edición
+- `tests/csv.test.ts` — CSV parsing + importación (613 líneas), format detection, pending categories
 - `tests/flash.test.ts` — sugerencias contextuales (138 líneas), todas las franjas horarias
 - `tests/integration.test.ts` — DB + parser flujo completo (38 líneas)
-- `tests/useProjections.test.ts` — proyecciones con `fake-indexeddb` (170 líneas)
+- `tests/useProjections.test.ts` — proyecciones con `fake-indexeddb` (136 líneas)
 
 ---
 
@@ -432,13 +431,13 @@ beforeEach(async () => {
 ### 11.3 Cobertura Objetivo
 
 - **Parser** (`tests/parser.test.ts`): 100% — lógica pura, 287 líneas
-- **Recurring engine** (`tests/recurring.test.ts`): 100% — motor crítico, 243 líneas
+- **Recurring engine** (`tests/recurring.test.ts`): 100% — motor crítico, 631 líneas
 - **CSV** (`tests/csv.test.ts`): 100% — parsing, format detection, pending categories, 613 líneas
 - **Flash** (`tests/flash.test.ts`): 100% — todas las franjas horarias, límites de día, 138 líneas
 - **Integración DB+Parser** (`tests/integration.test.ts`): smoke tests, 38 líneas
-- **Proyector** (`tests/useProjections.test.ts`): 100% — aserciones asíncronas con `fake-indexeddb`, depreciación de cuotas en periodos futuros, 170 líneas
+- **Proyector** (`tests/useProjections.test.ts`): 100% — aserciones asíncronas con `fake-indexeddb`, depreciación de cuotas en periodos futuros, 136 líneas
 - **UI**: sin tests unitarios (componentes simples, validación visual manual + E2E Playwright)
-- **Total**: 6 archivos, ~1489 líneas de tests
+- **Total**: 6 archivos, ~1843 líneas de tests
 
 ---
 

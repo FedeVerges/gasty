@@ -58,7 +58,7 @@ src/
 │   ├── transactions/# Transactions, TransactionItem, EmojiEditor
 │   └── ui/          # Card, Button, Badge (primitives)
 ├── context/         # SettingsContext, EditTransactionContext, CsvImportContext
-├── hooks/           # useTransactions, useCategories, useRecurringCheck, useProjections, useViewport, useKeyboardHeight
+├── hooks/           # useTransactions, useCategories, useProjections, useViewport, useKeyboardHeight
 ├── lib/             # db (Dexie), parser, recurring, format, categories, csv, flash
 └── types/           # single index.ts
 tests/

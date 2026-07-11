@@ -55,19 +55,18 @@
 | `fixed_temporary` | `{kind: 'fixed_temporary', currentMonth, totalMonths, invoiceDay}` | Cuotas: auto, préstamos, planes — N meses |
 | `none` | `{kind: 'none'}` | Transacciones únicas |
 
-### 4.2 Algoritmo (`checkAndCloneRecurring`)
-1. Ejecutado en `useRecurringCheck` (mount de `App`)
-2. Lee **todas** tx → filtra `sources`: `recurring.kind !== 'none' && !originalId`
-3. Agrupa clones existentes por `originalId` + mes (`date.slice(0,7)`)
-4. Para cada source sin clon del mes actual:
-   - Si `fixed_temporary` y `currentMonth > totalMonths` → **skip**
-   - Crea clon: `date = primer día mes actual + invoiceDay`
-   - `recurring.currentMonth = source.currentMonth + 1`
-   - `originalId = source.id`
-5. Retorna cantidad clonados
+### 4.2 Algoritmo (`createFutureClones` en `SmartInputSheet`)
+1. Ejecutado al confirmar una transacción recurrente en `SmartInputSheet.tsx`
+2. `createFutureClones(source, existingClones?)` genera clones desde la fecha de la fuente:
+   - Fuente `fixed`: crea clones para los próximos 12 meses (horizonte fijo)
+   - Fuente `fixed_temporary`: crea clones solo para los meses restantes según `totalMonths` y `currentMonth`
+3. Clones existentes (mismo `originalId` + mes) son detectados y skipeados (idempotencia)
+4. Los clones toman el `invoiceDay` de la fuente; si no está seteado, usa día 1
+5. `editRecurringSource()` maneja edición de fuentes existentes (actualiza + crea/elimina clones sobrantes)
+6. `deleteRecurringSource()` convierte la fuente a `kind: 'none'` y elimina solo clones futuros (preserva históricos)
 
-### 4.3 Eliminación en Cascada
-`deleteRecurringSource(id)` → borra source + **todos** clones (`originalId === id`) en una transacción Dexie.
+### 4.3 Eliminación Inteligente
+`deleteRecurringSource(id)` → convierte la fuente a `kind: 'none'` + elimina **solo clones futuros** (`date >= hoy`). Los clones históricos se preservan para mantener el registro financiero. Para `editRecurringSource()`: actualiza datos de la fuente, crea clones faltantes y elimina excedentes si se redujo `totalMonths`, todo en una transacción Dexie.
 
 ---
 
@@ -339,4 +338,4 @@ Cuando el usuario navega a un mes futuro con `MonthSelector`, la app entra en "m
 - Los datos de BalanceCard, transacciones y charts se renderizan con tokens del Proyector (`--color-proyector-*`)
 
 ### 12.4 Tests
-- `tests/useProjections.test.ts` (170 líneas): mes actual con datos reales, mes futuro sin datos físicos, expiración de `fixed_temporary`, verificación de fuentes `fixed`, eliminación en cascada
+- `tests/useProjections.test.ts` (136 líneas): mes actual con datos reales, mes futuro sin datos físicos, expiración de `fixed_temporary`, verificación de fuentes `fixed`, eliminación en cascada

@@ -8,6 +8,7 @@ import { clearDatabase } from '../../lib/db'
 import { CsvImportContext } from '../../context/CsvImportContext'
 import { CategoryManager } from './CategoryManager'
 import type { Transaction } from '../../types'
+import { version } from '../../../package.json'
 
 type SettingsView = 'main' | 'categories'
 
@@ -338,7 +339,7 @@ export function Settings() {
         <p className="text-sm text-body">
           Tu app de gastos personal. Tus datos quedan en tu dispositivo.
         </p>
-        <p className="text-xs text-mute mt-2">v0.1.0</p>
+        <p className="text-xs text-mute mt-2">{version}</p>
       </Card>
     </div>
   )
