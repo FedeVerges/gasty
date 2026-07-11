@@ -3,6 +3,7 @@ import type { Tab } from '../../types'
 interface SidebarProps {
   active: Tab
   onChange: (tab: Tab) => void
+  isWide?: boolean
 }
 
 const TABS: Array<{ id: Tab; label: string; icon: string }> = [
@@ -60,20 +61,21 @@ function Icon({ name, className = 'w-5 h-5' }: { name: string; className?: strin
   }
 }
 
-export function Sidebar({ active, onChange }: SidebarProps) {
+export function Sidebar({ active, onChange, isWide }: SidebarProps) {
   return (
     <aside
-      className="
+      className={`
         hidden md:flex
         flex-col
-        w-56 shrink-0
+        shrink-0
         bg-canvas border-r border-border
-        py-6 px-3
+        py-6
         h-full
-      "
+        ${isWide ? 'w-64 px-4' : 'w-56 px-3'}
+      `}
     >
       {/* Logo */}
-      <div className="flex items-center gap-2.5 px-3 mb-8">
+      <div className={`flex items-center gap-2.5 px-3 ${isWide ? 'mb-10' : 'mb-8'}`}>
         <div className="w-8 h-8 rounded-xl bg-primary flex items-center justify-center">
           <span className="text-on-primary font-bold text-sm">$</span>
         </div>

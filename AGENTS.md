@@ -72,6 +72,7 @@ e2e/
 ├── add-transaction.spec.ts
 ├── category-manager.spec.ts
 ├── consistency.spec.ts
+├── csv-dates.spec.ts
 ├── csv-import.spec.ts
 ├── dashboard-details.spec.ts
 ├── edit-delete.spec.ts

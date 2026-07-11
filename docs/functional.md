@@ -16,7 +16,7 @@
    - **Tipo**: gasto/ingreso (keywords)
    - **Monto**: regex `$`, miles, decimales
    - **Fecha**: hoy/ayer/mañana, `DD-MM`, `DD/MM/YYYY`, `DD mes`, `mes`
-   - **Categoría**: ~120 keywords → 12 categorías
+   - **Categoría**: 234 keywords → 23 categorías
    - **Recurrencia**: `X/Y` (cuotas) o keywords (`alquiler`, `expensas`, `cuota`, `suscripción`...)
 5. Preview en tiempo real: emoji, color, categoría, monto formateado, fecha
 6. **Selector de categoría inline**: pills horizontales con emoji filtrados por tipo de transacción
@@ -105,21 +105,32 @@ ParsedTransaction
 
 **Recurrentes**: `alquiler`, `expensas`, `cuota`, `crédito`, `credito`, `servicio`, `suscripcion`, `suscripción`, `patente`, `seguro`, `impuesto`, `sueldo`, `salario`
 
-**Categorías (120+ keywords → 12 cats)**:
+**Categorías (234 keywords → 23 cats)**:
 | Cat ID | Nombre | Emoji | Keywords Ejemplo |
 |--------|--------|-------|------------------|
-| `food` | Comida | 🍔 | lomito, hamburguesa, pancho, choripan, helado, sushi, pollo, carne, pescado, ensalada, fruta, verdura, kiosco, almuerzo, cena, desayuno, merienda, verdulería, carnicería, panadería |
+| `food` | Comida | 🍔 | lomito, hamburguesa, pancho, sushi, pollo, carne, pescado, ensalada, verdulería, carnicería |
 | `home` | Vivienda | 🏠 | alquiler, expensas, hipoteca, crédito hipotecario |
 | `services` | Servicios | 💡 | luz, gas, internet, agua, cable, celular, teléfono |
-| `transport` | Transporte | 🚗 | nafta, taxi, uber, sube, peaje, colectivo, subte, estacionamiento, cuota auto, patente, seguro auto |
-| `leisure` | Salidas | 🎉 | birra, cerveza, pizza, empanada, restaurant, café, bar, recital, cine, teatro, boliche, viaje, salida, fiesta, delivery, pedidosya, rappi, uber eats, netflix, spotify, disney, hbomax, prime |
+| `transport` | Transporte | 🚗 | nafta, taxi, uber, sube, peaje, colectivo, subte, estacionamiento, cuota auto, patente |
+| `leisure` | Salidas | 🎉 | birra, pizza, restaurant, café, bar, delivery, pedidosya, netflix, spotify |
 | `repair` | Reparaciones | 🛠️ | arreglo, reparación, instalación, termotanque, plomero, electricista, mecánico |
-| `health` | Salud | 💊 | farmacia, remedio, medicamento, médico, consulta, análisis, dentista, óptica, obra social, prepaga, mutual, seguro medico, oftalmólogo, psicólogo, kinesiólogo |
+| `health` | Salud | 💊 | farmacia, remedio, médico, consulta, dentista, obra social, prepaga, psicólogo |
 | `education` | Educación | 📚 | curso, libro, universidad, colegio, matrícula |
-| `supermarket` | Supermercado | 🛒 | super, supermercado, carrefour, disco, día, coto, jumbo, chino, almacén |
-| `other_exp` | Otros | 📦 | ropa, zapatillas, indumentaria (fallback gasto) |
-| `salary` | Sueldo | 💼 | sueldo, salario, sueldo básico, aguinaldo, bonificación, bono |
-| `other_inc` | Otros ingresos | 💰 | honorarios, venta, freelance, devolución, comisión, propina, dividendo, ganancia, alquiler cobrado |
+| `supermarket` | Supermercado | 🛒 | super, carrefour, disco, día, coto, jumbo, chino, almacén |
+| `food_exp` | Alimentación | 🍽️ | alimentación, carne, parrilla, verdulería |
+| `deportes` | Deporte | ⚽ | deporte, gimnasio, tenis, club, fútbol, running |
+| `subscriptions` | Suscripciones | 📱 | suscripción, youtube, netflix, spotify, streaming, disney |
+| `entertainment` | Entretenimiento | 🎭 | entretenimiento, recital, cine, teatro, boliche, salida, regalo |
+| `savings` | Ahorros | 🐖 | ahorro, ahorros, reserva |
+| `debts` | Finanzas y Deudas | 💳 | tarjeta, deuda, galicia, naranja, visa, mastercard |
+| `household` | Hogar | 🏡 | hogar, mueble, electrodoméstico, heladera, lavarropa |
+| `trips` | Viajes | ✈️ | viaje, vacaciones, pasaje, hotel, vuelo |
+| `insurance` | Seguros | 🛡️ | seguro auto, seguro viaje, seguro médico |
+| `car_maint` | Mantenimiento | 🔧 | mantenimiento, service, aceite, neumático |
+| `clothing` | Vestimenta | 👕 | ropa, zapatillas, indumentaria |
+| `other_exp` | Otros | 📦 | otros (fallback gasto) |
+| `salary` | Sueldo | 💼 | sueldo, salario, aguinaldo, bonificación, bono |
+| `other_inc` | Otros ingresos | 💰 | honorarios, venta, freelance, devolución, comisión, propina, ganancia, alquiler cobrado |
 
 ### 5.3 Formatos de Fecha Soportados
 | Input | Ejemplo | Resultado |
@@ -149,8 +160,8 @@ interface Category {
 }
 ```
 
-### 6.2 Defaults (12 categorías)
-- **Gastos (10)**: food, home, services, transport, leisure, repair, health, education, supermarket, other_exp
+### 6.2 Defaults (23 categorías)
+- **Gastos (21)**: food, home, services, transport, leisure, repair, health, education, supermarket, food_exp, deportes, subscriptions, entertainment, savings, debts, household, trips, insurance, car_maint, clothing, other_exp
 - **Ingresos (2)**: salary, other_inc
 
 ### 6.3 Persistencia

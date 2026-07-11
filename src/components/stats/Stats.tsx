@@ -17,7 +17,7 @@ export function Stats() {
   const transactions = useAllTransactions()
   const categories = useCategories()
   const { settings } = useSettings()
-  const { isDesktop } = useViewport()
+  const { isDesktop, isWide } = useViewport()
 
   const now = useMemo(() => new Date(), [])
   const currentKey = monthKey(now)
@@ -97,8 +97,8 @@ export function Stats() {
     return { category: categories.find((c) => c.id === id), total }
   }, [monthTransactions, categories])
 
-  const WIDTH = isDesktop ? 600 : 320
-  const HEIGHT = isDesktop ? 180 : 160
+  const WIDTH = isWide ? 800 : isDesktop ? 600 : 320
+  const HEIGHT = isWide ? 200 : isDesktop ? 180 : 160
   const PADDING = 8
   const BAR_WIDTH = (WIDTH - PADDING * 2) / data.months.length - 8
 
@@ -140,7 +140,7 @@ export function Stats() {
           </span>
         </div>
 
-        <div className={isDesktop ? 'max-w-lg mx-auto' : ''}>
+        <div className={isWide ? 'max-w-2xl mx-auto' : isDesktop ? 'max-w-lg mx-auto' : ''}>
           <svg
             viewBox={`0 0 ${WIDTH} ${HEIGHT + 20}`}
             className="w-full h-auto"

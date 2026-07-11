@@ -22,9 +22,10 @@
 │  ├── layout/      AppShell, BottomNav, Sidebar, FAB           │
 │  ├── add/         SmartInputSheet, CsvImportSheet,           │
 │  │                 FlashChips (Interfaz Gasty Flash)         │
-│  ├── dashboard/   Dashboard, BalanceCard, MonthSummary,      │
+│  ├── dashboard/   Dashboard, BalanceCard, CategoryDonutChart,│
 │  │                 MonthSelector (Controlador Temporal)      │
-│  ├── transactions/ Transactions, TransactionItem             │
+│  ├── transactions/ Transactions, TransactionItem,            │
+│  │                 EmojiEditor                               │
 │  ├── stats/       Stats (Manejo de SVG puros responsivos)     │
 │  ├── settings/    Settings, CategoryManager                   │
 │  └── ui/          Button, Card, Badge (Primitivas atómicas)  │
@@ -177,10 +178,10 @@ checkAndCloneRecurring()
 
 ## 4. Esquema de Base de Datos (Dexie)
 
-El almacenamiento se estructura en torno a tres almacenes optimizados con índices específicos para evitar penalizaciones de búsqueda durante los escaneos secuenciales. El schema ha evolucionado a través de 4 versiones:
+El almacenamiento se estructura en torno a tres almacenes optimizados con índices específicos para evitar penalizaciones de búsqueda durante los escaneos secuenciales. El schema ha evolucionado a través de 5 versiones:
 
 ```typescript
-// src/lib/db.ts — Versión actual: 4
+// src/lib/db.ts — Versión actual: 5
 
 // v1: Esquema base
 db.version(1).stores({
@@ -190,13 +191,16 @@ db.version(1).stores({
 })
 
 // v2: Agrega csvFormat a settings (backfill con defaults)
-db.version(2).stores({ ... }).upgrade(async (tx) => { /* backfill csvFormat */ })
+db.version(2).stores({ }).upgrade(async (tx) => { /* backfill csvFormat */ })
 
 // v3: Agrega keywords a categories (backfill desde DEFAULT_CATEGORIES)
-db.version(3).stores({ ... }).upgrade(async (tx) => { /* backfill keywords */ })
+db.version(3).stores({ }).upgrade(async (tx) => { /* backfill keywords */ })
 
 // v4: Deduplica colores de categorías (asegura paleta única)
-db.version(4).stores({ ... }).upgrade(async (tx) => { /* deduplicate colors */ })
+db.version(4).stores({ }).upgrade(async (tx) => { /* deduplicate colors */ })
+
+// v5: Inserta categorías default faltantes para usuarios existentes
+db.version(5).stores({ }).upgrade(async (tx) => { /* add missing default categories */ })
 ```
 
 ### Índices y Consultas Típicas
@@ -251,6 +255,9 @@ const componentStyles = isFuture
 |---|---|---|---|---|
 | Fondo app | `--color-bg` | `var(--color-canvas)` (#ffffff) | `var(--color-canvas-soft)` (#22261f) | Inalterado (mantiene base) |
 | Fondo tarjeta | `--color-card` | `var(--color-canvas)` (#ffffff) | `var(--color-canvas)` (#1a1e17) | `--color-proyector-bg` (#0c4a6e) |
+| Fondo tarjeta dark | `--color-card-dark` | #0e0f0c | #11140e | — |
+| Texto tarjeta dark | `--color-card-dark-text` | `var(--color-primary)` (#9fe870) | `var(--color-primary)` (#9fe870) | — |
+| Fondo card proyector | `--color-proyector-card` | #0e3a5c | #0e3a5c | — |
 | Texto principal | `--color-text` | `var(--color-ink)` (#0e0f0c) | `var(--color-ink)` (#eef0ea) | `--color-proyector-text` (#e0f2fe) |
 | Texto muted | `--color-text-muted` | `var(--color-body)` (#454745) | `var(--color-body)` (#abada7) | — |
 | Bordes | `--color-border` | #d6d9d3 | #2d322a | `--color-proyector-accent` (#22d3ee) |
@@ -307,7 +314,7 @@ export function ComponentName({ transaction }: ComponentNameProps) {
 
 | Archivo | Responsabilidad |
 |---------|-----------------|
-| `parser.ts` | `parseInput()` — pipeline puro NLP, `parseAmountFromText()`, `toLocalISO()`, `createTransactionFromParsed()` |
+| `parser.ts` | `parseInput()` — pipeline puro NLP, `parseAmountFromText()`, `toLocalISO()`, `createTransactionFromParsed()`, `normalizeCategory()` |
 | `categories.ts` | Data: `DEFAULT_CATEGORIES`, `KEYWORDS[]`, `INCOME_KEYWORDS[]`, `RECURRING_KEYWORDS[]`, `syncKeywordMaps()` |
 | `flash.ts` | `getFlashSuggestions()` — sugerencias contextuales por hora/día (pureza total) |
 | `csv.ts` | `parseCsvContent()`, `executeImport()` — parsing CSV con auto-creación de categorías |
@@ -340,11 +347,14 @@ export function ComponentName({ transaction }: ComponentNameProps) {
 ### 9.1 Comandos Exactos
 
 ```bash
-npm run dev        # vite dev server
-npm run build      # tsc -b && vite build → dist/
-npm run lint       # eslint . (flat config)
-npm test           # vitest run
-npm run preview    # vite preview (serve dist/)
+npm run dev            # vite dev server
+npm run build          # tsc -b && vite build → dist/
+npm run lint           # eslint . (flat config)
+npm test               # vitest run
+npm run preview        # vite preview (serve dist/)
+npm run test:e2e       # playwright test (chromium, 375x812)
+npm run test:e2e:ui    # playwright test --ui
+npm run test:e2e:debug # playwright test --debug
 ```
 
 ### 9.2 Build Order (Crítico)
@@ -422,21 +432,21 @@ beforeEach(async () => {
 ### 11.3 Cobertura Objetivo
 
 - **Parser** (`tests/parser.test.ts`): 100% — lógica pura, 287 líneas
-- **Recurring engine** (`tests/recurring.test.ts`): 100% — motor crítico, 93 líneas
-- **CSV** (`tests/csv.test.ts`): 100% — parsing, format detection, pending categories, 578 líneas
+- **Recurring engine** (`tests/recurring.test.ts`): 100% — motor crítico, 243 líneas
+- **CSV** (`tests/csv.test.ts`): 100% — parsing, format detection, pending categories, 613 líneas
 - **Flash** (`tests/flash.test.ts`): 100% — todas las franjas horarias, límites de día, 138 líneas
 - **Integración DB+Parser** (`tests/integration.test.ts`): smoke tests, 38 líneas
 - **Proyector** (`tests/useProjections.test.ts`): 100% — aserciones asíncronas con `fake-indexeddb`, depreciación de cuotas en periodos futuros, 170 líneas
 - **UI**: sin tests unitarios (componentes simples, validación visual manual + E2E Playwright)
-- **Total**: 6 archivos, ~1304 líneas de tests
+- **Total**: 6 archivos, ~1489 líneas de tests
 
 ---
 
 ## 12. Migraciones Futuras (Schema Versioning)
 
 ```typescript
-// La última versión de schema es 4. Ejemplo de cómo agregar v5:
-db.version(5).stores({
+// La última versión de schema es 5. Ejemplo de cómo agregar v6:
+db.version(6).stores({
   transactions: 'id, type, date, categoryId, originalId, newField',
   categories: 'id, type',
   settings: 'id',
@@ -487,12 +497,13 @@ webServer: {
 }
 ```
 
-### 14.3 Spec Files (11)
+### 14.3 Spec Files (12)
 
 | Archivo | Cobertura |
 |---------|-----------|
 | `add-transaction.spec.ts` | Flujo completo de agregar transacción |
 | `edit-delete.spec.ts` | Edición y eliminación de transacciones |
+| `csv-dates.spec.ts` | Manejo de fechas en importación CSV |
 | `csv-import.spec.ts` | Flujo de importación CSV |
 | `parser-e2e.spec.ts` | Parser integrado con UI |
 | `stats-charts.spec.ts` | Verificación de gráficos Stats |

@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react'
 import { useCategories } from '../../hooks/useCategories'
 import { useAllTransactions } from '../../hooks/useTransactions'
 import { useProjections } from '../../hooks/useProjections'
+import { useViewport } from '../../hooks/useViewport'
 import { TransactionItem } from './TransactionItem'
 import { MonthSelector } from '../dashboard/MonthSelector'
 import { formatMoney, formatDateGroupHeader } from '../../lib/format'
@@ -30,6 +31,7 @@ export function Transactions() {
   const categories = useCategories()
   const allTransactions = useAllTransactions()
   const { settings } = useSettings()
+  const { isWide } = useViewport()
 
   const now = useMemo(() => new Date(), [])
   const [selectedMonth, setSelectedMonth] = useState(monthKey(now))
@@ -152,7 +154,7 @@ export function Transactions() {
       />
 
       {/* Category info cards */}
-      <div className="grid grid-cols-2 gap-3 max-w-lg mx-auto">
+      <div className={`grid grid-cols-2 gap-3 mx-auto ${isWide ? 'max-w-xl' : 'max-w-lg'}`}>
         {/* Top categoría del mes */}
         {topCategory && (
           <div className="bg-card border border-border rounded-2xl p-4">

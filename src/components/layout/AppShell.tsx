@@ -16,7 +16,7 @@ interface AppShellProps {
 }
 
 export function AppShell({ active, onTabChange, children }: AppShellProps) {
-  const { isDesktop } = useViewport()
+  const { isDesktop, isWide } = useViewport()
   const [inputOpen, setInputOpen] = useState(false)
   const [csvOpen, setCsvOpen] = useState(false)
   const [editTransaction, setEditTransaction] = useState<Transaction | null>(null)
@@ -42,15 +42,15 @@ export function AppShell({ active, onTabChange, children }: AppShellProps) {
   return (
     <CsvImportContext.Provider value={() => setCsvOpen(true)}>
       <EditTransactionContext.Provider value={handleEdit}>
-        <div className={isDesktop ? 'flex h-full' : 'flex flex-col h-full'}>
+        <div className={`${isDesktop ? 'flex h-full' : 'flex flex-col h-full'} w-full`}>
           {/* Sidebar (desktop only) */}
           {isDesktop && (
-            <Sidebar active={active} onChange={onTabChange} />
+            <Sidebar active={active} onChange={onTabChange} isWide={isWide} />
           )}
 
           {/* Main content */}
-            <main className="flex-1 min-w-0 min-h-0 overflow-y-auto pb-20 md:pb-6">
-            <div className={`pt-6 ${isDesktop ? 'px-8 pb-6 mx-auto max-w-3xl w-full' : 'px-5 pb-4 mx-auto max-w-[480px]'}`}>
+          <main className="flex-1 min-w-0 min-h-0 overflow-y-auto pb-20 md:pb-6">
+            <div className={`pt-6 ${isDesktop ? `pb-6 mx-auto w-full ${isWide ? 'px-12 max-w-5xl' : 'px-8 max-w-3xl'}` : 'px-5 pb-4 mx-auto max-w-[480px]'}`}>
               {children}
             </div>
           </main>

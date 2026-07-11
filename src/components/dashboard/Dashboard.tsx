@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import { useAllTransactions } from '../../hooks/useTransactions'
 import { useProjections } from '../../hooks/useProjections'
+import { useViewport } from '../../hooks/useViewport'
 import { BalanceCard } from './BalanceCard'
 import { TransactionItem } from '../transactions/TransactionItem'
 import { formatMonth, formatDateGroupHeader } from '../../lib/format'
@@ -11,6 +12,7 @@ function monthKey(d: Date): string {
 
 export function Dashboard() {
   const transactions = useAllTransactions()
+  const { isWide } = useViewport()
 
   const now = useMemo(() => new Date(), [])
   const selectedMonth = monthKey(now)
@@ -32,7 +34,7 @@ export function Dashboard() {
     let monthIncome = 0
     let prevMonthSpent = 0
 
-    for (const tx of transactions) {
+    for (const tx of monthTransactions) {
       if (tx.type === 'income') {
         totalIncome += tx.amount
       } else {
@@ -80,7 +82,7 @@ export function Dashboard() {
     <div className="space-y-4">
       <header className="pt-2 pb-1 flex items-center justify-between">
         <div>
-          <h1 className="text-4xl font-black tracking-tight leading-none">Gasty</h1>
+          <h1 className={`${isWide ? 'text-5xl' : 'text-4xl'} font-black tracking-tight leading-none`}>Gasty</h1>
           <p className="text-sm text-body mt-2">Tus gastos, simples.</p>
         </div>
       </header>

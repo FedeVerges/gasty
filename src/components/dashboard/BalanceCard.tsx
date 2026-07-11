@@ -1,11 +1,12 @@
 import { Card } from '../ui/Card'
 import { useSettings } from '../../context/SettingsContext'
+import { useViewport } from '../../hooks/useViewport'
 import { formatMoney } from '../../lib/format'
 
 interface BalanceCardProps {
-  /** Total income (all time) */
+  /** Total income (current month) */
   totalIncome: number
-  /** Total expense (all time) */
+  /** Total expense (current month) */
   totalExpense: number
   /** Expenses in the current selected month */
   monthSpent: number
@@ -28,6 +29,7 @@ export function BalanceCard({
   isProjection = false,
 }: BalanceCardProps) {
   const { settings } = useSettings()
+  const { isWide } = useViewport()
 
   const balance = totalIncome - totalExpense
   const hasIncome = monthIncome > 0
@@ -39,8 +41,8 @@ export function BalanceCard({
   const isLower = diff < 0
 
   return (
-    <div className="flex flex-col gap-4">
-      <Card variant="dark" isProjection={isProjection}>
+    <div className={`gap-4 ${isWide ? 'flex flex-row' : 'flex flex-col'}`}>
+      <Card variant="dark" isProjection={isProjection} className={isWide ? 'flex-1' : undefined}>
         {/* Available balance */}
         <div className="flex flex-col gap-1 ">
           <span className="text-xs uppercase tracking-widest "
@@ -55,7 +57,7 @@ export function BalanceCard({
         </div>
       </Card>
 
-      <Card>
+      <Card className={isWide ? 'flex-1' : undefined}>
         {/* Spent amount */}
         <div className="mb-4">
           <span className="block text-sm text-body">
