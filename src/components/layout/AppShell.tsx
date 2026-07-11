@@ -6,7 +6,7 @@ import { Sidebar } from './Sidebar'
 import { FAB } from './FAB'
 import { SmartInputSheet } from '../add/SmartInputSheet'
 import { CsvImportSheet } from '../add/CsvImportSheet'
-import { CsvImportContext } from '../../context/CsvImportContext'
+import { CsvImportProvider } from '../../context/CsvImportContext'
 import { EditTransactionContext } from '../../context/EditTransactionContext'
 
 interface AppShellProps {
@@ -40,7 +40,7 @@ export function AppShell({ active, onTabChange, children }: AppShellProps) {
   }
 
   return (
-    <CsvImportContext.Provider value={() => setCsvOpen(true)}>
+    <CsvImportProvider onOpenCsvImport={() => setCsvOpen(true)}>
       <EditTransactionContext.Provider value={handleEdit}>
         <div className={`${isDesktop ? 'flex h-full' : 'flex flex-col h-full'} w-full`}>
           {/* Sidebar (desktop only) */}
@@ -67,6 +67,6 @@ export function AppShell({ active, onTabChange, children }: AppShellProps) {
         <SmartInputSheet key={sheetKey} open={inputOpen} onClose={handleClose} editTransaction={editTransaction} />
         <CsvImportSheet open={csvOpen} onClose={() => setCsvOpen(false)} />
       </EditTransactionContext.Provider>
-    </CsvImportContext.Provider>
+    </CsvImportProvider>
   )
 }

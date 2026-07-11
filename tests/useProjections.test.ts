@@ -1,10 +1,8 @@
 import 'fake-indexeddb/auto'
 import { describe, it, expect, beforeEach } from 'vitest'
 import { db, seedDatabase, generateId } from '../src/lib/db'
+import { createFutureClones } from '../src/lib/recurring'
 import type { Transaction } from '../src/types'
-
-// We test the projection logic directly via the pure computation function
-// by examining what data is available in DB and how it would be projected
 
 describe('useProjections: data layer', () => {
   beforeEach(async () => {
@@ -29,7 +27,6 @@ describe('useProjections: data layer', () => {
     }
     await db.transactions.add(tx)
 
-    // Query real transactions
     const allTxs = await db.transactions.toArray()
     const currentMonthTxs = allTxs.filter((t) => t.date.startsWith(currentMonth))
 
@@ -38,95 +35,67 @@ describe('useProjections: data layer', () => {
     expect(currentMonthTxs[0].description).toBe('test gasto')
   })
 
-  it('future month has no physical transactions in DB', async () => {
+  it('future month has real transactions when created by createFutureClones', async () => {
     const now = new Date()
-    // Pick a future month
     const futureMonth = now.getMonth() === 11
       ? `${now.getFullYear() + 1}-01`
       : `${now.getFullYear()}-${String(now.getMonth() + 2).padStart(2, '0')}`
 
-    const tx: Transaction = {
-      id: generateId(),
-      type: 'expense',
-      amount: 1500,
-      description: 'test gasto',
-      categoryId: 'food',
-      date: `${futureMonth}-15`,
-      recurring: { kind: 'none' },
-      createdAt: new Date().toISOString(),
-    }
-    await db.transactions.add(tx)
-
-    // Verify it was stored
-    const allTxs = await db.transactions.toArray()
-    expect(allTxs).toHaveLength(1)
-    expect(allTxs[0].date.startsWith(futureMonth)).toBe(true)
-  })
-
-  it('recurring source with fixed_temporary does not create clones beyond totalMonths', async () => {
-    // Insert a fixed_temporary source
-    const source: Transaction = {
-      id: generateId(),
-      type: 'expense',
-      amount: 25000,
-      description: 'cuota auto',
-      categoryId: 'transport',
-      date: '2026-01-15',
-      recurring: {
-        kind: 'fixed_temporary',
-        currentMonth: 12,
-        totalMonths: 12,
-        invoiceDay: 15,
-      },
-      createdAt: new Date().toISOString(),
-    }
-    await db.transactions.add(source)
-
-    // The source should exist
-    const sources = await db.transactions
-      .filter((t) => t.recurring.kind !== 'none' && !t.originalId)
-      .toArray()
-    expect(sources).toHaveLength(1)
-    expect(sources[0].recurring.currentMonth).toBe(12)
-    expect(sources[0].recurring.totalMonths).toBe(12)
-
-    // Verify no additional clones created by us (no recurring engine has run)
-    const allTxs = await db.transactions.toArray()
-    expect(allTxs).toHaveLength(1)
-  })
-
-  it('recurring source with kind fixed generates virtual clones in future months', async () => {
-    // Insert a fixed recurring source
     const source: Transaction = {
       id: generateId(),
       type: 'expense',
       amount: 45000,
       description: 'alquiler',
       categoryId: 'home',
-      date: '2026-01-01',
+      date: `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`,
+      recurring: { kind: 'fixed', invoiceDay: 1 },
+      createdAt: new Date().toISOString(),
+    }
+    await db.transactions.add(source)
+
+    // createFutureClones writes real rows to DB
+    await createFutureClones(source)
+
+    const allTxs = await db.transactions.toArray()
+    const futureTxs = allTxs.filter((t) => t.date.startsWith(futureMonth))
+
+    expect(futureTxs.length).toBeGreaterThan(0)
+    expect(futureTxs[0].amount).toBe(45000)
+    expect(futureTxs[0].originalId).toBe(source.id)
+  })
+
+  it('recurring source with fixed_temporary creates clones for all remaining months', async () => {
+    const source: Transaction = {
+      id: generateId(),
+      type: 'expense',
+      amount: 25000,
+      description: 'cuota auto',
+      categoryId: 'transport',
+      date: '2026-07-15',
       recurring: {
-        kind: 'fixed',
-        invoiceDay: 1,
+        kind: 'fixed_temporary',
+        currentMonth: 1,
+        totalMonths: 6,
+        invoiceDay: 15,
       },
       createdAt: new Date().toISOString(),
     }
     await db.transactions.add(source)
 
-    // Verify the source is in DB
-    const sources = await db.transactions
-      .filter((t) => t.recurring.kind !== 'none' && !t.originalId)
-      .toArray()
-    expect(sources).toHaveLength(1)
-    expect(sources[0].description).toBe('alquiler')
+    await createFutureClones(source)
 
-    // Verify no physical clones exist yet
-    const clones = await db.transactions
-      .filter((t) => t.originalId)
-      .toArray()
-    expect(clones).toHaveLength(0)
+    const allTxs = await db.transactions.toArray()
+    const clones = allTxs.filter((t) => t.originalId === source.id)
+    expect(clones).toHaveLength(6)
+
+    // Each clone should be a real DB row
+    for (const clone of clones) {
+      expect(clone.id).not.toContain('virtual')
+      expect(clone.originalId).toBe(source.id)
+    }
   })
 
-  it('deleting recurring source does not leave zombie data when cascade delete runs', async () => {
+  it('deleting recurring source removes future clones from DB', async () => {
     const sourceId = generateId()
     const source: Transaction = {
       id: sourceId,
@@ -134,37 +103,34 @@ describe('useProjections: data layer', () => {
       amount: 10000,
       description: 'expensas',
       categoryId: 'home',
-      date: '2026-01-01',
+      date: '2026-07-01',
       recurring: { kind: 'fixed', invoiceDay: 1 },
       createdAt: new Date().toISOString(),
     }
     await db.transactions.add(source)
 
-    // Create a clone manually (as the recurring engine would)
-    const clone: Transaction = {
-      id: generateId(),
-      type: 'expense',
-      amount: 10000,
-      description: 'expensas',
-      categoryId: 'home',
-      date: '2026-02-01',
-      recurring: { kind: 'fixed', currentMonth: 2, invoiceDay: 1 },
-      originalId: sourceId,
-      createdAt: new Date().toISOString(),
-    }
-    await db.transactions.add(clone)
+    // Create future clones
+    await createFutureClones(source)
 
-    // Verify both exist
+    // Verify clones exist
     const beforeDelete = await db.transactions.toArray()
-    expect(beforeDelete).toHaveLength(2)
+    const clonesBefore = beforeDelete.filter((t) => t.originalId === sourceId)
+    expect(clonesBefore.length).toBeGreaterThan(0)
 
-    // Cascade delete
+    // Simulate deleteRecurringSource by converting source + deleting clones
+    await db.transactions.update(sourceId, { recurring: { kind: 'none' } })
     const all = await db.transactions.toArray()
-    const toDelete = all.filter((t) => t.id === sourceId || t.originalId === sourceId)
+    const toDelete = all.filter((t) => t.originalId === sourceId)
     await db.transactions.bulkDelete(toDelete.map((t) => t.id))
 
-    // Verify both are gone
+    // Verify clones are gone
     const afterDelete = await db.transactions.toArray()
-    expect(afterDelete).toHaveLength(0)
+    const clonesAfter = afterDelete.filter((t) => t.originalId === sourceId)
+    expect(clonesAfter).toHaveLength(0)
+
+    // Source should still exist as normal transaction
+    const srcAfter = afterDelete.find((t) => t.id === sourceId)
+    expect(srcAfter).toBeDefined()
+    expect(srcAfter!.recurring.kind).toBe('none')
   })
 })

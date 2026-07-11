@@ -1,10 +1,11 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useContext } from 'react'
 import { Button } from '../ui/Button'
-import { parseCsvContent, executeImport, type CsvRow, type CsvPendingCategory } from '../../lib/csv'
-import { useCategories } from '../../hooks/useCategories'
+import { CsvImportContext } from '../../context/CsvImportContext'
 import { formatMoney } from '../../lib/format'
 import { useSettings } from '../../context/SettingsContext'
 import { useViewport } from '../../hooks/useViewport'
+import { useCategories } from '../../hooks/useCategories'
+import { useVirtualizer } from '@tanstack/react-virtual'
 
 interface CsvImportSheetProps {
   open: boolean
@@ -13,17 +14,29 @@ interface CsvImportSheetProps {
 
 type Step = 'select' | 'preview' | 'result'
 
+const ROW_ESTIMATED_SIZE = 88
+
 export function CsvImportSheet({ open, onClose }: CsvImportSheetProps) {
   const { settings } = useSettings()
   const { isDesktop } = useViewport()
+  const csvImport = useContext(CsvImportContext)
   const categories = useCategories()
   const [step, setStep] = useState<Step>('select')
-  const [rows, setRows] = useState<CsvRow[]>([])
-  const [parseErrors, setParseErrors] = useState<number[]>([])
-  const [pendingCategories, setPendingCategories] = useState<CsvPendingCategory[]>([])
-  const [importResult, setImportResult] = useState<{ imported: number; errors: number } | null>(null)
-  const [importing, setImporting] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const listParentRef = useRef<HTMLDivElement>(null)
+
+  const rows = csvImport?.rows ?? []
+  const parseErrors = csvImport?.parseErrors ?? []
+  const isImporting = csvImport?.isImporting ?? false
+  const importResult = csvImport?.importResult ?? null
+
+  // eslint-disable-next-line react-hooks/incompatible-library
+  const virtualizer = useVirtualizer({
+    count: rows.length,
+    getScrollElement: () => listParentRef.current,
+    estimateSize: () => ROW_ESTIMATED_SIZE,
+    overscan: 5,
+  })
 
   useEffect(() => {
     if (open) {
@@ -40,36 +53,25 @@ export function CsvImportSheet({ open, onClose }: CsvImportSheetProps) {
     }
   }, [open])
 
+  // Transition to preview when rows are loaded
+  useEffect(() => {
+    if (csvImport?.rows.length) setStep('preview')
+  }, [csvImport?.rows.length])
+
   const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
-
-    const reader = new FileReader()
-    reader.onload = (ev) => {
-      const content = ev.target?.result as string
-      const { rows: parsed, errors, pendingCategories: pending } = parseCsvContent(content, settings.csvFormat, categories)
-      setRows(parsed)
-      setParseErrors(errors)
-      setPendingCategories(pending)
-      setStep('preview')
-    }
-    reader.readAsText(file)
+    csvImport?.loadCsvFile(file)
   }
 
   const handleImport = async () => {
-    setImporting(true)
-    const result = await executeImport(rows, pendingCategories)
-    setImportResult({ imported: result.imported, errors: result.errors })
+    await csvImport?.executeImportFn()
     setStep('result')
-    setImporting(false)
   }
 
   const handleClose = () => {
     setStep('select')
-    setRows([])
-    setParseErrors([])
-    setImportResult(null)
-    setImporting(false)
+    csvImport?.reset()
     onClose()
   }
 
@@ -163,43 +165,100 @@ Birra,2500,15/6,Salidas`}
                 </div>
               )}
 
-              <div className="space-y-2 max-h-[50vh] overflow-y-auto">
-                {rows.map((row) => {
-                  const isPending = pendingCategories.some(
-                    (p) => p.name.toLowerCase() === row.categoryName.toLowerCase()
-                  )
-                  const cat = !isPending ? categories.find((c) => c.id === row.categoryId) : undefined
-                  return (
-                    <div
-                      key={row.rawLine}
-                      className="rounded-2xl border border-border p-3 bg-card"
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2 min-w-0">
-                          <span
-                            className="w-8 h-8 rounded-lg flex items-center justify-center text-sm shrink-0"
-                            style={{ background: `${cat?.color ?? '#888'}25` }}
-                          >
-                            {isPending ? '🆕' : (cat?.emoji ?? '📦')}
-                          </span>
-                          <span className="text-sm font-medium truncate">
-                            {row.description}
-                          </span>
+              {/* Virtualized list */}
+              <div
+                ref={listParentRef}
+                className="overflow-y-auto scrollbar-hide"
+                style={{ maxHeight: '50vh' }}
+              >
+                <div
+                  style={{
+                    height: `${virtualizer.getTotalSize()}px`,
+                    position: 'relative',
+                  }}
+                >
+                  {virtualizer.getVirtualItems().map((virtualItem) => {
+                    const row = rows[virtualItem.index]
+                    if (!row) return null
+                    const isRecurring = row.recurring.kind !== 'none'
+                    const isPending = csvImport?.pendingCategories.some(
+                      (p) => p.name.toLowerCase() === row.categoryName.toLowerCase()
+                    ) ?? false
+                    const cat = !isPending ? categories.find((c) => c.id === row.categoryId) : undefined
+
+                    return (
+                      <div
+                        key={virtualItem.key}
+                        style={{
+                          position: 'absolute',
+                          top: 0,
+                          left: 0,
+                          width: '100%',
+                          height: `${virtualItem.size}px`,
+                          transform: `translateY(${virtualItem.start}px)`,
+                        }}
+                      >
+                        <div className="rounded-2xl border border-border p-3 bg-card h-full flex flex-col justify-between">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2 min-w-0">
+                              <span
+                                className="w-8 h-8 rounded-lg flex items-center justify-center text-sm shrink-0"
+                                style={{ background: `${cat?.color ?? '#888'}25` }}
+                              >
+                                {cat?.emoji ?? '📦'}
+                              </span>
+                              <span className="text-sm font-medium truncate">
+                                {row.description}
+                              </span>
+                            </div>
+                            <span className={`text-sm font-bold shrink-0 ml-2 ${row.type === 'income' ? 'text-income' : 'text-negative'}`}>
+                              {row.type === 'income' ? '+ ' : '− '}{formatMoney(row.amount, settings.currency)}
+                            </span>
+                          </div>
+                          <div className="flex items-center justify-between mt-1 ml-10">
+                            <div className="flex items-center gap-2 min-w-0">
+                              <span className="text-xs text-mute">{row.date}</span>
+                              <span className="text-xs text-mute">·</span>
+                              <span className="text-xs truncate">{row.categoryName}</span>
+                            </div>
+                            <div className="flex items-center gap-1 shrink-0">
+                              {/* Recurrente toggle */}
+                              <button
+                                onClick={() => csvImport?.toggleRecurring(virtualItem.index)}
+                                className={`
+                                  flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium
+                                  transition-colors min-h-[28px]
+                                  ${isRecurring
+                                    ? 'bg-recurring-soft text-recurring'
+                                    : 'text-mute hover:text-body'
+                                  }
+                                `}
+                                aria-label={isRecurring ? 'Quitar recurrente' : 'Marcar como recurrente'}
+                              >
+                                <svg viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 shrink-0">
+                                  <path fillRule="evenodd" clipRule="evenodd"
+                                    d="M15.312 11.424a5.5 5.5 0 01-9.201 2.466l-.312-.311h2.433a.75.75 0 000-1.5H3.989a.75.75 0 00-.75.75v4.242a.75.75 0 001.5 0v-2.43l.31.31a7 7 0 0011.712-3.138.75.75 0 00-1.449-.39l-.001.001zM4.688 8.576a5.5 5.5 0 019.2-2.466l.312.311h-2.432a.75.75 0 000 1.5h4.243a.75.75 0 00.75-.75V2.929a.75.75 0 00-1.5 0v2.43l-.31-.31a7 7 0 00-11.712 3.138.75.75 0 101.449.39z" />
+                                </svg>
+                                {isRecurring && 'Recurrente'}
+                              </button>
+                              {/* Delete button */}
+                              <button
+                                onClick={() => csvImport?.removeRow(virtualItem.index)}
+                                className="flex items-center justify-center w-7 h-7 rounded-full text-mute hover:text-negative transition-colors"
+                                aria-label="Eliminar fila"
+                              >
+                                <svg viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
+                                  <path fillRule="evenodd" clipRule="evenodd"
+                                    d="M8.75 1A2.75 2.75 0 006 3.75v.443c-.795.077-1.584.176-2.365.298a.75.75 0 10.23 1.482l.149-.022.841 10.518A2.75 2.75 0 007.596 19h4.807a2.75 2.75 0 002.742-2.53l.841-10.52.149.023a.75.75 0 00.23-1.482A41.03 41.03 0 0014 4.193V3.75A2.75 2.75 0 0011.25 1h-2.5zM10 4c-.84 0-1.673.025-2.5.075V3.75c0-.69.56-1.25 1.25-1.25h2.5c.69 0 1.25.56 1.25 1.25v.325C11.673 4.025 10.84 4 10 4zM8.58 7.72a.75.75 0 00-1.5.06l.3 7.5a.75.75 0 101.5-.06l-.3-7.5zm4.34.06a.75.75 0 10-1.5-.06l-.3 7.5a.75.75 0 101.5.06l.3-7.5z" />
+                                </svg>
+                              </button>
+                            </div>
+                          </div>
                         </div>
-                        <span className={`text-sm font-bold shrink-0 ml-2 ${row.type === 'income' ? 'text-income' : 'text-negative'}`}>
-                          {row.type === 'income' ? '+ ' : '− '}{formatMoney(row.amount, settings.currency)}
-                        </span>
                       </div>
-                      <div className="flex items-center gap-2 mt-1 ml-10">
-                        <span className="text-xs text-mute">{row.date}</span>
-                        <span className="text-xs text-mute">·</span>
-                        <span className={`text-xs ${isPending ? 'text-accent font-medium' : 'text-body'}`}>
-                          {row.categoryName}{isPending ? ' (nueva)' : ''}
-                        </span>
-                      </div>
-                    </div>
-                  )
-                })}
+                    )
+                  })}
+                </div>
               </div>
 
               <div className="flex gap-2 pt-2">
@@ -212,11 +271,11 @@ Birra,2500,15/6,Salidas`}
                 </Button>
                 <Button
                   onClick={handleImport}
-                  disabled={rows.length === 0 || importing}
+                  disabled={rows.length === 0 || isImporting}
                   fullWidth
                   size="md"
                 >
-                  {importing ? 'Importando...' : `Importar ${rows.length} filas`}
+                  {isImporting ? 'Importando...' : `Importar ${rows.length} filas`}
                 </Button>
               </div>
             </>

@@ -1,12 +1,12 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
 import { db } from '../../lib/db'
 import { parseInput, createTransactionFromParsed, toLocalISO } from '../../lib/parser'
+import { createFutureClones, editRecurringSource } from '../../lib/recurring'
 import { useCategories } from '../../hooks/useCategories'
 import { useKeyboardHeight } from '../../hooks/useKeyboardHeight'
 import { useViewport } from '../../hooks/useViewport'
 import { useSettings } from '../../context/SettingsContext'
-import { formatMoney, formatDateFull } from '../../lib/format'
-import { Button } from '../ui/Button'
+import { formatMoney, formatDate } from '../../lib/format'
 import { Badge } from '../ui/Badge'
 import { FlashChips } from './FlashChips'
 import type { ParsedTransaction, RecurringConfig, Transaction, TransactionType } from '../../types'
@@ -101,6 +101,19 @@ export function SmartInputSheet({ open, onClose, editTransaction }: SmartInputSh
     ? categories.find((c) => c.id === parsed.categoryId)
     : undefined
 
+  const sortedCategories = useMemo(() => {
+    if (!parsed) return []
+    const filtered = categories.filter((c) =>
+      parsed.type === 'income' ? c.type === 'income' : c.type === 'expense'
+    )
+    const selectedId = categoryOverride ?? parsed.categoryId
+    return [...filtered].sort((a, b) => {
+      if (a.id === selectedId) return -1
+      if (b.id === selectedId) return 1
+      return 0
+    })
+  }, [categories, parsed, categoryOverride])
+
   const handleSubmit = async (e: React.PointerEvent | React.FormEvent) => {
     e.preventDefault()
     if (!parsed) return
@@ -117,23 +130,34 @@ export function SmartInputSheet({ open, onClose, editTransaction }: SmartInputSh
         )
 
     if (editTransaction) {
-      const tx = createTransactionFromParsed({
-        ...parsed,
-        recurring: finalRecurring,
-      })
-      tx.id = editTransaction.id
-      tx.createdAt = editTransaction.createdAt
-      // Preserve custom emoji if present
-      if (editTransaction.emoji) {
-        tx.emoji = editTransaction.emoji
-      }
-      await db.transactions.put(tx)
+      // Edit existing: update source + regenerate future clones (single transaction)
+      await editRecurringSource(
+        editTransaction.id,
+        {
+          id: editTransaction.id,
+          type: parsed.type,
+          amount: parsed.amount,
+          description: parsed.description,
+          categoryId: parsed.categoryId,
+          date: parsed.date,
+          emoji: editTransaction.emoji,
+        },
+        finalRecurring,
+      )
     } else {
+      // New transaction — atomic: source + clones in one Dexie transaction
       const tx = createTransactionFromParsed({
         ...parsed,
         recurring: finalRecurring,
       })
-      await db.transactions.add(tx)
+      if (finalRecurring.kind !== 'none') {
+        await db.transaction('rw', db.transactions, async () => {
+          await db.transactions.add(tx)
+          await createFutureClones(tx)
+        })
+      } else {
+        await db.transactions.add(tx)
+      }
     }
     onClose()
   }
@@ -184,119 +208,140 @@ export function SmartInputSheet({ open, onClose, editTransaction }: SmartInputSh
           </div>
         </div>
 
-        <form className="px-5 pb-6 space-y-4" >
-          {/* Gasty Flash — contextual suggestions when input is empty */}
-          {!text && !editTransaction && (
-            <div className="mb-1">
-              <FlashChips onSelect={(suggestionText) => setText(suggestionText)} />
-            </div>
-          )}
-
+        <form className="px-5 pb-6 space-y-4" onSubmit={handleSubmit}>
+          {/* ANCHOR: input + type row never move — prevents CLS on first keystroke */}
           <div>
-            <input
-              ref={inputRef}
-              type="text"
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              placeholder="Ej: birra 1500"
-              className="
-                w-full text-xl p-4
-                rounded-2xl
-                bg-canvas border-2 border-border
-                focus:border-primary
-                placeholder:text-mute
-                transition-colors
-              "
-              autoFocus
-            />
+            <div className="flex items-center gap-2">
+              <input
+                ref={inputRef}
+                type="text"
+                value={text}
+                onChange={(e) => setText(e.target.value)}
+                placeholder="Ej: birra 1500"
+                className="
+                  flex-1 text-xl p-4
+                  rounded-2xl
+                  bg-canvas border-2 border-border
+                  focus:border-primary
+                  placeholder:text-mute
+                  transition-colors
+                "
+                autoFocus
+              />
+              <button
+                type="submit"
+                disabled={!parsed}
+                className="
+                  w-11 h-11 shrink-0 rounded-full
+                  bg-primary text-on-primary
+                  flex items-center justify-center
+                  disabled:opacity-30 disabled:cursor-not-allowed
+                  active:scale-95 transition-transform
+                "
+                aria-label="Confirmar transacción"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3}
+                     strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+              </button>
+            </div>
             <div className="flex items-center gap-2 mt-2 px-1">
-              <p className="text-xs text-body flex-1">
+              <button
+                type="button"
+                onClick={() => setTypeOverride(typeOverride === 'expense' ? null : 'expense')}
+                className={`
+                  w-11 h-11 rounded-xl flex items-center justify-center text-lg font-bold
+                  transition-colors
+                  ${typeOverride === 'expense'
+                    ? 'bg-negative text-white'
+                    : 'bg-canvas-soft text-body border border-border'}
+                `}
+                aria-label="Marcar como gasto"
+              >
+                −
+              </button>
+              <button
+                type="button"
+                onClick={() => setTypeOverride(typeOverride === 'income' ? null : 'income')}
+                className={`
+                  w-11 h-11 rounded-xl flex items-center justify-center text-lg font-bold
+                  transition-colors
+                  ${typeOverride === 'income'
+                    ? 'bg-positive text-white'
+                    : 'bg-canvas-soft text-body border border-border'}
+                `}
+                aria-label="Marcar como ingreso"
+              >
+                +
+              </button>
+              <p className="text-xs text-body flex-1 ml-1">
                 Ej: birra 1500
               </p>
-              <div className="flex gap-1">
-                <button
-                  type="button"
-                  onClick={() => setTypeOverride(typeOverride === 'expense' ? null : 'expense')}
-                  className={`
-                    w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold
-                    transition-colors
-                    ${typeOverride === 'expense'
-                      ? 'bg-negative text-white'
-                      : 'bg-canvas-soft text-body border border-border'}
-                  `}
-                  aria-label="Marcar como gasto"
-                >
-                  −
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setTypeOverride(typeOverride === 'income' ? null : 'income')}
-                  className={`
-                    w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold
-                    transition-colors
-                    ${typeOverride === 'income'
-                      ? 'bg-positive text-white'
-                      : 'bg-canvas-soft text-body border border-border'}
-                  `}
-                  aria-label="Marcar como ingreso"
-                >
-                  +
-                </button>
-              </div>
             </div>
           </div>
 
-          {parsed && category && (
-            <div
-              className="rounded-2xl p-4 border"
-              style={{
-                background: `${category.color}10`,
-                borderColor: `${category.color}30`,
-              }}
-            >
-              <div className="flex items-center gap-3">
-                <div
-                  className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl"
-                  style={{ background: `${category.color}25` }}
-                >
-                  {category.emoji}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
+          {/* DYNAMIC ZONE — content fades in/out; input stays anchored above */}
+          <div className="space-y-4 min-h-[56px]">
+            {!text && !editTransaction && (
+              <FlashChips onSelect={(suggestionText) => setText(suggestionText)} />
+            )}
+
+            {parsed && category && (
+              <div
+                className="rounded-2xl p-5 border animate-fade-in motion-reduce:animate-none"
+                style={{
+                  background: `${category.color}10`,
+                  borderColor: `${category.color}30`,
+                }}
+              >
+                <div className="flex items-center gap-4">
+                  <div
+                    className="w-11 h-11 rounded-2xl flex items-center justify-center text-xl shrink-0"
+                    style={{ background: `${category.color}20` }}
+                  >
+                    {category.emoji}
+                  </div>
+
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-ink truncate">
+                      {parsed.description}
+                    </p>
+                    <div className="flex items-center gap-1.5 mt-1">
+                      <span className="text-xs text-body truncate">
+                        {category.name}
+                      </span>
+                      {(parsed.recurring.kind === 'fixed' || parsed.recurring.kind === 'fixed_temporary') && recurring.kind === 'none' && (
+                        <Badge color="recurring">
+                          {parsed.recurring.kind === 'fixed'
+                            ? '🔄'
+                            : `${parsed.recurring.currentMonth}/${parsed.recurring.totalMonths}`}
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col items-end gap-0.5 shrink-0">
                     <span
-                      className="text-2xl font-bold"
-                      style={{ color: parsed.type === 'income' ? 'var(--color-positive)' : 'var(--color-negative)' }}
+                      className={`font-bold text-lg ${parsed.type === 'income' ? 'text-positive' : 'text-negative'}`}
                     >
                       {parsed.type === 'income' ? '+' : '−'} {formatMoney(parsed.amount, settings.currency)}
                     </span>
+                    <span className="text-xs text-mute">
+                      {formatDate(parsed.date)}
+                    </span>
                   </div>
-                  <p className="text-sm text-body truncate">
-                    {parsed.description} · {category.name} · {formatDateFull(parsed.date)}
-                  </p>
                 </div>
               </div>
-
-              {(parsed.recurring.kind === 'fixed' || parsed.recurring.kind === 'fixed_temporary') && recurring.kind === 'none' && (
-                <div className="mt-3 flex flex-wrap gap-2">
-                  <Badge color="recurring">
-                    {parsed.recurring.kind === 'fixed_temporary'
-                      ? `⏱️ ${parsed.recurring.currentMonth}/${parsed.recurring.totalMonths} cuotas`
-                      : '🔄 Detectado: recurrente'}
-                  </Badge>
-                </div>
-              )}
-            </div>
-          )}
+            )}
 
           {parsed && (
-            <div>
+            <div className="animate-fade-in motion-reduce:animate-none">
               <p className="text-xs text-body uppercase tracking-wide mb-2 font-medium">
                 Categoría
               </p>
               <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1">
-                {categories
-                  .filter((c) => parsed.type === 'income' ? c.type === 'income' : c.type === 'expense')
-                  .map((c) => {
+                {sortedCategories.map((c) => {
                     const selected = (categoryOverride ?? parsed.categoryId) === c.id
                     return (
                       <button
@@ -323,7 +368,7 @@ export function SmartInputSheet({ open, onClose, editTransaction }: SmartInputSh
           )}
 
           {parsed && (
-            <div>
+            <div className="animate-fade-in motion-reduce:animate-none">
               <p className="text-xs text-body uppercase tracking-wide mb-2 font-medium">
                 ¿Es recurrente?
               </p>
@@ -376,18 +421,8 @@ export function SmartInputSheet({ open, onClose, editTransaction }: SmartInputSh
               )}
             </div>
           )}
-
-          <div className="pt-2">
-            <Button
-              type="submit"
-              onClick={handleSubmit}
-              disabled={!parsed}
-              fullWidth
-              size="lg"
-            >
-              Confirmar
-            </Button>
           </div>
+
         </form>
       </div>
     </div>

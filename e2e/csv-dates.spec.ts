@@ -49,7 +49,6 @@ test.describe('CSV: fechas DD/MM/YYYY y variantes', () => {
     await page.waitForTimeout(300)
 
     const prevBtn = page.locator('[aria-label="Mes anterior"]')
-    const nextBtn = page.locator('[aria-label="Mes siguiente"]')
 
     // ── 5. Mes actual (Julio 2026) — sin movimientos importados ──
     await expect(page.getByText(/Julio 2026/i).first()).toBeVisible()

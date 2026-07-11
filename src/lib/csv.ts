@@ -1,7 +1,7 @@
 import { createTransactionFromParsed, parseAmountFromText, toLocalISO, normalizeCategory, parseInput } from './parser'
 import { db } from './db'
 import { DEFAULT_CATEGORIES, getPaletteColor } from './categories'
-import type { CsvFormatSettings, Category } from '../types'
+import type { CsvFormatSettings, Category, RecurringConfig } from '../types'
 
 function parseCSVLine(line: string): string[] {
   const result: string[] = []
@@ -94,6 +94,7 @@ export interface CsvRow {
   categoryName: string
   type: 'expense' | 'income'
   rawLine: number
+  recurring: RecurringConfig
 }
 
 export interface CsvImportResult {
@@ -249,6 +250,7 @@ export function parseCsvContent(
       categoryName,
       type,
       rawLine: i + 1,
+      recurring: { kind: 'none' },
     })
   }
 
@@ -316,7 +318,7 @@ export async function executeImport(
         description: row.description,
         categoryId: row.categoryId,
         date: row.date,
-        recurring: { kind: 'none' },
+        recurring: row.recurring,
       })
       await db.transactions.add(tx)
       imported++

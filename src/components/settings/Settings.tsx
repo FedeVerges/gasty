@@ -14,7 +14,7 @@ type SettingsView = 'main' | 'categories'
 export function Settings() {
   const { settings, setTheme, setCurrency, setCsvFormat } = useSettings()
   const categories = useCategories()
-  const openCsvImport = useContext(CsvImportContext)
+  const csvImport = useContext(CsvImportContext)
   const [recurring, setRecurring] = useState<Transaction[]>([])
   const [view, setView] = useState<SettingsView>('main')
   const [clearing, setClearing] = useState(false)
@@ -239,7 +239,7 @@ export function Settings() {
           Cargá gastos desde un archivo CSV (nombre, importe, fecha, categoría).
         </p>
         <button
-          onClick={openCsvImport ?? undefined}
+          onClick={csvImport?.openCsvImport}
           className="
             w-full py-3 px-4 rounded-2xl
             bg-primary text-on-primary font-semibold
