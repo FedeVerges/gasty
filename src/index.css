@@ -164,6 +164,7 @@
     #root {
       max-width: none;
       flex-direction: row;
+      overflow: hidden;
     }
   }
 

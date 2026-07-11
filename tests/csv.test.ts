@@ -465,7 +465,7 @@ Youtube FP ,"ARS 1,500.00",01/07/2026,Suscripciones,`
     expect(errors).toHaveLength(0)
     expect(rows).toHaveLength(16)
 
-    expect(rows[0].date).toBe('2026-07-01T00:00')
+    expect(rows[0].date).toBe('2026-07-01')
     expect(rows[0].description).toBe('Pago Tarjeta Galicia')
     expect(rows[0].amount).toBe(590000)
     expect(rows[0].categoryId).toBe('debts')          // "Finanzas y Deudas" → default
@@ -489,6 +489,39 @@ Youtube FP ,"ARS 1,500.00",01/07/2026,Suscripciones,`
     expect(rows[2].amount).toBe(300000)
     expect(rows[7].amount).toBe(77000)
     expect(rows[15].amount).toBe(1500)
+  })
+
+  it('procesa CSV con headers "Concepto,Importe,Fecha,Categoría" (estilo Notion)', () => {
+    const csv = `Concepto,Importe,Fecha,"Categoría "
+Alquiler + expesas Julio,"ARS 400,000.00",01/07/2026,Hogar
+Ahorro,"ARS 300,000.00",01/07/2026,Ahorros
+Carne,"ARS 45,000.00",05/06/2026,Alimentación
+Bayahibe,"ARS 566,000.00",03/05/2026 → 12/05/2026,Viajes`
+
+    const format: CsvFormatSettings = {
+      thousandsSeparator: ',',
+      decimalSeparator: '.',
+      stripCurrencyPrefix: true,
+    }
+
+    const { rows, errors } = parseCsvContent(csv, format)
+    expect(errors).toHaveLength(0)
+
+    // Fechas correctas (no hoy)
+    expect(rows[0].date).toBe('2026-07-01')
+    expect(rows[0].description).toBe('Alquiler + expesas Julio')
+    expect(rows[0].amount).toBe(400000)
+
+    expect(rows[1].date).toBe('2026-07-01')
+    expect(rows[1].description).toBe('Ahorro')
+
+    expect(rows[2].date).toBe('2026-06-05')
+    expect(rows[2].description).toBe('Carne')
+
+    // Fila con rango de fechas "03/05/2026 → 12/05/2026" → fallback a hoy
+    // La fecha exacta depende de cuando se corre el test; solo verificar que no es 2026-05-03
+    expect(rows[3].date).not.toBe('2026-05-03')
+    expect(rows[3].amount).toBe(566000)
   })
 
   it('colecciona descripciones únicas como keywords en pending categories', () => {

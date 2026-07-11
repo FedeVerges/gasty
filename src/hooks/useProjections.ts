@@ -96,7 +96,8 @@ export function useProjections(month: string): {
     const virtualClones: Transaction[] = []
 
     for (const source of sources) {
-      const sourceDate = new Date(source.date.slice(0, 10))
+      const [srcY, srcM, srcD] = source.date.split('-').map(Number)
+      const sourceDate = new Date(srcY, srcM - 1, srcD)
 
       // Calculate how many months between source date and target
       const deltaMonths =

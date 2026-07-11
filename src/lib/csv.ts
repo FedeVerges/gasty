@@ -46,7 +46,7 @@ function parseCSVLine(line: string): string[] {
   return result
 }
 
-const HEADER_PATTERN = /^(desc|description|monto|amount|importe|nombre|fecha|date|categor)/i
+const HEADER_PATTERN = /^(desc|description|monto|amount|importe|nombre|fecha|date|concepto|categor)/i
 
 function isHeaderRow(cols: string[]): boolean {
   return cols.length > 0 && HEADER_PATTERN.test(cols[0])
@@ -183,8 +183,8 @@ export function parseCsvContent(
 
     // ── Run through the same parser the manual input uses ──
     // Reconstruct a natural-language-style string from CSV columns
-    // (description + amount only — no date, because the ISO date format
-    // YYYY-MM-DDTHH:mm confuses the parser's DD/MM date detection).
+    // (description + amount only — no date, because "YYYY-MM-DD" would
+    // confuse the parser's numeric token detection).
     // Same engine as SmartInputSheet: detectRecurring → parseAmount →
     // detectType → detectCategory → cleanDescription.
     const parserInput = `${desc} ${Math.round(amount)}`

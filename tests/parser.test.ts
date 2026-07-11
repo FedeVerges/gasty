@@ -53,17 +53,17 @@ describe('parser: fechas', () => {
     const y = now.getFullYear()
     const m = String(now.getMonth() + 1).padStart(2, '0')
     const d = String(now.getDate()).padStart(2, '0')
-    expect(result?.date).toMatch(new RegExp(`^${y}-${m}-${d}T\\d{2}:\\d{2}$`))
+    expect(result?.date).toBe(`${y}-${m}-${d}`)
   })
 
   it('parsea fecha con guión', () => {
     const result = parseInput('lomito 3000 20-5')
-    expect(result?.date).toMatch(/^2027-05-20T\d{2}:\d{2}$/)
+    expect(result?.date).toBe('2027-05-20')
   })
 
   it('parsea fecha con barra', () => {
     const result = parseInput('lomito 3000 20/7')
-    expect(result?.date).toMatch(/^2026-07-20T\d{2}:\d{2}$/)
+    expect(result?.date).toBe('2026-07-20')
   })
 
   it('parsea ayer', () => {
@@ -73,17 +73,17 @@ describe('parser: fechas', () => {
     const y = yesterday.getFullYear()
     const m = String(yesterday.getMonth() + 1).padStart(2, '0')
     const d = String(yesterday.getDate()).padStart(2, '0')
-    expect(result?.date).toMatch(new RegExp(`^${y}-${m}-${d}T\\d{2}:\\d{2}$`))
+    expect(result?.date).toBe(`${y}-${m}-${d}`)
   })
 
   it('parsea nombre de mes', () => {
     const result = parseInput('sueldo 150000 junio')
-    expect(result?.date).toMatch(/^\d{4}-06-\d{2}T\d{2}:\d{2}$/)
+    expect(result?.date).toBe('2027-06-01')
   })
 
   it('parsea nombre de mes con día', () => {
     const result = parseInput('sueldo 150000 15 junio')
-    expect(result?.date).toMatch(/^\d{4}-06-15T\d{2}:\d{2}$/)
+    expect(result?.date).toBe('2027-06-15')
   })
 
   it('parsea mes pasado sin día al próximo año', () => {
@@ -91,7 +91,7 @@ describe('parser: fechas', () => {
     vi.setSystemTime(new Date(2026, 6, 15, 12, 0))
 
     const result = parseInput('sueldo 150000 junio')
-    expect(result?.date).toMatch(/^2027-06-01T\d{2}:\d{2}$/)
+    expect(result?.date).toBe('2027-06-01')
   })
 })
 

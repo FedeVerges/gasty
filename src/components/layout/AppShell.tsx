@@ -49,8 +49,8 @@ export function AppShell({ active, onTabChange, children }: AppShellProps) {
           )}
 
           {/* Main content */}
-            <main className="flex-1 min-w-0 overflow-y-auto pb-20 md:pb-6">
-            <div className={`pt-6 ${isDesktop ? 'px-8 pb-6 mx-auto max-w-5xl w-full' : 'px-5 pb-4 mx-auto max-w-[480px]'}`}>
+            <main className="flex-1 min-w-0 min-h-0 overflow-y-auto pb-20 md:pb-6">
+            <div className={`pt-6 ${isDesktop ? 'px-8 pb-6 mx-auto max-w-3xl w-full' : 'px-5 pb-4 mx-auto max-w-[480px]'}`}>
               {children}
             </div>
           </main>

@@ -70,7 +70,6 @@ export function Sidebar({ active, onChange }: SidebarProps) {
         bg-canvas border-r border-border
         py-6 px-3
         h-full
-        sticky top-0
       "
     >
       {/* Logo */}

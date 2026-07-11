@@ -10,9 +10,7 @@ export function toLocalISO(d: Date): string {
   const y = d.getFullYear()
   const m = String(d.getMonth() + 1).padStart(2, '0')
   const day = String(d.getDate()).padStart(2, '0')
-  const h = String(d.getHours()).padStart(2, '0')
-  const min = String(d.getMinutes()).padStart(2, '0')
-  return `${y}-${m}-${day}T${h}:${min}`
+  return `${y}-${m}-${day}`
 }
 
 /**
@@ -325,7 +323,7 @@ export function parseInput(input: string): ParsedTransaction | null {
     date,
     recurring: {
       ...recurring,
-      invoiceDay: new Date(date).getDate(),
+      invoiceDay: parseInt(date.split('-')[2], 10),
     },
   }
 }
