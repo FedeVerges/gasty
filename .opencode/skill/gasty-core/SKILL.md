@@ -7,19 +7,36 @@ Gasty is a mobile-first PWA for personal expense tracking in es-AR. This skill c
 
 ## Always-on constraints
 
-- **No banned libraries.** Refuse Framer Motion (~15KB), Recharts/D3 (~50KB+), react-router (~12KB), wouter, Zustand, Redux, styled-components, Emotion, MUI, Chakra, lodash (full ~25KB), moment (~20KB), date-fns (~15KB). Use existing Tailwind/SVG/CSS alternatives.
-- **No localStorage for user data.** Persist transactions and settings via Dexie/IndexedDB only.
-- **Use design tokens, not hex literals.** Use canonical tokens from `src/index.css` (see Token Reference below). Legacy aliases (`bg-accent`, `bg-card`, `text-expense`) still work via CSS variable forwarding but prefer canonical names.
-- **Dark mode parity required.** Every new theme color must also exist in `[data-theme="dark"]`.
+- **No banned libraries.** → ver `gasty` (Canon §2) y `gasty-bundle-budget` para la lista completa y alternativas. Resumen: nada de Framer Motion, Recharts/D3, react-router, Zustand/Redux, styled-components/Emotion, MUI/Chakra, moment, lodash full, react-icons/lucide (todo).
+- **No localStorage for user data.** Persist transactions and settings via Dexie/IndexedDB only. → detalle en `gasty-data-layer` / `gasty` (Canon §6).
+- **Use design tokens, not hex literals.** → ver `gasty` (Canon §1) y `gasty-ui-conventions` para el modelo canónico (verde `#9fe870`, no púrpura). Legacy aliases (`bg-accent`, `bg-card`, `text-expense`) siguen funcionando pero preferí los canónicos.
+- **Dark mode parity required.** Every new theme color must also exist in `[data-theme="dark"]`. → ver `gasty` (Canon §1).
 - **Touch targets ≥ 44px.** Buttons, tabs, and tappable controls should use at least `py-3`.
 - **Respect safe-area-inset-bottom.** Bottom sheets, FABs, and fixed bottom controls must include `env(safe-area-inset-bottom)`.
-- **Animate only transform and opacity.** Use `transition-colors`, `transition-transform`, `transition-opacity`; never `transition-all`.
-- **Local ISO dates only.** Use `toLocalISO(d)` for `Transaction.date` and recurring clones; never `toISOString()` for local dates.
-- **Recurring clones are derived.** Do not mutate or edit transactions where `originalId` is set; edit the source only.
+- **Animate only transform and opacity.** → ver `gasty` (Canon §4): `transition-colors`/`transition-transform`/`transition-opacity`, nunca `transition-all` (ni en SVG).
+- **Local ISO dates only.** Use `toLocalISO(d)` for `Transaction.date` and recurring clones; never `toISOString()` for local dates. → ver `gasty` (Canon §3).
+- **Recurring clones are derived.** Do not mutate or edit transactions where `originalId` is set; edit the source only. → detalle en `gasty-data-layer` / `gasty` (Canon §5).
 - **Schema changes go through `db.version(N)`.** Add an `.upgrade()` callback for backfills; do not silently change indexes.
 - **Use helpers for formatting.** Use `formatMoney`, `formatDate`, `formatDateFull`, `formatMonth` from `src/lib/format.ts`; avoid `toLocaleString()` directly.
 - **Strings in es-AR only.** User-facing text must be Spanish, no i18n library.
 - **Stable keys in lists.** Use stable IDs in `.map()`, not array indices.
+
+## Re-render (React 19 — aplicable a esta PWA client-side)
+
+Estas reglas viven en `gasty` (Canon §7); se listan acá porque `gasty-core` es el skill always-on.
+Las reglas de RSC/Server Actions/SWR **no** aplican (Gasty es 100% client-side).
+
+- **Derivá estado durante el render.** No uses `useState` + `useEffect` para lo que se deduce de props/state (evita renders extra y state drift).
+- **No definas componentes dentro de componentes.** Crea un nuevo tipo cada render → remonta y pierde estado/foco. Pasá props.
+- **`functional setState`** para updates basados en el valor previo (evita stale closures, callbacks estables).
+- **`useMemo` solo para trabajo caro**, no para expresiones primitivas simples (el hook cuesta más que la expresión).
+- **`useDeferredValue` / `useTransition`** para búsquedas/filtros grandes (ej. lista de transacciones) — mantiene el input responsivo.
+- **`useRef` para valores transitorios** frecuentes (scroll, mouse) que no deben re-renderizar.
+- **Listeners globales estables:** `useEffectEvent` o handler en ref para no re-suscribir en cada render.
+- **Init-once por app load** (no en `useEffect([])` de un componente que puede remontar — ya aplicado en `useRecurringCheck`).
+- **Condicional explícita con ternario**, no `&&` cuando el valor puede ser `0`/`NaN`.
+- **Inmutabilidad:** `toSorted()` en vez de `sort()` sobre props/state.
+- **`Set`/`Map` para lookups repetidos**; hoist de `RegExp` fuera del render; `flatMap` para map+filter.
 
 ## Layout
 
@@ -28,43 +45,10 @@ Gasty is a mobile-first PWA for personal expense tracking in es-AR. This skill c
 
 ## Token Reference (`src/index.css`)
 
-### Canonical tokens (prefer these)
-
-| Category | Token | Light | Dark | Usage |
-|----------|-------|-------|------|-------|
-| **Surface** | `bg-canvas` | #ffffff | #1a1e17 | App background, inputs |
-| | `bg-canvas-soft` | #f5f5f4 | #22261f | Secondary surfaces, chips |
-| | `bg-card-hover` | #ececeb | #262b23 | Hover state on cards |
-| **Brand** | `bg-primary` | #9fe870 | #9fe870 | CTA, FAB, active states |
-| | `bg-primary-pale` | #e2f6d5 | #2a3324 | Soft brand background |
-| | `bg-primary-active` | #cdffad | #cdffad | Pressed state |
-| | `text-on-primary` | #0e0f0c | #0e0f0c | Text on primary bg |
-| **Text** | `text-ink` | #0e0f0c | #eef0ea | Primary text |
-| | `text-body` | #454745 | #abada7 | Secondary text |
-| | `text-mute` | #5c5e59 | #8f918b | Tertiary / placeholders |
-| **Semantic** | `text-positive` | #1a7a35 | #4ade80 | Income / success |
-| | `text-negative` | #d03238 | #f87171 | Expense / error |
-| | `text-warning` | #ffd11a | #fbbf24 | Recurring / warnings |
-| | `bg-expense-soft` | #fbe4e4 | #3b1a1a | Soft expense background |
-| | `bg-income-soft` | #e4f3e4 | #1a2e1a | Soft income background |
-| | `bg-recurring-soft` | #fef3c7 | #3a2f1a | Soft recurring background |
-| **Border** | `border-border` | #d6d9d3 | #2d322a | Default borders |
-| | `border-border-strong` | #c1c4be | #3d4339 | Emphasized borders |
-
-### Proyector tokens (future month projection)
-
-Used ONLY when `selectedMonth > currentMonth`. Never apply to current/past months.
-
-| Token | Value | Usage |
-|-------|-------|-------|
-| `bg-proyector-bg` | #0c4a6e | Card background in projection |
-| `text-proyector-text` | #e0f2fe | Text in projection |
-| `border-proyector-accent` | #22d3ee | Borders in projection |
-| `bg-proyector-card` | #0e3a5c | Secondary card in projection |
-
-### Legacy aliases (still work, prefer canonical)
-
-`bg-accent` → `bg-primary`, `bg-card` → `bg-canvas`, `text-expense` → `text-negative`, `text-income` → `text-positive`, `text-recurring` → `text-warning`
+El modelo de tokens completo (canónicos, proyector y legacy aliases, con valores light/dark) vive en
+**`gasty` (Canon §1)**. No lo redefinas acá. Resumen: accent = verde `#9fe870` (`bg-primary`),
+canónicos `bg-canvas`/`text-ink`/`text-body`/`text-mute`/`text-positive`/`text-negative`/`text-warning`;
+legacy `bg-accent`/`bg-card`/`text-expense`/`text-income`/`text-recurring` siguen funcionando.
 
 ## File layout contract
 

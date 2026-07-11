@@ -43,6 +43,7 @@ Si la propuesta requiere alguna de estas, **rechazala y proponé alternativa**:
 |---|---|---|
 | `react`, `react-dom` | ~46KB gz | foundation, sin alternativa razonable |
 | `dexie`, `dexie-react-hooks` | ~8KB gz | persistencia oficial, tree-shakeable |
+| `@tanstack/react-virtual` | ~3KB gz | virtualización de listas largas (>500 txs); tree-shakeable, solo el hook usado |
 | `@vitejs/plugin-react` | build-time | no impacta bundle |
 | `@tailwindcss/vite` | build-time | genera CSS, no JS |
 | `vite-plugin-pwa` | build-time | genera SW, no impacta bundle inicial |

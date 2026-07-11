@@ -7,6 +7,10 @@ description: Use ONLY when modifying Dexie schema, hooks that use useLiveQuery, 
 
 Toda la persistencia de Gasty vive en IndexedDB a través de Dexie 4. No hay backend, no hay `localStorage` para datos de usuario, no hay estado de servidor. La reactividad es local: cualquier cambio en la DB dispara la re-renderización de los hooks `useLiveQuery`.
 
+> **Fuente de tipos:** `Transaction`, `Category`, `RecurringConfig`, `Settings` se definen una sola vez
+> en **`gasty-domain`** (y en `src/types/index.ts`). Este skill describe el *schema Dexie* y los hooks,
+> no redefinas los tipos acá. Reglas de fecha/recurrencia también en `gasty` (Canon §3/§5).
+
 ## Schema (v1) — `src/lib/db.ts`
 
 ```ts

@@ -28,6 +28,10 @@ Este skill cubre el runbook de build y empaquetado.
 
 ⚠️ `build` corre `tsc -b && vite build`. **No** quitar el `tsc -b` (vite no chequea tipos por sí solo).
 
+> **Versión de Vite:** el proyecto usa **Vite 6** (`vite@^6.4.2`). El skill externo `vite` documenta Vite 8
+> (Rolldown/Oxc) como referencia futura; su sección "Rolldown Migration" **no aplica hoy**. No migres a
+> Rolldown sin una ADR que valide el budget.
+
 ## Build de PWA
 
 ```bash
@@ -62,7 +66,7 @@ manifest: {
   name: 'Gasty',
   short_name: 'Gasty',
   description: 'Tu app de gastos, simple y rápida',
-  theme_color: '#7c3aed',           // DEBE matchear --color-accent en index.css
+  theme_color: '#9fe870',           // DEBE matchear --color-primary (verde) en index.css
   background_color: '#f9fafb',
   display: 'standalone',
   orientation: 'portrait',

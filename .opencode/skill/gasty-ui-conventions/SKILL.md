@@ -9,37 +9,27 @@ Gasty tiene un sistema de diseño mínimo y disciplinado. Todo color viene de un
 
 ## Design tokens — `src/index.css`
 
-Tailwind v4 + `@theme` con CSS custom properties. Todos los tokens viven en un solo lugar.
+Tailwind v4 + `@theme` con CSS custom properties. **El modelo de tokens canónico (nombres, valores
+light/dark y legacy aliases) vive en un solo lugar: `gasty` (Canon §1).** Leelo ahí — no lo redefinas.
 
-### Light mode (`@theme`)
+Resumen mínimo para no romper nada:
 
-| Token | Valor | Uso |
-|---|---|---|
-| `--color-bg` | `#f5f5f7` | Fondo de la app |
-| `--color-card` | `#ffffff` | Fondo de cards, sheets, inputs |
-| `--color-card-hover` | `#fafafa` | Hover state de cards |
-| `--color-text` | `#1a1a2e` | Texto principal |
-| `--color-text-muted` | `#6b7280` | Texto secundario |
-| `--color-text-subtle` | `#9ca3af` | Texto auxiliar (placeholders, hints) |
-| `--color-border` | `#e5e7eb` | Bordes sutiles |
-| `--color-border-strong` | `#d1d5db` | Bordes con peso |
-| `--color-accent` | `#7c3aed` | Morado principal (CTA, FAB, links) |
-| `--color-accent-2` | `#6366f1` | Variante del accent (gradients) |
-| `--color-accent-soft` | `#ede9fe` | Fondo suave del accent |
-| `--color-expense` | `#ef4444` | Rojo para gastos |
-| `--color-expense-soft` | `#fee2e2` | Fondo suave para gastos |
-| `--color-income` | `#22c55e` | Verde para ingresos |
-| `--color-income-soft` | `#dcfce7` | Fondo suave para ingresos |
-| `--color-recurring` | `#f59e0b` | Ámbar para recurrentes |
-| `--color-recurring-soft` | `#fef3c7` | Fondo suave para recurrentes |
-| `--color-overlay` | `rgba(0, 0, 0, 0.4)` | Backdrop de sheets/modals |
-| `--font-sans` | `-apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", "Segoe UI", Roboto, sans-serif` | Stack tipográfico |
+- El accent de Gasty es **verde `#9fe870`** (`--color-primary`), **no púrpura**. Nunca uses `#7c3aed`.
+- Nombres canónicos: `bg-canvas`, `bg-primary`, `text-ink`, `text-body`, `text-mute`,
+  `text-positive`/`text-negative`/`text-warning`, `border-border`. Los nombres viejos
+  (`bg-accent`, `bg-card`, `text-expense`, `text-income`, `text-recurring`) son **legacy aliases**
+  que siguen funcionando pero preferí los canónicos.
+- `category.color` es un hex dinámico por categoría (viene de `Category.color`); está permitido en
+  `style={{ background: c.color }}` / `stroke={c.color}` — no es un token del tema.
 
 ### Dark mode (`[data-theme="dark"]`)
 
-El dark mode se activa con el atributo en `<html>` (vía `SettingsContext`). **Cada token debe tener su contraparte oscura** en el bloque `[data-theme="dark"]`. Ver `src/index.css:27-46` para los valores actuales.
+El dark mode se activa con el atributo en `<html>` (vía `SettingsContext`). **Cada token debe tener su
+contraparte oscura** en el bloque `[data-theme="dark"]` (ver `src/index.css`, bloque
+`[data-theme="dark"]` ~línea 60+ para los valores actuales).
 
-⚠️ **Regla de oro**: si agregás un color nuevo en `@theme`, agregalo también en `[data-theme="dark"]`. Sin excepción.
+⚠️ **Regla de oro**: si agregás un color nuevo en `@theme`, agregalo también en `[data-theme="dark"]`.
+Sin excepción. → también en `gasty` (Canon §1) y `gasty-core` (pre-commit).
 
 ## Clases de Tailwind para usar
 
@@ -193,7 +183,7 @@ const CIRCUMFERENCE = 2 * Math.PI * RADIUS
             stroke={s.category.color} strokeWidth={STROKE}
             strokeDasharray={`${s.length} ${CIRCUMFERENCE - s.length}`}
             strokeDashoffset={-s.offset}
-            className="transition-all duration-500" />
+            className="transition-[stroke-dashoffset] duration-500" />
   ))}
 </svg>
 ```

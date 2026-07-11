@@ -7,6 +7,8 @@ description: Use ONLY when writing or modifying tests in tests/ directory. Trigg
 
 Tests con **Vitest** + **jsdom** + **fake-indexeddb**. Tres archivos canónicos en `tests/`. Esta skill es la fuente de verdad de cómo se escriben y organizan.
 
+> El patrón de setup de DB (`import 'fake-indexeddb/auto'` primero + `beforeEach` con `db.delete()/open()/seedDatabase()`) se alinea con **`gasty-data-layer`** (mismo flujo que usan los tests de recurring/integration). No lo redefinas: referencia este skill. Tipos bajo test → `gasty-domain`.
+
 ## Setup
 
 - `vitest.config.ts` (raíz): `globals: true`, `environment: 'jsdom'`, sin `setupFiles` (cada test hace su propio setup de `fake-indexeddb`).

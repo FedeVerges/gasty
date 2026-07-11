@@ -7,6 +7,9 @@ description: Use ONLY when modifying src/lib/parser.ts or src/lib/categories.ts.
 
 El parser convierte lenguaje natural en español ("birra 1500", "alquiler 45000", "cuota auto 25000 4/24") en un `ParsedTransaction` determinístico, sin red, sin librerías, sin NLP. Es la pieza más sensible de Gasty: cada cambio debe venir con tests.
 
+> `ParsedTransaction` y `Transaction` se definen en **`gasty-domain`** (fuente única de tipos). Este skill
+> describe solo las reglas de detección; no redefinas los tipos.
+
 ## Contrato de `parseInput(input: string): ParsedTransaction | null`
 
 - Devuelve `null` si el input está vacío o si no se detecta monto.

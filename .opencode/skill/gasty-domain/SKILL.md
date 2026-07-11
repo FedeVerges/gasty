@@ -7,6 +7,10 @@ description: Use ONLY when working on Gasty's domain model (transactions, catego
 
 Gasty is a personal expense tracker, es-AR locale, mobile-first PWA. The data is the product. This skill is the source of truth for the domain shapes and the end-to-end flow.
 
+> **Fuente única de tipos.** `Transaction`, `Category`, `RecurringConfig`, `Settings`, `ParsedTransaction`,
+> `Tab` se definen acá (y en `src/types/index.ts`). `gasty-data-layer` referencia estos tipos para el
+> schema Dexie; no los dupliques. El flujo e2e de abajo también se menciona en `gasty` (Canon).
+
 ## Core types (`src/types/index.ts`)
 
 ```ts
