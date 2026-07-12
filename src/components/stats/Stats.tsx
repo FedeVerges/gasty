@@ -13,7 +13,11 @@ function monthKey(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
 }
 
-export function Stats() {
+interface StatsProps {
+  categoryFilter?: string | null
+}
+
+export function Stats({ categoryFilter }: StatsProps) {
   const transactions = useAllTransactions()
   const categories = useCategories()
   const { settings } = useSettings()
@@ -22,6 +26,7 @@ export function Stats() {
   const now = useMemo(() => new Date(), [])
   const currentKey = monthKey(now)
   const [selectedMonth, setSelectedMonth] = useState(currentKey)
+  const [donutMode, setDonutMode] = useState<'pct' | 'amount'>('pct')
 
   const { transactions: monthTransactions, isProjection } = useProjections(selectedMonth)
 
@@ -96,6 +101,21 @@ export function Stats() {
     const [id, total] = sorted[0]
     return { category: categories.find((c) => c.id === id), total }
   }, [monthTransactions, categories])
+
+  const savingsTotal = useMemo(() => {
+    return monthTransactions
+      .filter((t) => t.type === 'expense' && t.categoryId === 'savings')
+      .reduce((acc, t) => acc + t.amount, 0)
+  }, [monthTransactions])
+
+  const filteredCategory = useMemo(() => {
+    if (!categoryFilter) return null
+    const cat = categories.find((c) => c.id === categoryFilter)
+    const total = monthTransactions
+      .filter((t) => t.type === 'expense' && t.categoryId === categoryFilter)
+      .reduce((acc, t) => acc + t.amount, 0)
+    return cat ? { cat, total } : null
+  }, [categoryFilter, categories, monthTransactions])
 
   const WIDTH = isWide ? 800 : isDesktop ? 600 : 320
   const HEIGHT = isWide ? 200 : isDesktop ? 180 : 160
@@ -182,7 +202,70 @@ export function Stats() {
         data={data.categoryData}
         total={data.monthTotal}
         title={`Por categoría · ${monthLabel}`}
+        mode={donutMode}
       />
+
+      {/* Donut mode toggle (% / monto) */}
+      <div className="flex justify-center">
+        <div className="inline-flex bg-canvas-soft rounded-full p-1">
+          <button
+            onClick={() => setDonutMode('pct')}
+            className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${donutMode === 'pct' ? 'bg-primary text-on-primary' : 'text-body'}`}
+            aria-label="Ver porcentajes"
+          >
+            %
+          </button>
+          <button
+            onClick={() => setDonutMode('amount')}
+            className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${donutMode === 'amount' ? 'bg-primary text-on-primary' : 'text-body'}`}
+            aria-label="Ver montos"
+          >
+            $
+          </button>
+        </div>
+      </div>
+
+      {/* Categoría filtrada desde Movimientos */}
+      {filteredCategory && (
+        <Card>
+          <div className="flex items-center gap-3">
+            <div
+              className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl"
+              style={{ background: `${filteredCategory.cat.color}25` }}
+            >
+              {filteredCategory.cat.emoji}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs uppercase tracking-widest text-body font-medium">Categoría seleccionada</p>
+              <p className="font-bold text-lg text-ink truncate">{filteredCategory.cat.name}</p>
+            </div>
+            <span className="font-bold text-lg text-ink">
+              {formatMoney(filteredCategory.total, settings.currency)}
+            </span>
+          </div>
+        </Card>
+      )}
+
+      {/* Sección Ahorros */}
+      <Card>
+        <span className="text-xs uppercase tracking-widest text-body font-medium block mb-3">
+          Ahorros del mes
+        </span>
+        <div className="flex items-center gap-3">
+          <div
+            className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl"
+            style={{ background: 'var(--color-positive)25' }}
+          >
+            🐖
+          </div>
+          <div className="flex-1">
+            <p className="text-sm text-body">Lo que apartaste este mes</p>
+            <p className="text-2xl font-bold text-positive">
+              {formatMoney(savingsTotal, settings.currency)}
+            </p>
+          </div>
+        </div>
+      </Card>
 
       {topCategory && topCategory.category && (
         <Card isProjection={isProjection}>

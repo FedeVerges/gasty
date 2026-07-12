@@ -165,9 +165,9 @@ test.describe('Gestión de recurrencias', () => {
     await page.getByText('Alquiler').first().click()
     await page.waitForTimeout(300)
 
-    // Modificar el monto
-    const input = page.locator('input[placeholder="Ej: birra 1500"]')
-    await input.fill('alquiler 50000')
+    // Modificar el monto (modo edición: campo numérico)
+    const amountInput = page.locator('input[placeholder="Monto"]')
+    await amountInput.fill('50000')
     await page.waitForTimeout(200)
 
     // Confirmar edición

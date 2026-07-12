@@ -6,6 +6,7 @@ import { useCategories } from '../../hooks/useCategories'
 import { formatMoney, formatDate } from '../../lib/format'
 import { clearDatabase } from '../../lib/db'
 import { CsvImportContext } from '../../context/CsvImportContext'
+import { EditTransactionContext } from '../../context/EditTransactionContext'
 import { CategoryManager } from './CategoryManager'
 import type { Transaction } from '../../types'
 import { version } from '../../../package.json'
@@ -16,7 +17,9 @@ export function Settings() {
   const { settings, setTheme, setCurrency, setCsvFormat } = useSettings()
   const categories = useCategories()
   const csvImport = useContext(CsvImportContext)
+  const onEdit = useContext(EditTransactionContext)
   const [recurring, setRecurring] = useState<Transaction[]>([])
+  const [recurringSearch, setRecurringSearch] = useState('')
   const [view, setView] = useState<SettingsView>('main')
   const [clearing, setClearing] = useState(false)
 
@@ -45,6 +48,14 @@ export function Settings() {
     }
   }
 
+  const filteredRecurring = recurring.filter((tx) => {
+    const search = recurringSearch.toLowerCase().trim()
+    if (!search) return true
+    const cat = categories.find((c) => c.id === tx.categoryId)
+    const haystack = `${tx.description} ${cat?.name ?? ''}`.toLowerCase()
+    return haystack.includes(search)
+  })
+
   if (view === 'categories') {
     return (
       <div className="space-y-4">
@@ -65,44 +76,139 @@ export function Settings() {
 
   return (
     <div className="space-y-4">
-      <header className="pt-2 pb-1">
+      <header className="pt-2 pb-1 flex items-center gap-3">
+        {/* Theme slider — top-left, simple toggle with icon */}
+        <button
+          onClick={() => setTheme(settings.theme === 'light' ? 'dark' : 'light')}
+          className="relative w-14 h-8 rounded-full transition-colors shrink-0"
+          style={{ background: settings.theme === 'dark' ? 'var(--color-primary)' : 'var(--color-canvas-soft)', border: '1px solid var(--color-border)' }}
+          role="switch"
+          aria-checked={settings.theme === 'dark'}
+          aria-label="Cambiar tema claro/oscuro"
+        >
+          <span
+            className="absolute top-1 w-6 h-6 rounded-full bg-white shadow flex items-center justify-center text-xs transition-transform"
+            style={{ left: 2, transform: settings.theme === 'dark' ? 'translateX(22px)' : 'translateX(0)' }}
+          >
+            {settings.theme === 'dark' ? '🌙' : '☀️'}
+          </span>
+        </button>
         <h1 className="text-4xl font-black tracking-tight leading-none">Ajustes</h1>
       </header>
 
+      {/* 1. Categorías */}
       <Card>
         <span className="text-xs uppercase tracking-widest text-body font-medium block mb-3">
-          Apariencia
+          Categorías
         </span>
-        <div className="grid grid-cols-2 gap-2">
-          <button
-            onClick={() => setTheme('light')}
-            className={`
-              p-4 rounded-2xl border-2 transition-colors text-left
-              ${settings.theme === 'light' ? 'border-primary bg-primary-pale' : 'border-border bg-card'}
-            `}
-          >
-            <div className="flex items-center gap-2 mb-1">
-              <span className="text-lg">☀️</span>
-              <span className="font-semibold">Claro</span>
-            </div>
-            <p className="text-xs text-body">Fondo blanco</p>
-          </button>
-          <button
-            onClick={() => setTheme('dark')}
-            className={`
-              p-4 rounded-2xl border-2 transition-colors text-left
-              ${settings.theme === 'dark' ? 'border-primary bg-primary-pale' : 'border-border bg-card'}
-            `}
-          >
-            <div className="flex items-center gap-2 mb-1">
-              <span className="text-lg">🌙</span>
-              <span className="font-semibold">Oscuro</span>
-            </div>
-            <p className="text-xs text-body">No tan oscuro</p>
-          </button>
-        </div>
+        <p className="text-xs text-body mb-3">
+          Administrá las categorías y las palabras clave para detección automática al cargar gastos.
+        </p>
+        <button
+          onClick={() => setView('categories')}
+          className="
+            w-full py-3 px-4 rounded-2xl
+            bg-primary text-on-primary font-semibold
+            active:scale-[0.98] transition-transform
+          "
+        >
+          Editar
+        </button>
       </Card>
 
+      {/* 2. Movimientos recurrentes */}
+      <Card>
+        <div className="flex items-center justify-between mb-3">
+          <span className="text-xs uppercase tracking-widest text-body font-medium">
+            Movimientos recurrentes
+          </span>
+          <span className="text-xs text-body">
+            {recurring.length} activos
+          </span>
+        </div>
+
+        <div className="relative mb-3">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={2}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-mute pointer-events-none"
+          >
+            <circle cx="11" cy="11" r="8" />
+            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+          </svg>
+          <input
+            type="text"
+            value={recurringSearch}
+            onChange={(e) => setRecurringSearch(e.target.value)}
+            placeholder="Buscar recurrente..."
+            className="w-full pl-9 pr-3 py-2.5 rounded-2xl bg-canvas border border-border text-sm text-ink placeholder:text-mute focus:border-primary transition-colors"
+          />
+        </div>
+
+        {filteredRecurring.length === 0 ? (
+          <div className="text-center py-6">
+            <p className="text-sm text-body">No tenés movimientos recurrentes</p>
+            <p className="text-xs text-body mt-1">
+              Al crear un movimiento, marcá la opción 🔄
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {filteredRecurring.map((tx) => {
+              const cat = categories.find((c) => c.id === tx.categoryId)
+              return (
+                <div
+                  key={tx.id}
+                  className="flex items-center gap-3 p-3 rounded-2xl bg-canvas-soft"
+                >
+                  <div
+                    className="w-10 h-10 rounded-xl flex items-center justify-center text-lg shrink-0"
+                    style={{ background: `${cat?.color ?? '#888'}25` }}
+                  >
+                    {cat?.emoji ?? '🔁'}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-ink truncate">
+                      {tx.description}
+                    </p>
+                    <p className="text-xs text-body">
+                      {cat?.name} · {formatDate(tx.date)}
+                      {tx.recurring.kind === 'fixed_temporary' &&
+                        ` · ${tx.recurring.currentMonth}/${tx.recurring.totalMonths}`}
+                    </p>
+                  </div>
+                  <div className="flex flex-col items-end gap-1">
+                    <span className="font-bold text-sm">
+                      {formatMoney(tx.amount, settings.currency)}
+                    </span>
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={() => onEdit?.(tx)}
+                        className="text-xs text-primary"
+                        aria-label={`Editar ${tx.description}`}
+                      >
+                        Editar
+                      </button>
+                      <button
+                        onClick={() => handleDeleteRecurring(tx.id)}
+                        className="text-xs text-negative"
+                      >
+                        Eliminar
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </Card>
+
+      {/* 3. Moneda */}
       <Card>
         <span className="text-xs uppercase tracking-widest text-body font-medium block mb-3">
           Moneda
@@ -129,6 +235,7 @@ export function Settings() {
         </div>
       </Card>
 
+      {/* 4. Formato de moneda (CSV) */}
       <Card>
         <span className="text-xs uppercase tracking-widest text-body font-medium block mb-3">
           Formato de CSV
@@ -215,25 +322,6 @@ export function Settings() {
 
       <Card>
         <span className="text-xs uppercase tracking-widest text-body font-medium block mb-3">
-          Categorías
-        </span>
-        <p className="text-xs text-body mb-3">
-          Administrá las categorías y las palabras clave para detección automática al cargar gastos.
-        </p>
-        <button
-          onClick={() => setView('categories')}
-          className="
-            w-full py-3 px-4 rounded-2xl
-            bg-primary text-on-primary font-semibold
-            active:scale-[0.98] transition-transform
-          "
-        >
-          Editar
-        </button>
-      </Card>
-
-      <Card>
-        <span className="text-xs uppercase tracking-widest text-body font-medium block mb-3">
           Importar datos
         </span>
         <p className="text-sm text-body mb-3">
@@ -249,66 +337,6 @@ export function Settings() {
         >
           Importar CSV
         </button>
-      </Card>
-
-      <Card>
-        <div className="flex items-center justify-between mb-3">
-          <span className="text-xs uppercase tracking-widest text-body font-medium">
-            Movimientos recurrentes
-          </span>
-          <span className="text-xs text-body">
-            {recurring.length} activos
-          </span>
-        </div>
-
-        {recurring.length === 0 ? (
-          <div className="text-center py-6">
-            <p className="text-sm text-body">No tenés movimientos recurrentes</p>
-            <p className="text-xs text-body mt-1">
-              Al crear un movimiento, marcá la opción 🔄
-            </p>
-          </div>
-        ) : (
-          <div className="space-y-2">
-            {recurring.map((tx) => {
-              const cat = categories.find((c) => c.id === tx.categoryId)
-              return (
-                <div
-                  key={tx.id}
-                  className="flex items-center gap-3 p-3 rounded-2xl bg-canvas-soft"
-                >
-                  <div
-                    className="w-10 h-10 rounded-xl flex items-center justify-center text-lg shrink-0"
-                    style={{ background: `${cat?.color ?? '#888'}25` }}
-                  >
-                    {cat?.emoji ?? '🔁'}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium text-ink truncate">
-                      {tx.description}
-                    </p>
-                    <p className="text-xs text-body">
-                      {cat?.name} · {formatDate(tx.date)}
-                      {tx.recurring.kind === 'fixed_temporary' &&
-                        ` · ${tx.recurring.currentMonth}/${tx.recurring.totalMonths}`}
-                    </p>
-                  </div>
-                  <div className="flex flex-col items-end gap-1">
-                    <span className="font-bold text-sm">
-                      {formatMoney(tx.amount, settings.currency)}
-                    </span>
-                    <button
-                      onClick={() => handleDeleteRecurring(tx.id)}
-                      className="text-xs text-negative"
-                    >
-                      Eliminar
-                    </button>
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        )}
       </Card>
 
       <div className="border-2 border-negative rounded-2xl p-4">

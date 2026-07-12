@@ -66,3 +66,13 @@ export interface ParsedTransaction {
 }
 
 export type Tab = 'dashboard' | 'transactions' | 'stats' | 'settings'
+
+export interface Investment {
+  id: string
+  name: string
+  /** Allocation percentage of the total saved amount (0-100) */
+  allocationPct: number
+  /** Expected monthly return percentage (e.g. 1.5 = 1.5% per month) */
+  monthlyReturnPct: number
+  emoji: string
+}

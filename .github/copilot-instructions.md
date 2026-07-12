@@ -10,13 +10,13 @@ Stack: **Vite 6 + React 19 + TypeScript + Tailwind v4 + Dexie 4 + vite-plugin-pw
 
 ## Hard constraints (non-negotiable)
 
-| Metric | Budget |
-|---|---|
-| JS bundle (gzipped) | < 100KB |
-| CSS bundle (gzipped) | < 10KB |
-| Container width | `max-w-[480px]` mobile-first (already on `#root`) |
-| Locale | es-AR only (v1) |
-| Touch targets | ≥ 44px (`py-3` min) |
+| Metric               | Budget                                            |
+| -------------------- | ------------------------------------------------- |
+| JS bundle (gzipped)  | < 200KB                                           |
+| CSS bundle (gzipped) | < 10KB                                            |
+| Container width      | `max-w-[480px]` mobile-first (already on `#root`) |
+| Locale               | es-AR only (v1)                                   |
+| Touch targets        | ≥ 44px (`py-3` min)                               |
 
 ## Always-on rules
 

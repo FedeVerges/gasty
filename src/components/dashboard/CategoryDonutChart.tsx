@@ -13,6 +13,7 @@ interface CategoryDonutChartProps {
   data: CategoryTotal[]
   total: number
   title?: string
+  mode?: 'pct' | 'amount'
 }
 
 function DonutChartSVG({ data, total }: { data: CategoryTotal[]; total: number }) {
@@ -71,7 +72,7 @@ function DonutChartSVG({ data, total }: { data: CategoryTotal[]; total: number }
   )
 }
 
-export function CategoryDonutChart({ data, total, title }: CategoryDonutChartProps) {
+export function CategoryDonutChart({ data, total, title, mode = 'pct' }: CategoryDonutChartProps) {
 
   if (data.length === 0 || total === 0) {
     return (
@@ -114,7 +115,9 @@ export function CategoryDonutChart({ data, total, title }: CategoryDonutChartPro
                 {s.category.name}
               </span>
               <span className="text-sm font-medium text-body">
-                {(s.fraction * 100).toFixed(0)}%
+                {mode === 'amount'
+                  ? formatMoney(s.total, undefined)
+                  : `${(s.fraction * 100).toFixed(0)}%`}
               </span>
             </div>
           ))}

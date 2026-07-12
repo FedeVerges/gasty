@@ -49,6 +49,18 @@ export function SmartInputSheet({ open, onClose, editTransaction }: SmartInputSh
   const [categoryOverride, setCategoryOverride] = useState<string | null>(
     () => editTransaction?.categoryId ?? null
   )
+
+  // Edit-mode field state (when editing an existing transaction)
+  const [editDescription, setEditDescription] = useState(
+    () => editTransaction?.description ?? ''
+  )
+  const [editAmount, setEditAmount] = useState<string>(
+    () => (editTransaction ? String(editTransaction.amount) : '')
+  )
+  const [editDate, setEditDate] = useState<string>(
+    () => (editTransaction ? editTransaction.date.split('T')[0] : toLocalISO(new Date()).split('T')[0])
+  )
+
   const inputRef = useRef<HTMLInputElement>(null)
   const userTouchedRecurrence = useRef(false)
   const keyboardHeight = useKeyboardHeight()
@@ -101,50 +113,59 @@ export function SmartInputSheet({ open, onClose, editTransaction }: SmartInputSh
     ? categories.find((c) => c.id === parsed.categoryId)
     : undefined
 
+  const activeType: TransactionType =
+    typeOverride ?? (editTransaction ? editTransaction.type : parsed?.type) ?? 'expense'
+  const activeCategoryId =
+    categoryOverride ?? (editTransaction ? editTransaction.categoryId : parsed?.categoryId)
+
   const sortedCategories = useMemo(() => {
-    if (!parsed) return []
     const filtered = categories.filter((c) =>
-      parsed.type === 'income' ? c.type === 'income' : c.type === 'expense'
+      activeType === 'income' ? c.type === 'income' : c.type === 'expense'
     )
-    const selectedId = categoryOverride ?? parsed.categoryId
+    const selectedId = activeCategoryId
     return [...filtered].sort((a, b) => {
       if (a.id === selectedId) return -1
       if (b.id === selectedId) return 1
       return 0
     })
-  }, [categories, parsed, categoryOverride])
+  }, [categories, activeType, activeCategoryId])
 
   const handleSubmit = async (e: React.PointerEvent | React.FormEvent) => {
     e.preventDefault()
-    if (!parsed) return
     inputRef.current?.blur()
+
     const finalRecurring: RecurringConfig =
       userTouchedRecurrence.current
         ? recurring.kind === 'fixed_temporary'
           ? { ...recurring, totalMonths: tempMonths, currentMonth: 1 }
           : recurring
         : editTransaction?.recurring ?? (
-          parsed.recurring.kind !== 'none'
+          parsed && parsed.recurring.kind !== 'none'
             ? parsed.recurring
             : recurring
         )
 
     if (editTransaction) {
-      // Edit existing: update source + regenerate future clones (single transaction)
+      // Edit mode: build from explicit fields (amount/date editable inline)
+      const amount = parseFloat(editAmount.replace(',', '.'))
+      if (isNaN(amount) || amount <= 0) return
+      const finalType = typeOverride ?? editTransaction.type
+      const finalCategory = categoryOverride ?? editTransaction.categoryId
       await editRecurringSource(
         editTransaction.id,
         {
           id: editTransaction.id,
-          type: parsed.type,
-          amount: parsed.amount,
-          description: parsed.description,
-          categoryId: parsed.categoryId,
-          date: parsed.date,
+          type: finalType,
+          amount,
+          description: editDescription.trim() || editTransaction.description,
+          categoryId: finalCategory,
+          date: editDate,
           emoji: editTransaction.emoji,
         },
         finalRecurring,
       )
     } else {
+      if (!parsed) return
       // New transaction — atomic: source + clones in one Dexie transaction
       const tx = createTransactionFromParsed({
         ...parsed,
@@ -210,75 +231,150 @@ export function SmartInputSheet({ open, onClose, editTransaction }: SmartInputSh
 
         <form className="px-5 pb-6 space-y-4" onSubmit={handleSubmit}>
           {/* ANCHOR: input + type row never move — prevents CLS on first keystroke */}
-          <div>
-            <div className="flex items-center gap-2">
-              <input
-                ref={inputRef}
-                type="text"
-                value={text}
-                onChange={(e) => setText(e.target.value)}
-                placeholder="Ej: birra 1500"
-                className="
-                  flex-1 text-xl p-4
-                  rounded-2xl
-                  bg-canvas border-2 border-border
-                  focus:border-primary
-                  placeholder:text-mute
-                  transition-colors
-                "
-                autoFocus
-              />
-              <button
-                type="submit"
-                disabled={!parsed}
-                className="
-                  w-11 h-11 shrink-0 rounded-full
-                  bg-primary text-on-primary
-                  flex items-center justify-center
-                  disabled:opacity-30 disabled:cursor-not-allowed
-                  active:scale-95 transition-transform
-                "
-                aria-label="Confirmar transacción"
-              >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3}
-                     strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6">
-                  <polyline points="20 6 9 17 4 12" />
-                </svg>
-              </button>
+          {editTransaction ? (
+            /* ── Edit mode: each property editable inline ── */
+            <div className="space-y-3">
+              <div>
+                <label className="text-xs text-mute block mb-1">Descripción</label>
+                <input
+                  type="text"
+                  value={editDescription}
+                  onChange={(e) => setEditDescription(e.target.value)}
+                  placeholder="Descripción"
+                  className="w-full px-4 py-3 rounded-2xl bg-canvas border-2 border-border text-ink focus:border-primary transition-colors"
+                />
+              </div>
+              <div>
+                <label className="text-xs text-mute block mb-1">Monto</label>
+                <input
+                  ref={inputRef}
+                  type="number"
+                  inputMode="decimal"
+                  min="0"
+                  step="0.01"
+                  value={editAmount}
+                  onChange={(e) => setEditAmount(e.target.value)}
+                  placeholder="Monto"
+                  className="w-full px-4 py-3 rounded-2xl bg-canvas border-2 border-border text-ink text-xl focus:border-primary transition-colors"
+                  autoFocus
+                />
+              </div>
+              <div>
+                <label className="text-xs text-mute block mb-1">Fecha</label>
+                <input
+                  type="date"
+                  value={editDate}
+                  onChange={(e) => setEditDate(e.target.value)}
+                  className="w-full px-4 py-3 rounded-2xl bg-canvas border-2 border-border text-ink focus:border-primary transition-colors"
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setTypeOverride(typeOverride === 'expense' ? null : 'expense')}
+                  className={`
+                    w-11 h-11 rounded-xl flex items-center justify-center text-lg font-bold transition-colors
+                    ${typeOverride === 'expense'
+                      ? 'bg-negative text-white'
+                      : 'bg-canvas-soft text-body border border-border'}
+                  `}
+                  aria-label="Marcar como gasto"
+                >
+                  −
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setTypeOverride(typeOverride === 'income' ? null : 'income')}
+                  className={`
+                    w-11 h-11 rounded-xl flex items-center justify-center text-lg font-bold transition-colors
+                    ${typeOverride === 'income'
+                      ? 'bg-positive text-white'
+                      : 'bg-canvas-soft text-body border border-border'}
+                  `}
+                  aria-label="Marcar como ingreso"
+                >
+                  +
+                </button>
+                <p className="text-xs text-body flex-1 ml-1">
+                  El emoji depende de la categoría
+                </p>
+              </div>
             </div>
-            <div className="flex items-center gap-2 mt-2 px-1">
-              <button
-                type="button"
-                onClick={() => setTypeOverride(typeOverride === 'expense' ? null : 'expense')}
-                className={`
-                  w-11 h-11 rounded-xl flex items-center justify-center text-lg font-bold
-                  transition-colors
-                  ${typeOverride === 'expense'
-                    ? 'bg-negative text-white'
-                    : 'bg-canvas-soft text-body border border-border'}
-                `}
-                aria-label="Marcar como gasto"
-              >
-                −
-              </button>
-              <button
-                type="button"
-                onClick={() => setTypeOverride(typeOverride === 'income' ? null : 'income')}
-                className={`
-                  w-11 h-11 rounded-xl flex items-center justify-center text-lg font-bold
-                  transition-colors
-                  ${typeOverride === 'income'
-                    ? 'bg-positive text-white'
-                    : 'bg-canvas-soft text-body border border-border'}
-                `}
-                aria-label="Marcar como ingreso"
-              >
-                +
-              </button>
-              <p className="text-xs text-body flex-1 ml-1">
-                Ej: birra 1500
-              </p>
+          ) : (
+            <div>
+              <div className="flex items-center gap-2">
+                <input
+                  ref={inputRef}
+                  type="text"
+                  value={text}
+                  onChange={(e) => setText(e.target.value)}
+                  placeholder="Ej: birra 1500"
+                  className="
+                    flex-1 text-xl p-4
+                    rounded-2xl
+                    bg-canvas border-2 border-border
+                    focus:border-primary
+                    placeholder:text-mute
+                    transition-colors
+                  "
+                  autoFocus
+                />
+              </div>
+              <div className="flex items-center gap-2 mt-2 px-1">
+                <button
+                  type="button"
+                  onClick={() => setTypeOverride(typeOverride === 'expense' ? null : 'expense')}
+                  className={`
+                    w-11 h-11 rounded-xl flex items-center justify-center text-lg font-bold
+                    transition-colors
+                    ${typeOverride === 'expense'
+                      ? 'bg-negative text-white'
+                      : 'bg-canvas-soft text-body border border-border'}
+                  `}
+                  aria-label="Marcar como gasto"
+                >
+                  −
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setTypeOverride(typeOverride === 'income' ? null : 'income')}
+                  className={`
+                    w-11 h-11 rounded-xl flex items-center justify-center text-lg font-bold
+                    transition-colors
+                    ${typeOverride === 'income'
+                      ? 'bg-positive text-white'
+                      : 'bg-canvas-soft text-body border border-border'}
+                  `}
+                  aria-label="Marcar como ingreso"
+                >
+                  +
+                </button>
+                <p className="text-xs text-body flex-1 ml-1">
+                  Ej: birra 1500
+                </p>
+              </div>
             </div>
+          )}
+
+          {/* Submit — always visible (new + edit mode) */}
+          <div className="flex justify-end">
+            <button
+              type="submit"
+              disabled={editTransaction ? (parseFloat(editAmount.replace(',', '.')) <= 0) : !parsed}
+              className="
+                w-11 h-11 shrink-0 rounded-full
+                bg-primary text-on-primary
+                flex items-center justify-center
+                disabled:opacity-30 disabled:cursor-not-allowed
+                active:scale-95 transition-transform
+              "
+              aria-label="Confirmar transacción"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3}
+                   strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6">
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+            </button>
           </div>
 
           {/* DYNAMIC ZONE — content fades in/out; input stays anchored above */}
@@ -335,14 +431,31 @@ export function SmartInputSheet({ open, onClose, editTransaction }: SmartInputSh
               </div>
             )}
 
-          {parsed && (
+            {editTransaction && (
+              <div
+                className="rounded-2xl p-4 border animate-fade-in motion-reduce:animate-none"
+                style={{
+                  background: `${sortedCategories.find((c) => c.id === activeCategoryId)?.color ?? '#888'}10`,
+                  borderColor: `${sortedCategories.find((c) => c.id === activeCategoryId)?.color ?? '#888'}30`,
+                }}
+              >
+                <p className="text-xs text-body uppercase tracking-wide font-medium mb-1">
+                  Editando movimiento
+                </p>
+                <p className="text-sm text-body">
+                  Ajustá los campos arriba. El emoji se toma de la categoría.
+                </p>
+              </div>
+            )}
+
+          {(parsed || editTransaction) && (
             <div className="animate-fade-in motion-reduce:animate-none">
               <p className="text-xs text-body uppercase tracking-wide mb-2 font-medium">
                 Categoría
               </p>
               <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1">
                 {sortedCategories.map((c) => {
-                    const selected = (categoryOverride ?? parsed.categoryId) === c.id
+                    const selected = activeCategoryId === c.id
                     return (
                       <button
                         key={c.id}
@@ -367,7 +480,7 @@ export function SmartInputSheet({ open, onClose, editTransaction }: SmartInputSh
             </div>
           )}
 
-          {parsed && (
+          {(parsed || editTransaction) && (
             <div className="animate-fade-in motion-reduce:animate-none">
               <p className="text-xs text-body uppercase tracking-wide mb-2 font-medium">
                 ¿Es recurrente?
@@ -410,10 +523,17 @@ export function SmartInputSheet({ open, onClose, editTransaction }: SmartInputSh
                   <span className="text-sm text-body">Por</span>
                   <input
                     type="number"
-                    min="1"
                     max="240"
-                    value={tempMonths}
-                    onChange={(e) => setTempMonths(Math.max(1, Math.min(240, parseInt(e.target.value) || 1)))}
+                    value={tempMonths === 0 ? '' : tempMonths}
+                    onChange={(e) => {
+                      const value = e.target.value
+                      if (value === '') {
+                        setTempMonths(0)
+                        return
+                      }
+                      const parsed = parseInt(value, 10)
+                      setTempMonths(Number.isNaN(parsed) ? 0 : Math.max(1, Math.min(240, parsed)))
+                    }}
                     className="w-20 px-3 py-2 rounded-xl bg-canvas border border-border text-center"
                   />
                   <span className="text-sm text-body">meses</span>

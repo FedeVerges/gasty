@@ -9,13 +9,15 @@ test.describe('Ajustes', () => {
   test('cambia tema a oscuro y a claro', async ({ page }) => {
     await navigateTo(page, 'settings')
 
-    await page.getByRole('button', { name: 'Oscuro' }).click()
+    const themeToggle = page.getByRole('switch', { name: 'Cambiar tema claro/oscuro' })
+
+    await themeToggle.click()
     await page.waitForTimeout(200)
 
     const themeAttr = await page.locator('html').getAttribute('data-theme')
     expect(themeAttr).toBe('dark')
 
-    await page.getByRole('button', { name: 'Claro' }).click()
+    await themeToggle.click()
     await page.waitForTimeout(200)
 
     const themeAttr2 = await page.locator('html').getAttribute('data-theme')

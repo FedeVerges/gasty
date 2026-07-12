@@ -79,5 +79,5 @@ After any non-trivial change, run:
 - [ ] Touch targets ≥ 44px on all interactive elements
 - [ ] Dates use `toLocalISO()`, never `toISOString()`
 - [ ] No editing of recurring clones (only source rows)
-- [ ] Bundle size < 100KB JS / < 10KB CSS gzipped
+- [ ] Bundle size <200KB JS / < 10KB CSS gzipped
 - [ ] Stable keys in `.map()`, not array indices

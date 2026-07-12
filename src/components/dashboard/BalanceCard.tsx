@@ -18,6 +18,8 @@ interface BalanceCardProps {
   monthLabel: string
   /** Whether we're in projection mode (future month) */
   isProjection?: boolean
+  /** Opens the detailed balance breakdown */
+  onOpenDetail?: () => void
 }
 
 export function BalanceCard({
@@ -27,6 +29,7 @@ export function BalanceCard({
   monthIncome,
   prevMonthExpense,
   isProjection = false,
+  onOpenDetail,
 }: BalanceCardProps) {
   const { settings } = useSettings()
   const { isWide } = useViewport()
@@ -42,7 +45,12 @@ export function BalanceCard({
 
   return (
     <div className={`gap-4 ${isWide ? 'flex flex-row' : 'flex flex-col'}`}>
-      <Card variant="dark" isProjection={isProjection} className={isWide ? 'flex-1' : undefined}>
+      <Card
+        variant="dark"
+        isProjection={isProjection}
+        className={isWide ? 'flex-1' : undefined}
+        onClick={onOpenDetail}
+      >
         {/* Available balance */}
         <div className="flex flex-col gap-1 ">
           <span className="text-xs uppercase tracking-widest "
@@ -57,7 +65,10 @@ export function BalanceCard({
         </div>
       </Card>
 
-      <Card className={isWide ? 'flex-1' : undefined}>
+      <Card
+        className={isWide ? 'flex-1' : undefined}
+        onClick={onOpenDetail}
+      >
         {/* Spent amount */}
         <div className="mb-4">
           <span className="block text-sm text-body">

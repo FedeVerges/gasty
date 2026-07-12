@@ -31,7 +31,7 @@ export async function navigateTo(page: Page, tab: string) {
 
   if (!tabLabel) throw new Error(`Unknown tab: ${tab}`)
 
-  await page.getByRole('button', { name: tabLabel }).click()
+  await page.getByRole('button', { name: tabLabel, exact: true }).click()
   await page.waitForTimeout(300)
 }
 

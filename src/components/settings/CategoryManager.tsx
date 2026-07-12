@@ -71,6 +71,12 @@ export function CategoryManager() {
     syncKeywordMaps(cats)
   }
 
+  const saveEmoji = async (catId: string, emoji: string) => {
+    const cat = categories.find(c => c.id === catId)
+    if (!cat) return
+    await db.categories.put({ ...cat, emoji })
+  }
+
   return (
     <Card>
       <span className="text-xs uppercase tracking-widest text-body font-medium block mb-3">
@@ -105,6 +111,18 @@ export function CategoryManager() {
 
             {expandedId === cat.id && (
               <div className="px-3 pb-3 border-t border-border pt-2">
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="text-xs text-mute">Emoji</span>
+                  <input
+                    value={cat.emoji}
+                    onChange={(e) => saveEmoji(cat.id, e.target.value)}
+                    placeholder="📦"
+                    maxLength={4}
+                    className="w-14 px-2 py-2 text-lg rounded-xl bg-canvas border border-border text-center outline-none focus:border-primary transition-colors"
+                    aria-label={`Emoji de ${cat.name}`}
+                  />
+                </div>
+
                 <div className="flex flex-wrap gap-1 mb-2">
                   {cat.keywords.map((kw) => (
                     <span

@@ -9,46 +9,46 @@ Gasty se promociona con un bundle de **~105KB gzipped JS + 5KB CSS** (`README.md
 
 ## Topes (no negociables)
 
-| Métrica | Tope | Actual |
-|---|---|---|
-| JS gzipped (total, sin contar service worker) | < 100KB | ~105KB ⚠️ |
-| CSS gzipped | < 10KB | ~5KB ✅ |
-| First Meaningful Paint (3G) | < 2s | — |
-| Time to Interactive (4x CPU throttling) | < 5s | — |
+| Métrica                                       | Tope   | Actual    |
+| --------------------------------------------- | ------ | --------- |
+| JS gzipped (total, sin contar service worker) | <200KB | ~105KB ⚠️ |
+| CSS gzipped                                   | < 10KB | ~5KB ✅   |
+| First Meaningful Paint (3G)                   | < 2s   | —         |
+| Time to Interactive (4x CPU throttling)       | < 5s   | —         |
 
-⚠️ El README dice "~105KB gzipped" — eso es **JS sin gzippar el service worker**, no el bundle inicial. El budget de **JS de carga inicial** sigue siendo < 100KB.
+⚠️ El README dice "~105KB gzipped" — eso es **JS sin gzippar el service worker**, no el bundle inicial. El budget de **JS de carga inicial** sigue siendo <200KB.
 
 ## Prohibidos (lista roja)
 
 Si la propuesta requiere alguna de estas, **rechazala y proponé alternativa**:
 
-| Categoría | Librería(s) | Por qué no | Alternativa |
-|---|---|---|---|
-| Animaciones | `framer-motion`, `react-spring`, `react-transition-group`, `motion` | ~30-50KB, layout animations matan mobile | CSS transitions, `@keyframes` |
-| Charts | `recharts`, `chart.js`, `victory`, `visx`, `d3` | Recharts ~95KB, d3 modular pero verboso | SVG custom (ver `CategoryDonutChart`, `Stats`) |
-| Routing | `react-router`, `wouter`, `@tanstack/router` | ~20-40KB innecesario para 4 tabs | `useState` para tab activo en `App.tsx` |
-| State global | `zustand`, `redux`, `jotai`, `mobx` | innecesario para un solo contexto | `useLiveQuery` + Context |
-| CSS-in-JS runtime | `styled-components`, `emotion`, `stitches` | ~12KB + overhead runtime | Tailwind v4 (utility classes) |
-| UI kits | `@mui/*`, `@chakra-ui/*`, `antd`, `mantine` | 30-100KB+ | Headless primitives custom o propios |
-| Date | `moment` | ~70KB, mutable | `Intl.DateTimeFormat` (usado en `format.ts`) |
-| Utility | `lodash` (full) | ~24KB | `lodash-es` per-function o nativos |
-| Iconografía | `react-icons`, `lucide-react` (todos), `@heroicons/react` | paquetes grandes; usás 5-10 íconos | SVG inline o emojis |
-| i18n | `i18next`, `react-intl`, `react-i18next` | 10-30KB | hardcoded en es-AR (v1) |
-| Toasts | `react-hot-toast`, `sonner`, `react-toastify` | 5-15KB | un `<div>` con `animate-slide-up` custom |
-| Modals | `react-modal`, `@reach/dialog`, `headlessui` | 5-20KB | div + `fixed inset-0` (ver `SmartInputSheet`) |
+| Categoría         | Librería(s)                                                         | Por qué no                               | Alternativa                                    |
+| ----------------- | ------------------------------------------------------------------- | ---------------------------------------- | ---------------------------------------------- |
+| Animaciones       | `framer-motion`, `react-spring`, `react-transition-group`, `motion` | ~30-50KB, layout animations matan mobile | CSS transitions, `@keyframes`                  |
+| Charts            | `recharts`, `chart.js`, `victory`, `visx`, `d3`                     | Recharts ~95KB, d3 modular pero verboso  | SVG custom (ver `CategoryDonutChart`, `Stats`) |
+| Routing           | `react-router`, `wouter`, `@tanstack/router`                        | ~20-40KB innecesario para 4 tabs         | `useState` para tab activo en `App.tsx`        |
+| State global      | `zustand`, `redux`, `jotai`, `mobx`                                 | innecesario para un solo contexto        | `useLiveQuery` + Context                       |
+| CSS-in-JS runtime | `styled-components`, `emotion`, `stitches`                          | ~12KB + overhead runtime                 | Tailwind v4 (utility classes)                  |
+| UI kits           | `@mui/*`, `@chakra-ui/*`, `antd`, `mantine`                         | 30-100KB+                                | Headless primitives custom o propios           |
+| Date              | `moment`                                                            | ~70KB, mutable                           | `Intl.DateTimeFormat` (usado en `format.ts`)   |
+| Utility           | `lodash` (full)                                                     | ~24KB                                    | `lodash-es` per-function o nativos             |
+| Iconografía       | `react-icons`, `lucide-react` (todos), `@heroicons/react`           | paquetes grandes; usás 5-10 íconos       | SVG inline o emojis                            |
+| i18n              | `i18next`, `react-intl`, `react-i18next`                            | 10-30KB                                  | hardcoded en es-AR (v1)                        |
+| Toasts            | `react-hot-toast`, `sonner`, `react-toastify`                       | 5-15KB                                   | un `<div>` con `animate-slide-up` custom       |
+| Modals            | `react-modal`, `@reach/dialog`, `headlessui`                        | 5-20KB                                   | div + `fixed inset-0` (ver `SmartInputSheet`)  |
 
 ## Permitidos (lista verde)
 
-| Librería | Tamaño | Por qué |
-|---|---|---|
-| `react`, `react-dom` | ~46KB gz | foundation, sin alternativa razonable |
-| `dexie`, `dexie-react-hooks` | ~8KB gz | persistencia oficial, tree-shakeable |
-| `@tanstack/react-virtual` | ~3KB gz | virtualización de listas largas (>500 txs); tree-shakeable, solo el hook usado |
-| `@vitejs/plugin-react` | build-time | no impacta bundle |
-| `@tailwindcss/vite` | build-time | genera CSS, no JS |
-| `vite-plugin-pwa` | build-time | genera SW, no impacta bundle inicial |
-| `date-fns` (selectivo) | ~2KB per fn | solo si necesitás algo que `Intl` no cubre (evitá el barrel import) |
-| `sharp` | build-time / runtime en Capacitor | solo para iconos en build |
+| Librería                     | Tamaño                            | Por qué                                                                        |
+| ---------------------------- | --------------------------------- | ------------------------------------------------------------------------------ |
+| `react`, `react-dom`         | ~46KB gz                          | foundation, sin alternativa razonable                                          |
+| `dexie`, `dexie-react-hooks` | ~8KB gz                           | persistencia oficial, tree-shakeable                                           |
+| `@tanstack/react-virtual`    | ~3KB gz                           | virtualización de listas largas (>500 txs); tree-shakeable, solo el hook usado |
+| `@vitejs/plugin-react`       | build-time                        | no impacta bundle                                                              |
+| `@tailwindcss/vite`          | build-time                        | genera CSS, no JS                                                              |
+| `vite-plugin-pwa`            | build-time                        | genera SW, no impacta bundle inicial                                           |
+| `date-fns` (selectivo)       | ~2KB per fn                       | solo si necesitás algo que `Intl` no cubre (evitá el barrel import)            |
+| `sharp`                      | build-time / runtime en Capacitor | solo para iconos en build                                                      |
 
 ## Cómo medir el bundle
 

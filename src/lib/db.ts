@@ -1,11 +1,11 @@
 import Dexie, { type EntityTable } from 'dexie'
-import type { Transaction, Category, Settings, CsvFormatSettings } from '../types'
+import type { Transaction, Category, Settings, CsvFormatSettings, Investment } from '../types'
 import { DEFAULT_CATEGORIES, syncKeywordMaps, getPaletteColor } from './categories'
 
 export function generateId(): string {
   const bytes = crypto.getRandomValues(new Uint8Array(16))
-  bytes[6] = (bytes[6]! & 0x0f) | 0x40
-  bytes[8] = (bytes[8]! & 0x3f) | 0x80
+  bytes[6] = (bytes[6] & 0x0f) | 0x40
+  bytes[8] = (bytes[8] & 0x3f) | 0x80
   const hex = Array.from(bytes, (b) => b.toString(16).padStart(2, '0'))
   return `${hex.slice(0, 4).join('')}-${hex.slice(4, 6).join('')}-${hex.slice(6, 8).join('')}-${hex.slice(8, 10).join('')}-${hex.slice(10).join('')}`
 }
@@ -20,6 +20,7 @@ export const db = new Dexie('gasty') as Dexie & {
   transactions: EntityTable<Transaction, 'id'>
   categories: EntityTable<Category, 'id'>
   settings: EntityTable<Settings & { id: string }, 'id'>
+  investments: EntityTable<Investment, 'id'>
 }
 
 db.version(1).stores({
@@ -83,6 +84,15 @@ db.version(5).stores({}).upgrade(async (tx) => {
       await tx.table('categories').add(cat)
     }
   }
+})
+
+db.version(6).stores({
+  transactions: 'id, type, date, categoryId, originalId',
+  categories: 'id, type',
+  settings: 'id',
+  investments: 'id',
+}).upgrade(async () => {
+  // v6 introduces the investments table (no backfill needed — starts empty)
 })
 
 const SETTINGS_ID = 'app-settings'

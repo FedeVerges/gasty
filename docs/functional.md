@@ -2,7 +2,7 @@
 
 ## 1. Visión General
 
-**Gasty** es una PWA mobile-first con soporte desktop responsive para seguimiento personal de gastos (locale es-AR), lista para Capacitor → Play Store. Entrada inteligente en lenguaje natural ("alquiler 45000", "cuota auto 25000 4/24"), auto-clonado de transacciones recurrentes, Gasty Flash (sugerencias contextuales de pago rápido), proyección de gastos a meses futuros, importación CSV con auto-creación de categorías, personalización de emojis por transacción, dark mode, sin backend.
+**Gasty** es una PWA mobile-first con soporte desktop responsive para seguimiento personal de gastos (locale es-AR), lista para Capacitor → Play Store. Entrada inteligente en lenguaje natural ("alquiler 45000", "cuota auto 25000 4/24"), auto-clonado de transacciones recurrentes, Gasty Flash (sugerencias contextuales de pago rápido), proyección de gastos a meses futuros, importación CSV con auto-creación de categorías, personalización de emojis por categoría, módulo de Inversiones (proyección de ahorros), detalle del balance y edición inline de movimientos, dark mode, sin backend.
 
 ---
 
@@ -28,7 +28,8 @@
 ### 2.2 Editar Transacción
 - Tap en cualquier `TransactionItem` → `EditTransactionContext` → `SmartInputSheet` en modo edición (`editTransaction` prop)
 - Mantiene `id` y `createdAt` original
-- **EmojiEditor**: tap en el emoji del `TransactionItem` abre un modal para personalizar el emoji de esa transacción específica (no afecta la categoría)
+- Edición inline de los campos: monto, fecha, categoría, descripción y recurrencia; el emoji se hereda de la categoría (no es editable por transacción)
+- Si la transacción es un **source recurrente**, la edición propaga vía `editRecurringSource()` (crea/elimina clones sobrantes) — nunca se edita un clon (`originalId` definido)
 
 ### 2.3 Eliminar Transacción
 - Botón 🗑️ en `TransactionItem` → confirm → `db.transactions.delete(id)`
@@ -39,10 +40,10 @@
 
 | Tab | Ruta | Componentes Clave | Funcionalidad |
 |-----|------|-------------------|---------------|
-| **🏠 Inicio** | `Dashboard` | `BalanceCard`, `MonthSelector`, `CategoryDonutChart`, filtros categoría, lista tx mes actual | Resumen financiero + proyección a futuro + lista filtrada (responsive) |
-| **📋 Movimientos** | `Transactions` | Selector mes, barra de búsqueda, filtros fecha (`este_mes`/`mes_pasado`/`trimestre`/`este_anio`), group headers por día, top categorías con barra horizontal, balance mes, lista completa | Historial con búsqueda + filtros rápidos + agrupación por fecha |
-| **📊 Stats** | `Stats` | `MonthSelector`, barras SVG 6 meses, Donut SVG categorías mes actual, Top categoría (responsive) | Visualización sin deps externas, navegable por mes |
-| **⚙️ Ajustes** | `Settings` | Theme toggle, Currency (ARS/USD), Configuración formato CSV, CategoryManager (CRUD categorías + keywords), Lista recurrentes con delete cascada, Botón Importar CSV | Configuración + gestión categorías, recurrencias e importación |
+| **🏠 Inicio** | `Dashboard` | Tabs internas `Resumen`/`Inversiones`, `BalanceCard`, `MonthSelector`, `CategoryDonutChart`, `BalanceDetailSheet`, lista tx mes actual | Resumen financiero + proyección a futuro + detalle de balance (tap en BalanceCard) + módulo Inversiones + botón scroll-to-top |
+| **📋 Movimientos** | `Transactions` | `MonthSelector` sticky, barra de búsqueda, balance mes clicable (`BalanceDetailSheet`), top categoría clicable → Stats, filtros fecha (`este_mes`/`mes_pasado`/`trimestre`/`este_anio`), group headers por día, top categorías con barra horizontal, lista completa | Historial con búsqueda + filtros rápidos + agrupación por fecha + navegación a detalle |
+| **📊 Stats** | `Stats` | `MonthSelector`, barras SVG 6 meses, Donut SVG categorías mes actual con toggle `%/monto`, sección Ahorros del mes, Top categoría, filtro por categoría desde Movimientos | Visualización sin deps externas, navegable por mes |
+| **⚙️ Ajustes** | `Settings` | Theme slider (claro/oscuro), Currency (ARS/USD), Formato CSV, CategoryManager (CRUD categorías + keywords + emoji), Lista recurrentes con búsqueda + edición + delete cascada, Botón Importar CSV | Configuración + gestión categorías, recurrencias e importación |
 
 ---
 
@@ -236,21 +237,25 @@ interface CsvImportResult {
 ## 9. Acciones de Usuario por Pantalla
 
 ### Dashboard (Inicio)
+- Tabs internas: **Resumen** (balance + lista) e **Inversiones** (módulo de ahorros)
 - Ver balance histórico (ingresos - gastos totales) en `BalanceCard` dark
 - Ver diff % vs mes anterior con indicador verde/rojo
-- Ver gastado/ingresado/restante mes actual + barra progreso (verde <80%, rojo ≥80%)
+- **BalanceCard** es clicable → abre `BalanceDetailSheet` (disponible, ingresos, gastado y composición del gasto por categoría, top 5)
 - **MonthSelector**: navegar meses prev/next, badge "Proy." para meses futuros
 - **Modo proyección**: banner indicando que los datos son estimaciones en meses futuros
 - Filtrar lista por categoría (chips horizontales)
-- Tap tx → editar | Tap emoji → EmojiEditor | Botón 🗑️ → eliminar
+- Tap tx → editar | Botón 🗑️ → eliminar
+- Botón flotante **scroll-to-top** (aparece al hacer scroll)
 - Layout responsive: se adapta a desktop
 
 ### Movimientos
-- **Barra de búsqueda**: buscar por texto o monto
-- **Top categorías**: sección con barra horizontal mostrando las categorías con más gasto
+- **MonthSelector** sticky en la parte superior (se mantiene visible al hacer scroll)
+- **Balance del mes** clicable → `BalanceDetailSheet` (respeta el mes seleccionado)
+- **Barra de búsqueda**: buscar por texto, categoría o monto (las tarjetas de resumen se ocultan al buscar — B1)
+- **Top categoría del mes** clicable → navega a Stats filtrando esa categoría
+- **Tarjetas de resumen**: Top del mes + Mayor crecimiento (ocultas durante la búsqueda)
 - Filtros rápidos de fecha: **Este mes** / **Mes pasado** / **Trimestre** / **Este año**
 - Group headers por día: `Hoy`, `Ayer`, `Hace N días`, `DD de mes`
-- Balance del mes (ingresos - gastos)
 - Lista completa con edit/delete
 - Layout responsive
 
@@ -258,15 +263,17 @@ interface CsvImportResult {
 - **MonthSelector**: navegar meses para ver stats de cualquier período
 - **Modo proyección**: banner para meses futuros
 - Barras SVG: últimos 6 meses (gastos) — dimensiones responsivas
-- Donut SVG: categorías mes actual — responsivo (180px mobile, 260px desktop)
+- Donut SVG: categorías mes actual — responsivo, con toggle **%/monto**
+- **Sección Ahorros del mes**: suma de movimientos en la categoría `savings`
+- **Filtro por categoría**: al entrar desde Movimientos, muestra el total de la categoría seleccionada
 - Top categoría del mes
 
 ### Ajustes
-- Theme: Light / Dark (persiste en `db.settings` + `data-theme` en `<html>`)
+- Theme: slider claro/oscuro (persiste en `db.settings` + `data-theme` en `<html>`)
 - Currency: ARS / USD
 - **Formato CSV**: configuración de separadores de miles, decimales y prefijo moneda
-- **CategoryManager**: CRUD completo de categorías + keywords (sub-vista con navegación)
-- Lista recurrentes activos con delete cascada
+- **CategoryManager**: CRUD completo de categorías + keywords + emoji (sub-vista con navegación)
+- **Movimientos recurrentes**: lista con búsqueda, botón Editar (abre `SmartInputSheet` vía `EditTransactionContext`) y Eliminar con delete cascada
 - Botón **Importar CSV** (abre `CsvImportSheet` via `CsvImportContext`)
 - Version info (v0.1.0)
 
@@ -279,7 +286,7 @@ interface CsvImportResult {
 3. **Moneda en enteros** — ARS sin decimales, USD 2 decimales. `formatMoney` maneja presentación.
 4. **Touch targets ≥ 44px** — `py-3` mínimo en botones/inputs.
 5. **Container max-w-[480px] (mobile)** — mobile-first, centrado en `#root`. En desktop (≥768px) `#root` pasa a `flex-row` sin límite de ancho y el contenido usa `max-w-[960px]`.
-6. **Bundle budgets** — JS < 100KB gz, CSS < 10KB gz. Sin deps pesadas.
+6. **Bundle budgets** — JS <200KB gz, CSS < 10KB gz. Sin deps pesadas.
 
 ---
 
@@ -339,3 +346,33 @@ Cuando el usuario navega a un mes futuro con `MonthSelector`, la app entra en "m
 
 ### 12.4 Tests
 - `tests/useProjections.test.ts` (136 líneas): mes actual con datos reales, mes futuro sin datos físicos, expiración de `fixed_temporary`, verificación de fuentes `fixed`, eliminación en cascada
+
+---
+
+## 13. Inversiones (Módulo de Ahorros)
+
+### 13.1 Concepto
+El módulo **Inversiones** (tab interno "Inversiones" en Inicio) permite distribuir el total ahorrado de la app entre distintos destinos y proyectar su crecimiento mensual. El "total ahorrado disponible" es la suma de **todos** los movimientos de tipo gasto en la categoría `savings` (`useSavingsTotal()`), sin importar el mes.
+
+### 13.2 Modelo (`Investment`)
+```typescript
+interface Investment {
+  id: string
+  name: string
+  emoji: string
+  allocationPct: number       // % del total ahorrado asignado a este destino
+  monthlyReturnPct: number    // retorno mensual estimado (%)
+}
+```
+Persistido en la nueva tabla Dexie `investments` (schema v6, `src/lib/db.ts`).
+
+### 13.3 UI (`src/components/dashboard/Inversiones.tsx`)
+- Card dark con **total ahorrado disponible** y una breve explicación (suma de la categoría Ahorros).
+- **Proyección a 12 meses**: area chart SVG que compone, para cada mes, `asignado * (1 + retorno/100)^m`, donde `asignado = totalAhorrado * allocationPct / 100`. Muestra valor final y ganancia.
+- Lista de destinos con asignado/proyectado y botón Eliminar (confirm).
+- Aviso si la suma de `allocationPct` supera 100%.
+- Formulario para agregar destino (emoji, nombre, % asignación, % retorno mensual).
+
+### 13.4 Hook (`src/hooks/useInvestments.ts`)
+- `useInvestments()` → `db.investments.toArray()` reactivo
+- `useSavingsTotal()` → suma de gastos en categoría `savings` (todo el histórico)

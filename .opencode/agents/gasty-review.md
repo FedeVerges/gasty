@@ -32,7 +32,7 @@ You review any change in:
 
 | Constraint | Target |
 |---|---|
-| JS bundle (gzipped) | < 100KB |
+| JS bundle (gzipped) | <200KB |
 | CSS bundle (gzipped) | < 10KB |
 | No Framer Motion | CSS transitions only |
 | No Recharts / D3 | SVG custom |

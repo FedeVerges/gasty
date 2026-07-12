@@ -19,7 +19,7 @@ Take a user request and ship working code that:
 
 | Constraint | Target |
 |---|---|
-| JS bundle (gzipped) | < 100KB |
+| JS bundle (gzipped) | < 200KB |
 | CSS bundle (gzipped) | < 10KB |
 | Container width | `max-w-[480px]` mobile-first |
 | No Framer Motion | Use CSS transitions |

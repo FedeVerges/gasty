@@ -5,8 +5,9 @@ import { useProjections } from '../../hooks/useProjections'
 import { useViewport } from '../../hooks/useViewport'
 import { TransactionItem } from './TransactionItem'
 import { MonthSelector } from '../dashboard/MonthSelector'
-import { formatMoney, formatDateGroupHeader } from '../../lib/format'
+import { formatMoney, formatDateGroupHeader, formatMonth } from '../../lib/format'
 import { useSettings } from '../../context/SettingsContext'
+import { useBalanceDetail } from '../../context/BalanceDetailContext'
 
 function monthKey(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
@@ -27,17 +28,26 @@ interface CategorySummary {
   count: number
 }
 
-export function Transactions() {
+interface TransactionsProps {
+  onPickCategory?: (categoryId: string) => void
+}
+
+export function Transactions({ onPickCategory }: TransactionsProps) {
   const categories = useCategories()
   const allTransactions = useAllTransactions()
   const { settings } = useSettings()
   const { isWide } = useViewport()
+  const { open: openBalance } = useBalanceDetail()
 
   const now = useMemo(() => new Date(), [])
   const [selectedMonth, setSelectedMonth] = useState(monthKey(now))
   const [searchText, setSearchText] = useState('')
 
   const { transactions: monthTransactions, isProjection } = useProjections(selectedMonth)
+
+  const selectedDate = new Date(parseInt(selectedMonth.slice(0, 4)), parseInt(selectedMonth.slice(5, 7)) - 1)
+  const monthLabel = formatMonth(selectedDate)
+  const openBalanceDetail = () => openBalance(selectedMonth, monthLabel)
 
   const filtered = useMemo(() => {
     const search = searchText.toLowerCase().trim()
@@ -60,9 +70,10 @@ export function Transactions() {
     [filtered],
   )
 
+  // Resumen del mes completo (NO se filtra con la búsqueda — B1)
   const categorySummary = useMemo<CategorySummary[]>(() => {
     const map = new Map<string, CategorySummary>()
-    for (const tx of filtered) {
+    for (const tx of monthTransactions) {
       if (tx.type !== 'expense') continue
       const existing = map.get(tx.categoryId)
       if (existing) {
@@ -83,7 +94,7 @@ export function Transactions() {
     return Array.from(map.values())
       .sort((a, b) => b.total - a.total)
       .slice(0, 5)
-  }, [filtered, categories])
+  }, [monthTransactions, categories])
 
   const prevMonthKey = useMemo(() => {
     const [y, m] = selectedMonth.split('-').map(Number)
@@ -147,70 +158,20 @@ export function Transactions() {
         <h1 className="text-4xl font-black tracking-tight leading-none">Movimientos</h1>
       </header>
 
-      {/* Month selector */}
-      <MonthSelector
-        selectedMonth={selectedMonth}
-        onChange={setSelectedMonth}
-      />
-
-      {/* Category info cards */}
-      <div className={`grid grid-cols-2 gap-3 mx-auto ${isWide ? 'max-w-xl' : 'max-w-lg'}`}>
-        {/* Top categoría del mes */}
-        {topCategory && (
-          <div className="bg-card border border-border rounded-2xl p-4">
-            <p className="text-[10px] text-body uppercase tracking-wide font-medium mb-3">
-              Top del mes
-            </p>
-            <div className="flex items-center gap-2.5">
-              <div
-                className="w-11 h-11 rounded-xl flex items-center justify-center text-xl shrink-0"
-                style={{ background: `${topCategory.color}25` }}
-              >
-                {topCategory.emoji}
-              </div>
-              <div className="min-w-0">
-                <p className="text-sm font-bold text-ink truncate">
-                  {formatMoney(topCategory.total, settings.currency)}
-                </p>
-                <p className="text-[10px] text-body truncate">{topCategory.name}</p>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Categoría que más creció */}
-        {growthCategory ? (
-          <div className="bg-card border border-border rounded-2xl p-4">
-            <p className="text-[10px] text-body uppercase tracking-wide font-medium mb-3">
-              Mayor crecimiento
-            </p>
-            <div className="flex items-center gap-2.5">
-              <div
-                className="w-11 h-11 rounded-xl flex items-center justify-center text-xl shrink-0"
-                style={{ background: `${growthCategory.category.color}25` }}
-              >
-                {growthCategory.category.emoji}
-              </div>
-              <div className="min-w-0">
-                <p className="text-sm font-bold text-ink truncate">
-                  +{formatMoney(growthCategory.growth, settings.currency)}
-                </p>
-                <p className="text-[10px] text-body truncate">{growthCategory.category.name}</p>
-              </div>
-            </div>
-          </div>
-        ) : (
-          <div className="bg-card border border-border rounded-2xl p-4">
-            <p className="text-[10px] text-body uppercase tracking-wide font-medium mb-3">
-              Mayor crecimiento
-            </p>
-            <p className="text-sm text-mute">Sin variación</p>
-          </div>
-        )}
+      {/* Month selector — sticky */}
+      <div className="sticky top-0 z-20 -mx-5 px-5 pt-2 pb-2 bg-canvas">
+        <MonthSelector
+          selectedMonth={selectedMonth}
+          onChange={setSelectedMonth}
+        />
       </div>
 
-      {/* Balance */}
-      <div className="bg-card border border-border rounded-2xl px-4 py-3 flex justify-between items-center">
+      {/* Balance — debajo del selector (clicable → detalle) */}
+      <button
+        onClick={openBalanceDetail}
+        className="w-full bg-card border border-border rounded-2xl px-4 py-3 flex justify-between items-center active:scale-[0.99] transition-transform text-left"
+        aria-label="Ver detalle del balance"
+      >
         <span className="text-sm text-body">Balance</span>
         <span
           className={`font-bold ${monthTotal >= 0 ? 'text-positive' : 'text-negative'
@@ -218,9 +179,71 @@ export function Transactions() {
         >
           {monthTotal >= 0 ? '+' : '−'} {formatMoney(Math.abs(monthTotal), settings.currency)}
         </span>
-      </div>
+      </button>
 
-      {/* Search bar */}
+      {/* Category info cards — resumen del mes (oculto al buscar, B1) */}
+      {!searchText && (
+        <div className={`grid grid-cols-2 gap-3 mx-auto ${isWide ? 'max-w-xl' : 'max-w-lg'}`}>
+          {/* Top categoría del mes */}
+          {topCategory && (
+            <button
+              onClick={() => onPickCategory?.(topCategory.id)}
+              className="bg-card border border-border rounded-2xl p-4 text-left active:scale-[0.98] transition-transform"
+              aria-label={`Ver detalle de ${topCategory.name} en Stats`}
+            >
+              <p className="text-[10px] text-body uppercase tracking-wide font-medium mb-3">
+                Top del mes
+              </p>
+              <div className="flex items-center gap-2.5">
+                <div
+                  className="w-11 h-11 rounded-xl flex items-center justify-center text-xl shrink-0"
+                  style={{ background: `${topCategory.color}25` }}
+                >
+                  {topCategory.emoji}
+                </div>
+                <div className="min-w-0">
+                  <p className="text-sm font-bold text-ink truncate">
+                    {formatMoney(topCategory.total, settings.currency)}
+                  </p>
+                  <p className="text-[10px] text-body truncate">{topCategory.name}</p>
+                </div>
+              </div>
+            </button>
+          )}
+
+          {/* Categoría que más creció */}
+          {growthCategory ? (
+            <div className="bg-card border border-border rounded-2xl p-4">
+              <p className="text-[10px] text-body uppercase tracking-wide font-medium mb-3">
+                Mayor crecimiento
+              </p>
+              <div className="flex items-center gap-2.5">
+                <div
+                  className="w-11 h-11 rounded-xl flex items-center justify-center text-xl shrink-0"
+                  style={{ background: `${growthCategory.category.color}25` }}
+                >
+                  {growthCategory.category.emoji}
+                </div>
+                <div className="min-w-0">
+                  <p className="text-sm font-bold text-ink truncate">
+                    +{formatMoney(growthCategory.growth, settings.currency)}
+                  </p>
+                  <p className="text-[10px] text-body truncate">{growthCategory.category.name}</p>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="bg-card border border-border rounded-2xl p-4">
+              <p className="text-[10px] text-body uppercase tracking-wide font-medium mb-3">
+                Mayor crecimiento
+              </p>
+              <p className="text-sm text-mute">Sin variación</p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Search bar — resaltado */}
       <div className="relative">
         <svg
           viewBox="0 0 24 24"
@@ -240,11 +263,11 @@ export function Transactions() {
           onChange={(e) => setSearchText(e.target.value)}
           placeholder="Buscar por descripción, categoría o monto..."
           className="
-            w-full pl-10 pr-4 py-2.5
+            w-full pl-10 pr-10 py-3
             rounded-2xl
-            bg-canvas border border-border
+            bg-card border-2 border-border
             text-sm text-ink placeholder:text-mute
-            focus:border-primary
+            focus:border-primary focus:bg-canvas
             transition-colors
           "
         />

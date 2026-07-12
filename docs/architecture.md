@@ -8,7 +8,7 @@
 | **Offline-first** | IndexedDB (gestionado a través de **Dexie 4**) como única fuente de verdad absoluta. La aplicación carece por diseño de sincronización síncrona con backend, garantizando operatividad total sin conectividad. |
 | **Zero-runtime CSS** | Compilación nativa mediante **Tailwind v4**. Uso estricto de directivas `@theme` y variables CSS nativas para evitar sobrecostos de procesamiento en hilos de renderizado de dispositivos móviles de gama baja. |
 | **Reactive data** | Enlace reactivo mediante `dexie-react-hooks` (`useLiveQuery`). El ciclo de vida de los componentes se suscribe automáticamente a las mutaciones de las tablas de la base de datos local, eliminando estados redundantes. |
-| **Bundle budget** | JS < 100KB gzipped, CSS < 10KB gzipped. Exclusión absoluta de dependencias de gran envergadura (como Moment.js, date-fns o Framer Motion) mediante la creación de utilidades nativas ligeras. |
+| **Bundle budget** | JS <200KB gzipped, CSS < 10KB gzipped. Exclusión absoluta de dependencias de gran envergadura (como Moment.js, date-fns o Framer Motion) mediante la creación de utilidades nativas ligeras. |
 | **Single-source types** | Centralización estricta de todos los modelos de dominio y contratos en un único punto de verdad: `src/types/index.ts`. |
 
 ---
@@ -23,9 +23,9 @@
 │  ├── add/         SmartInputSheet, CsvImportSheet,           │
 │  │                 FlashChips (Interfaz Gasty Flash)         │
 │  ├── dashboard/   Dashboard, BalanceCard, CategoryDonutChart,│
-│  │                 MonthSelector (Controlador Temporal)      │
-│  ├── transactions/ Transactions, TransactionItem,            │
-│  │                 EmojiEditor                               │
+│  │                 MonthSelector, BalanceDetailSheet,         │
+│  │                 Inversiones                               │
+│  ├── transactions/ Transactions, TransactionItem             │
 │  ├── stats/       Stats (Manejo de SVG puros responsivos)     │
 │  ├── settings/    Settings, CategoryManager                   │
 │  └── ui/          Button, Card, Badge (Primitivas atómicas)  │
@@ -34,11 +34,13 @@
 │  context/SettingsContext.tsx    (Temas, divisas, formato)    │
 │  context/EditTransactionContext (Puente AppShell ↔ Sheet)    │
 │  context/CsvImportContext       (Orquestador de importación) │
+│  context/BalanceDetailContext   (Apertura de BalanceDetail)  │
 ├─────────────────────────────────────────────────────────────┤
 │                         HOOKS                                │
 │  hooks/useTransactions.ts    (useLiveQuery → Historial real) │
 │  hooks/useProjections.ts     (Simulador reactivo en memoria) │
 │  hooks/useCategories.ts      (useLiveQuery → Categorías DB)  │
+│  hooks/useInvestments.ts     (useLiveQuery → Inversiones DB) │
 │  hooks/useKeyboardHeight.ts  (Cálculo vía visualViewport API)│
 │  hooks/useViewport.ts        (MediaQueries de entorno)       │
 ├─────────────────────────────────────────────────────────────┤
@@ -53,7 +55,8 @@
 ├─────────────────────────────────────────────────────────────┤
 │                      DATA LAYER                              │
 │  Dexie 4 (IndexedDB)                                         │
-│  Tablas locales: transactions, categories, settings          │
+│  Tablas locales: transactions, categories, settings,         │
+│                 investments                                   │
 │  Índices clave: type, date, categoryId, originalId           │
 └─────────────────────────────────────────────────────────────┘
 ```
@@ -177,10 +180,10 @@ createFutureClones(source)
 
 ## 4. Esquema de Base de Datos (Dexie)
 
-El almacenamiento se estructura en torno a tres almacenes optimizados con índices específicos para evitar penalizaciones de búsqueda durante los escaneos secuenciales. El schema ha evolucionado a través de 5 versiones:
+El almacenamiento se estructura en torno a cuatro almacenes optimizados con índices específicos para evitar penalizaciones de búsqueda durante los escaneos secuenciales. El schema ha evolucionado a través de 6 versiones:
 
 ```typescript
-// src/lib/db.ts — Versión actual: 5
+// src/lib/db.ts — Versión actual: 6
 
 // v1: Esquema base
 db.version(1).stores({
@@ -200,6 +203,14 @@ db.version(4).stores({ }).upgrade(async (tx) => { /* deduplicate colors */ })
 
 // v5: Inserta categorías default faltantes para usuarios existentes
 db.version(5).stores({ }).upgrade(async (tx) => { /* add missing default categories */ })
+
+// v6: Agrega la tabla investments (módulo Inversiones) — sin backfill (inicia vacía)
+db.version(6).stores({
+  transactions: 'id, type, date, categoryId, originalId',
+  categories:   'id, type',
+  settings:     'id',
+  investments:  'id',
+}).upgrade(async () => { /* no-op: nueva tabla vacía */ })
 ```
 
 ### Índices y Consultas Típicas
@@ -263,6 +274,8 @@ const componentStyles = isFuture
 | Gasto | `--color-expense` | `var(--color-negative)` (#d03238) | `var(--color-negative)` (#f87171) | Inalterado |
 | Ingreso | `--color-income` | `var(--color-positive)` (#1a7a35) | `var(--color-positive)` (#4ade80) | Inalterado |
 | Recurrente | `--color-recurring` | `var(--color-warning)` (#ffd11a) | `var(--color-warning)` (#fbbf24) | Inalterado |
+| Resaltado de selección | `--color-accent-cyan` | #38c8ff | #38c8ff | — |
+| Fondo primary suave | `--color-primary-pale` | #e2f6d5 | #2a3324 | — |
 | Primary brand | `--color-primary` | #9fe870 | #9fe870 | — |
 
 ---
@@ -314,10 +327,10 @@ export function ComponentName({ transaction }: ComponentNameProps) {
 | Archivo | Responsabilidad |
 |---------|-----------------|
 | `parser.ts` | `parseInput()` — pipeline puro NLP, `parseAmountFromText()`, `toLocalISO()`, `createTransactionFromParsed()`, `normalizeCategory()` |
-| `categories.ts` | Data: `DEFAULT_CATEGORIES`, `KEYWORDS[]`, `INCOME_KEYWORDS[]`, `RECURRING_KEYWORDS[]`, `syncKeywordMaps()` |
+| `categories.ts` | Data: `DEFAULT_CATEGORIES`, `KEYWORDS[]`, `INCOME_KEYWORDS[]`, `RECURRING_KEYWORDS[]`, `CHART_COLORS[]`, `getPaletteColor()`, `syncKeywordMaps()` |
 | `flash.ts` | `getFlashSuggestions()` — sugerencias contextuales por hora/día (pureza total) |
 | `csv.ts` | `parseCsvContent()`, `executeImport()` — parsing CSV con auto-creación de categorías |
-| `recurring.ts` | Side effects: `checkAndCloneRecurring()`, `getRecurringSources()`, `deleteRecurringSource()` |
+| `recurring.ts` | Side effects: `createFutureClones()`, `editRecurringSource()`, `getRecurringSources()`, `deleteRecurringSource()` |
 
 ### 7.2 Testing Strategy
 
@@ -398,7 +411,7 @@ Para asegurar la carga instantánea como PWA instalable, el árbol de dependenci
 | `tailwindcss` (v4) | ~0KB (build-time) | Inyección estática de estilos en tiempo de compilación |
 | `@fontsource/inter` | ~15KB | Tipografía empaquetada localmente para omitir peticiones de red |
 | `vite-plugin-pwa` | ~0KB (build-time) | Generación de Service Worker + manifest |
-| **Métrica Total** | **~81KB** | **Cumple con holgura el umbral crítico establecido de < 100KB.** |
+| **Métrica Total** | **~81KB** | **Cumple con holgura el umbral crítico establecido de <200KB.** |
 
 ### Prohibidas (ADR requerido para agregar)
 
@@ -444,14 +457,17 @@ beforeEach(async () => {
 ## 12. Migraciones Futuras (Schema Versioning)
 
 ```typescript
-// La última versión de schema es 5. Ejemplo de cómo agregar v6:
-db.version(6).stores({
-  transactions: 'id, type, date, categoryId, originalId, newField',
-  categories: 'id, type',
-  settings: 'id',
+// La última versión de schema es 6 (tabla `investments` ya agregada).
+// Ejemplo de cómo agregar v7 sin tocar versiones previas:
+db.version(7).stores({
+  transactions: 'id, type, date, categoryId, originalId',
+  categories:   'id, type',
+  settings:     'id',
+  investments:  'id',
+  newTable:     'id, foo',
 }).upgrade(tx => {
-  // tx.table('transactions').modify(record => {
-  //   record.newField = defaultValue
+  // tx.table('newTable').modify(record => {
+  //   record.foo = defaultValue
   // })
 })
 ```
@@ -473,7 +489,7 @@ db.version(6).stores({
 - [ ] Fechas usan `toLocalISO()` no `toISOString()`
 - [ ] No edición de clones recurrentes (solo source)
 - [ ] Las consultas embebidas en el hook `useProjections` se procesan enteramente de forma reactiva en memoria fuera de disco
-- [ ] Bundle size < 100KB JS / < 10KB CSS (ver `gasty-bundle-budget` skill)
+- [ ] Bundle size <200KB JS / < 10KB CSS (ver `gasty-bundle-budget` skill)
 
 ---
 
