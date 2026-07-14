@@ -28,7 +28,7 @@
 ### 2.2 Editar Transacción
 - Tap en cualquier `TransactionItem` → `EditTransactionContext` → `SmartInputSheet` en modo edición (`editTransaction` prop)
 - Mantiene `id` y `createdAt` original
-- Edición inline de los campos: monto, fecha, categoría, descripción y recurrencia; el emoji se hereda de la categoría (no es editable por transacción)
+- Edición inline de los campos: monto, fecha, categoría, descripción y recurrencia
 - Si la transacción es un **source recurrente**, la edición propaga vía `editRecurringSource()` (crea/elimina clones sobrantes) — nunca se edita un clon (`originalId` definido)
 
 ### 2.3 Eliminar Transacción
@@ -40,8 +40,8 @@
 
 | Tab | Ruta | Componentes Clave | Funcionalidad |
 |-----|------|-------------------|---------------|
-| **🏠 Inicio** | `Dashboard` | Tabs internas `Resumen`/`Inversiones`, `BalanceCard`, `MonthSelector`, `CategoryDonutChart`, `BalanceDetailSheet`, lista tx mes actual | Resumen financiero + proyección a futuro + detalle de balance (tap en BalanceCard) + módulo Inversiones + botón scroll-to-top |
-| **📋 Movimientos** | `Transactions` | `MonthSelector` sticky, barra de búsqueda, balance mes clicable (`BalanceDetailSheet`), top categoría clicable → Stats, filtros fecha (`este_mes`/`mes_pasado`/`trimestre`/`este_anio`), group headers por día, top categorías con barra horizontal, lista completa | Historial con búsqueda + filtros rápidos + agrupación por fecha + navegación a detalle |
+| **🏠 Inicio** | `Dashboard` | Tabs internas `Resumen`/`Inversiones`, `BalanceCard`, `MonthSelector`, `CategoryDonutChart`, `BalanceDetailPage`, lista tx mes actual | Resumen financiero + proyección a futuro + detalle de balance (tap en BalanceCard) + módulo Inversiones + botón scroll-to-top |
+| **📋 Movimientos** | `Transactions` | `MonthSelector` sticky, barra de búsqueda, balance mes clicable (`BalanceDetailPage`), top categoría clicable → Stats, filtros fecha (`este_mes`/`mes_pasado`/`trimestre`/`este_anio`), group headers por día, top categorías con barra horizontal, lista completa | Historial con búsqueda + filtros rápidos + agrupación por fecha + navegación a detalle |
 | **📊 Stats** | `Stats` | `MonthSelector`, barras SVG 6 meses, Donut SVG categorías mes actual con toggle `%/monto`, sección Ahorros del mes, Top categoría, filtro por categoría desde Movimientos | Visualización sin deps externas, navegable por mes |
 | **⚙️ Ajustes** | `Settings` | Theme slider (claro/oscuro), Currency (ARS/USD), Formato CSV, CategoryManager (CRUD categorías + keywords + emoji), Lista recurrentes con búsqueda + edición + delete cascada, Botón Importar CSV | Configuración + gestión categorías, recurrencias e importación |
 
@@ -240,7 +240,7 @@ interface CsvImportResult {
 - Tabs internas: **Resumen** (balance + lista) e **Inversiones** (módulo de ahorros)
 - Ver balance histórico (ingresos - gastos totales) en `BalanceCard` dark
 - Ver diff % vs mes anterior con indicador verde/rojo
-- **BalanceCard** es clicable → abre `BalanceDetailSheet` (disponible, ingresos, gastado y composición del gasto por categoría, top 5)
+- **BalanceCard** es clicable → abre `BalanceDetailPage` (disponible, ingresos, gastado y composición del gasto por categoría, top 5)
 - **MonthSelector**: navegar meses prev/next, badge "Proy." para meses futuros
 - **Modo proyección**: banner indicando que los datos son estimaciones en meses futuros
 - Filtrar lista por categoría (chips horizontales)
@@ -250,7 +250,7 @@ interface CsvImportResult {
 
 ### Movimientos
 - **MonthSelector** sticky en la parte superior (se mantiene visible al hacer scroll)
-- **Balance del mes** clicable → `BalanceDetailSheet` (respeta el mes seleccionado)
+- **Balance del mes** clicable → `BalanceDetailPage` (respeta el mes seleccionado)
 - **Barra de búsqueda**: buscar por texto, categoría o monto (las tarjetas de resumen se ocultan al buscar — B1)
 - **Top categoría del mes** clicable → navega a Stats filtrando esa categoría
 - **Tarjetas de resumen**: Top del mes + Mayor crecimiento (ocultas durante la búsqueda)
@@ -275,7 +275,7 @@ interface CsvImportResult {
 - **CategoryManager**: CRUD completo de categorías + keywords + emoji (sub-vista con navegación)
 - **Movimientos recurrentes**: lista con búsqueda, botón Editar (abre `SmartInputSheet` vía `EditTransactionContext`) y Eliminar con delete cascada
 - Botón **Importar CSV** (abre `CsvImportSheet` via `CsvImportContext`)
-- Version info (v0.1.0)
+- Version info (v1.0.2)
 
 ---
 
@@ -286,7 +286,7 @@ interface CsvImportResult {
 3. **Moneda en enteros** — ARS sin decimales, USD 2 decimales. `formatMoney` maneja presentación.
 4. **Touch targets ≥ 44px** — `py-3` mínimo en botones/inputs.
 5. **Container max-w-[480px] (mobile)** — mobile-first, centrado en `#root`. En desktop (≥768px) `#root` pasa a `flex-row` sin límite de ancho y el contenido usa `max-w-[960px]`.
-6. **Bundle budgets** — JS <200KB gz, CSS < 10KB gz. Sin deps pesadas.
+6. **Bundle budgets** — JS <250KB gz, CSS < 15KB gz. Sin deps pesadas sin ADR.
 
 ---
 

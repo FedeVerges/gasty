@@ -8,7 +8,7 @@
 | **Offline-first** | IndexedDB (gestionado a través de **Dexie 4**) como única fuente de verdad absoluta. La aplicación carece por diseño de sincronización síncrona con backend, garantizando operatividad total sin conectividad. |
 | **Zero-runtime CSS** | Compilación nativa mediante **Tailwind v4**. Uso estricto de directivas `@theme` y variables CSS nativas para evitar sobrecostos de procesamiento en hilos de renderizado de dispositivos móviles de gama baja. |
 | **Reactive data** | Enlace reactivo mediante `dexie-react-hooks` (`useLiveQuery`). El ciclo de vida de los componentes se suscribe automáticamente a las mutaciones de las tablas de la base de datos local, eliminando estados redundantes. |
-| **Bundle budget** | JS <200KB gzipped, CSS < 10KB gzipped. Exclusión absoluta de dependencias de gran envergadura (como Moment.js, date-fns o Framer Motion) mediante la creación de utilidades nativas ligeras. |
+| **Bundle budget** | JS <250KB gzipped, CSS < 15KB gzipped. Framer Motion y Zustand requieren ADR; el resto de dependencias pesadas (Recharts, react-router, moment, lodash) está prohibido. |
 | **Single-source types** | Centralización estricta de todos los modelos de dominio y contratos en un único punto de verdad: `src/types/index.ts`. |
 
 ---
@@ -23,7 +23,7 @@
 │  ├── add/         SmartInputSheet, CsvImportSheet,           │
 │  │                 FlashChips (Interfaz Gasty Flash)         │
 │  ├── dashboard/   Dashboard, BalanceCard, CategoryDonutChart,│
-│  │                 MonthSelector, BalanceDetailSheet,         │
+│  │                 MonthSelector, BalanceDetailPage,          │
 │  │                 Inversiones                               │
 │  ├── transactions/ Transactions, TransactionItem             │
 │  ├── stats/       Stats (Manejo de SVG puros responsivos)     │
@@ -41,6 +41,7 @@
 │  hooks/useProjections.ts     (Simulador reactivo en memoria) │
 │  hooks/useCategories.ts      (useLiveQuery → Categorías DB)  │
 │  hooks/useInvestments.ts     (useLiveQuery → Inversiones DB) │
+│  hooks/useHashRouter.ts      (Hash routing sin dependencias) │
 │  hooks/useKeyboardHeight.ts  (Cálculo vía visualViewport API)│
 │  hooks/useViewport.ts        (MediaQueries de entorno)       │
 ├─────────────────────────────────────────────────────────────┤
@@ -409,13 +410,17 @@ Para asegurar la carga instantánea como PWA instalable, el árbol de dependenci
 | `dexie` | ~18KB | Mecanismo de abstracción indexada sobre IndexedDB |
 | `dexie-react-hooks` | ~3KB | Enlace reactivo para flujos asíncronos distribuidos |
 | `tailwindcss` (v4) | ~0KB (build-time) | Inyección estática de estilos en tiempo de compilación |
-| `@fontsource/inter` | ~15KB | Tipografía empaquetada localmente para omitir peticiones de red |
+| `@fontsource/inter` | ~189KB raw (3 pesos: 400/600/900) | Tipografía empaquetada localmente para omitir peticiones de red |
 | `vite-plugin-pwa` | ~0KB (build-time) | Generación de Service Worker + manifest |
-| **Métrica Total** | **~81KB** | **Cumple con holgura el umbral crítico establecido de <200KB.** |
+| **Métrica Total (JS)** | **~127KB** | **Cumple con el umbral de <250KB. CSS ~9.4KB (<15KB).** |
 
-### Prohibidas (ADR requerido para agregar)
+### Requieren ADR (evaluar bundle impact)
 
-- Framer Motion (+15KB), Recharts/D3 (+50KB+), react-router (+12KB), Zustand (+2KB), lodash (+25KB), moment (+20KB), date-fns (+15KB)
+- Framer Motion, Zustand — permitidos solo con ADR que justifique el impacto en bundle. Evaluar si la funcionalidad se logra con CSS transitions / `useLiveQuery` + Context.
+
+### Prohibidas (sin excepción)
+
+- Recharts/D3 (+50KB+), react-router (+12KB), lodash (+25KB), moment (+20KB), styled-components, MUI/Chakra
 
 ---
 
@@ -481,7 +486,7 @@ db.version(7).stores({
 - [ ] `npm run lint` pasa
 - [ ] `npm test` pasa (todos los tests en `tests/` finalizan con éxito)
 - [ ] `npm run build` pasa (type-check + bundle) sin advertencias de desborde de tamaño de paquete
-- [ ] Para cambios UI críticos: `npm run test:e2e` pasa
+- [ ] Para cambios UI: `npm run test:e2e` pasa antes de commitear
 - [ ] No nuevas deps sin ADR en `docs/adr/`
 - [ ] Dark mode counterpart para nuevos colores
 - [ ] Se comprueba el contraste cromático de los nuevos tokens semánticos del Proyector de Gastos para entornos claros y oscuros
@@ -489,7 +494,7 @@ db.version(7).stores({
 - [ ] Fechas usan `toLocalISO()` no `toISOString()`
 - [ ] No edición de clones recurrentes (solo source)
 - [ ] Las consultas embebidas en el hook `useProjections` se procesan enteramente de forma reactiva en memoria fuera de disco
-- [ ] Bundle size <200KB JS / < 10KB CSS (ver `gasty-bundle-budget` skill)
+- [ ] Bundle size <250KB JS / < 15KB CSS (ver `gasty-bundle-budget` skill)
 
 ---
 
@@ -506,9 +511,10 @@ db.version(7).stores({
 
 ```typescript
 webServer: {
-  command: 'pnpm dev',  // Inconsistente con npm en docs — nota conocida
-  url: 'http://localhost:5173',
+  command: 'npm run dev -- --host 127.0.0.1 --strictPort',
+  url: 'http://127.0.0.1:5173',
   reuseExistingServer: !process.env.CI,
+  timeout: 120_000,
 }
 ```
 

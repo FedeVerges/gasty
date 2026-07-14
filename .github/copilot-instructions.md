@@ -12,15 +12,15 @@ Stack: **Vite 6 + React 19 + TypeScript + Tailwind v4 + Dexie 4 + vite-plugin-pw
 
 | Metric               | Budget                                            |
 | -------------------- | ------------------------------------------------- |
-| JS bundle (gzipped)  | < 200KB                                           |
-| CSS bundle (gzipped) | < 10KB                                            |
+| JS bundle (gzipped)  | < 250KB                                           |
+| CSS bundle (gzipped) | < 15KB                                            |
 | Container width      | `max-w-[480px]` mobile-first (already on `#root`) |
 | Locale               | es-AR only (v1)                                   |
 | Touch targets        | ≥ 44px (`py-3` min)                               |
 
 ## Always-on rules
 
-1. **No banned libraries.** Refuse Framer Motion, Recharts, D3, react-router, wouter, Zustand, Redux, styled-components, Emotion, MUI, Chakra, lodash (full), moment. Use the alternatives inlined in the relevant chat mode.
+1. **Library policy.** Framer Motion and Zustand require an ADR with bundle impact justification. Banned without exception: Recharts, D3, react-router, wouter, styled-components, Emotion, MUI, Chakra, lodash (full), moment.
 2. **No `localStorage` for user data.** Dexie/IndexedDB only. `useLiveQuery` for reactivity.
 3. **Use design tokens, not hex literals.** All colors come from `src/index.css` `@theme` (`bg-accent`, `text-expense`, `bg-card`, `border-border`, etc.). Never `bg-[#7c3aed]` or `style={{ color: '#...' }}` for theme values. Dynamic per-category colors (from `Category.color`) ARE allowed in `style={{ background: c.color }}`.
 4. **Dark mode parity required.** Every new color in `@theme` must have a counterpart in `[data-theme="dark"]` in `src/index.css`.

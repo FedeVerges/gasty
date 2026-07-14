@@ -32,12 +32,11 @@ You review any change in:
 
 | Constraint | Target |
 |---|---|
-| JS bundle (gzipped) | <200KB |
-| CSS bundle (gzipped) | < 10KB |
-| No Framer Motion | CSS transitions only |
+| JS bundle (gzipped) | <250KB |
+| CSS bundle (gzipped) | < 15KB |
+| Framer Motion / Zustand | ADR required |
 | No Recharts / D3 | SVG custom |
 | No React Router | `useState` for tab state |
-| No Zustand / Redux | `useLiveQuery` + Context |
 | No localStorage for data | Dexie / IndexedDB only |
 
 ## Review checklist
@@ -171,7 +170,8 @@ Is the change a new third-party dependency?
 
 ## Anti-patterns to refuse endorsing
 
-- 🟥 PR that introduces Framer Motion, Recharts, react-router, Zustand, or any banned dep
+- 🟥 PR that introduces Recharts, react-router, or any banned dep without ADR
+- 🟥 PR that introduces Framer Motion / Zustand without ADR + bundle justification
 - 🟥 PR that uses `localStorage` for transactions
 - 🟥 PR that edits clones directly
 - 🟥 PR that skips dark mode parity

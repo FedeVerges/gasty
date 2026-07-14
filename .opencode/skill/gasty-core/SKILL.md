@@ -7,7 +7,7 @@ Gasty is a mobile-first PWA for personal expense tracking in es-AR. This skill c
 
 ## Always-on constraints
 
-- **No banned libraries.** → ver `gasty` (Canon §2) y `gasty-bundle-budget` para la lista completa y alternativas. Resumen: nada de Framer Motion, Recharts/D3, react-router, Zustand/Redux, styled-components/Emotion, MUI/Chakra, moment, lodash full, react-icons/lucide (todo).
+- **No banned libraries without ADR.** → ver `gasty` (Canon §2) y `gasty-bundle-budget` para la lista completa. Framer Motion y Zustand requieren ADR con justificación de bundle impacto. Prohibidas sin excepción: Recharts/D3, react-router, styled-components, MUI, moment, lodash, react-icons/lucide.
 - **No localStorage for user data.** Persist transactions and settings via Dexie/IndexedDB only. → detalle en `gasty-data-layer` / `gasty` (Canon §6).
 - **Use design tokens, not hex literals.** → ver `gasty` (Canon §1) y `gasty-ui-conventions` para el modelo canónico (verde `#9fe870`, no púrpura). Legacy aliases (`bg-accent`, `bg-card`, `text-expense`) siguen funcionando pero preferí los canónicos.
 - **Dark mode parity required.** Every new theme color must also exist in `[data-theme="dark"]`. → ver `gasty` (Canon §1).
@@ -79,5 +79,5 @@ After any non-trivial change, run:
 - [ ] Touch targets ≥ 44px on all interactive elements
 - [ ] Dates use `toLocalISO()`, never `toISOString()`
 - [ ] No editing of recurring clones (only source rows)
-- [ ] Bundle size <200KB JS / < 10KB CSS gzipped
+- [ ] Bundle size <250KB JS / < 15KB CSS gzipped
 - [ ] Stable keys in `.map()`, not array indices

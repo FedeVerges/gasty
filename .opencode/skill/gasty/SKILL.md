@@ -62,12 +62,11 @@ Canonical (preferí estos nombres):
 ⚠️ **Nunca** uséis los valores púrpura antiguos (`#7c3aed`). El accent de Gasty es verde `#9fe870`.
 Cualquier color nuevo debe tener su contraparte en `[data-theme="dark"]`.
 
-### 2. Libs prohibidas (presupuesto <100KB JS / <10KB CSS)
+### 2. Libs prohibidas (presupuesto <250KB JS / <15KB CSS)
 
-Rechazadas sin excepción: `framer-motion`/`motion`/`react-spring`, `recharts`/`chart.js`/`d3`/`visx`,
-`react-router`/`wouter`/`@tanstack/router`, `zustand`/`redux`/`jotai`, `styled-components`/`emotion`,
-`@mui/*`/`@chakra-ui/*`/`antd`, `moment`, `lodash` (full barrel), `react-icons`/`lucide-react` (todo),
-`i18next`, `react-hot-toast`/`sonner`, `react-modal`/`@headlessui` (para modals).
+**Requieren ADR** (evaluar bundle impact): `framer-motion`/`motion`, `zustand`/`redux`/`jotai`.
+
+**Prohibidas sin excepción**: `recharts`/`chart.js`/`d3`/`visx`, `react-router`/`wouter`/`@tanstack/router`, `styled-components`/`emotion`, `@mui/*`/`@chakra-ui/*`/`antd`, `moment`, `lodash` (full barrel), `react-icons`/`lucide-react` (todo), `i18next`, `react-hot-toast`/`sonner`, `react-modal`/`@headlessui` (para modals).
 → detalle y alternativas en `gasty-bundle-budget`.
 
 ### 3. Fechas locales

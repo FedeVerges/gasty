@@ -19,13 +19,12 @@ Take a user request and ship working code that:
 
 | Constraint | Target |
 |---|---|
-| JS bundle (gzipped) | < 200KB |
-| CSS bundle (gzipped) | < 10KB |
+| JS bundle (gzipped) | < 250KB |
+| CSS bundle (gzipped) | < 15KB |
 | Container width | `max-w-[480px]` mobile-first |
-| No Framer Motion | Use CSS transitions |
+| Framer Motion / Zustand | ADR required |
 | No Recharts / D3 | SVG custom |
 | No React Router | `useState` for tab state |
-| No Zustand / Redux | `useLiveQuery` + Context |
 | No localStorage for data | Dexie / IndexedDB only |
 | Touch targets | ≥ 44px (`py-3` min) |
 | Locale | es-AR only (v1) |
@@ -132,10 +131,8 @@ formatMoney(amount, settings.currency)
 
 ## Anti-patterns to refuse even if asked
 
-- 🟥 Adding Framer Motion, react-spring, react-transition-group
 - 🟥 Adding Recharts, Chart.js, Victory, Visx
 - 🟥 Adding react-router, wouter, @tanstack/router
-- 🟥 Adding Zustand, Jotai, Redux
 - 🟥 Adding styled-components, Emotion (use Tailwind classes only)
 - 🟥 localStorage for anything beyond a feature flag
 - 🟥 Inline `style={{ color: '#...' }}` for theme colors

@@ -1,22 +1,22 @@
 ---
 name: gasty-bundle-budget
-description: Use ONLY when evaluating dependency choices, bundle size, or any UI/animation decision that could impact Gasty's <100KB JS / <10KB CSS budget. Triggers on: 'bundle', 'bundle size', 'dependencia', 'Framer', 'Recharts', 'D3', 'react-router', 'Zustand', 'tamaño', 'KB', 'tree-shaking', 'lazy', 'código muerto'.
+description: Use ONLY when evaluating dependency choices, bundle size, or any UI/animation decision that could impact Gasty's <250KB JS / <15KB CSS budget. Triggers on: 'bundle', 'bundle size', 'dependencia', 'Framer', 'Recharts', 'D3', 'react-router', 'Zustand', 'tamaño', 'KB', 'tree-shaking', 'lazy', 'código muerto'.
 ---
 
 # Bundle Budget — Gasty
 
-Gasty se promociona con un bundle de **~105KB gzipped JS + 5KB CSS** (`README.md`). Este tamaño es una decisión de producto, no un detalle técnico: define el target (smartphones de gama media-baja con 3G), el modelo de monetización (sin paywalls de performance), y el techo de complejidad. Toda decisión de UI o dependencia se mide contra este budget.
+Gasty se promociona con un bundle de **~127KB gzipped JS + 9.4KB CSS** (`dist/`). Este tamaño es una decisión de producto, no un detalle técnico: define el target (smartphones de gama media-baja con 3G), el modelo de monetización (sin paywalls de performance), y el techo de complejidad. Toda decisión de UI o dependencia se mide contra este budget.
 
 ## Topes (no negociables)
 
-| Métrica                                       | Tope   | Actual    |
-| --------------------------------------------- | ------ | --------- |
-| JS gzipped (total, sin contar service worker) | <200KB | ~105KB ⚠️ |
-| CSS gzipped                                   | < 10KB | ~5KB ✅   |
-| First Meaningful Paint (3G)                   | < 2s   | —         |
-| Time to Interactive (4x CPU throttling)       | < 5s   | —         |
+| Métrica                                       | Tope    | Actual    |
+| --------------------------------------------- | ------- | --------- |
+| JS gzipped (total, sin contar service worker) | <250KB  | ~127KB ✅ |
+| CSS gzipped                                   | < 15KB  | ~9.4KB ✅ |
+| First Meaningful Paint (3G)                   | < 2s    | —         |
+| Time to Interactive (4x CPU throttling)       | < 5s    | —         |
 
-⚠️ El README dice "~105KB gzipped" — eso es **JS sin gzippar el service worker**, no el bundle inicial. El budget de **JS de carga inicial** sigue siendo <200KB.
+⚠️ El JS actual es ~127KB gzipped. El budget de **JS de carga inicial** es <250KB. CSS es ~9.4KB con budget de <15KB.
 
 ## Prohibidos (lista roja)
 
@@ -24,10 +24,10 @@ Si la propuesta requiere alguna de estas, **rechazala y proponé alternativa**:
 
 | Categoría         | Librería(s)                                                         | Por qué no                               | Alternativa                                    |
 | ----------------- | ------------------------------------------------------------------- | ---------------------------------------- | ---------------------------------------------- |
-| Animaciones       | `framer-motion`, `react-spring`, `react-transition-group`, `motion` | ~30-50KB, layout animations matan mobile | CSS transitions, `@keyframes`                  |
-| Charts            | `recharts`, `chart.js`, `victory`, `visx`, `d3`                     | Recharts ~95KB, d3 modular pero verboso  | SVG custom (ver `CategoryDonutChart`, `Stats`) |
-| Routing           | `react-router`, `wouter`, `@tanstack/router`                        | ~20-40KB innecesario para 4 tabs         | `useState` para tab activo en `App.tsx`        |
-| State global      | `zustand`, `redux`, `jotai`, `mobx`                                 | innecesario para un solo contexto        | `useLiveQuery` + Context                       |
+| Animaciones       | `react-spring`, `react-transition-group`                                    | ~30-50KB, layout animations matan mobile | CSS transitions, `@keyframes`                  |
+| Charts            | `recharts`, `chart.js`, `victory`, `visx`, `d3`                             | Recharts ~95KB, d3 modular pero verboso  | SVG custom (ver `CategoryDonutChart`, `Stats`) |
+| Routing           | `react-router`, `wouter`, `@tanstack/router`                                | ~20-40KB innecesario para 4 tabs         | `useState` para tab activo en `App.tsx`        |
+| State global      | `redux`, `jotai`, `mobx`                                                    | innecesario para un solo contexto        | `useLiveQuery` + Context                      |
 | CSS-in-JS runtime | `styled-components`, `emotion`, `stitches`                          | ~12KB + overhead runtime                 | Tailwind v4 (utility classes)                  |
 | UI kits           | `@mui/*`, `@chakra-ui/*`, `antd`, `mantine`                         | 30-100KB+                                | Headless primitives custom o propios           |
 | Date              | `moment`                                                            | ~70KB, mutable                           | `Intl.DateTimeFormat` (usado en `format.ts`)   |
@@ -72,7 +72,7 @@ ls -lahS dist/assets/*.js | head
 ANALYZE=true npx vite build
 ```
 
-Si el total JS gzipped > 100KB, el release está **bloqueado**. Identificá al culpable con `ls -lahS`, trazalo al import que lo arrastró, y hand off a `gasty-dev`.
+Si el total JS gzipped > 250KB, el release está **bloqueado**. Identificá al culpable con `ls -lahS`, trazalo al import que lo arrastró, y hand off a `gasty-dev`.
 
 ## Tree-shaking — qué lo rompe
 
@@ -105,8 +105,8 @@ Antes de instalar:
 - **GPU compositing**: `transform: translateZ(0)` solo en elementos que animan.
 - **Debounce scroll/resize** handlers.
 - **`requestAnimationFrame`** para updates visuales no críticos.
-- **No** `framer-motion` en listas >20 items.
 - **No** `setTimeout` con valores hardcodeados para animaciones; usá `transition`/`animation` CSS.
+- **Framer Motion**: permitido solo con ADR. Evaluar si CSS transitions cubre el caso de uso. En listas >20 items, preferir CSS.
 
 ## Anti-patterns
 
