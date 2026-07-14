@@ -35,3 +35,4 @@ skills-lock.json
 test-results/
 playwright-report/
 .atl
+.atl/*

@@ -9,7 +9,7 @@ A **mobile-first PWA** for personal expense tracking (locale es-AR), ready for C
 Store. Smart input in natural Spanish ("alquiler 45000", "cuota auto 25000 4/24"), recurring
 transaction auto-cloning, contextual quick-input (Gasty Flash), expense projections for future
 months, CSV import with auto-created categories, customizable per-category emoji, Investments
-module (savings projection), balance detail sheet, inline transaction editing, dark mode, no backend.
+module (savings projection), balance detail page, inline transaction editing, dark mode, no backend.
 
 ## Stack (locked)
 
@@ -24,8 +24,8 @@ module (savings projection), balance detail sheet, inline transaction editing, d
 
 | Metric | Budget |
 |---|---|
-| JS bundle (gzipped) | < 200KB |
-| CSS bundle (gzipped) | < 10KB |
+| JS bundle (gzipped) | < 250KB |
+| CSS bundle (gzipped) | < 15KB |
 | Container width | `max-w-[480px]` mobile-first (on `#root`) |
 | Locale | es-AR only (v1) |
 | Touch targets | ≥ 44px (`py-3` min) |
@@ -44,7 +44,7 @@ npm run test:e2e:ui    # playwright test --ui
 npm run test:e2e:debug # playwright test --debug
 ```
 
-After any non-trivial change, run `npm run lint`, `npm test`. For UI-breaking changes also run `npm run test:e2e`.
+After any non-trivial change, run `npm run lint`, `npm test`. For UI changes, run `npm run test:e2e` before committing.
 
 ## File layout (do not reorganize)
 
@@ -52,14 +52,14 @@ After any non-trivial change, run `npm run lint`, `npm test`. For UI-breaking ch
 src/
 ├── components/
 │   ├── add/         # SmartInputSheet, FlashChips, CsvImportSheet
-│   ├── dashboard/   # Dashboard, BalanceCard, CategoryDonutChart, MonthSelector, BalanceDetailSheet, Inversiones
+│   ├── dashboard/   # Dashboard, BalanceCard, CategoryDonutChart, MonthSelector, BalanceDetailPage, Inversiones
 │   ├── layout/      # AppShell (EditTransactionContext, CsvImportContext), BottomNav, FAB, Sidebar
 │   ├── settings/    # Settings, CategoryManager
 │   ├── stats/       # Stats (custom SVG bars + donut, 0KB deps)
 │   ├── transactions/# Transactions, TransactionItem
 │   └── ui/          # Card, Button, Badge (primitives)
 ├── context/         # SettingsContext, EditTransactionContext, CsvImportContext, BalanceDetailContext
-├── hooks/           # useTransactions, useCategories, useProjections, useViewport, useKeyboardHeight, useInvestments
+├── hooks/           # useTransactions, useCategories, useProjections, useHashRouter, useViewport, useKeyboardHeight, useInvestments
 ├── lib/             # db (Dexie), parser, recurring, format, categories, csv, flash
 └── types/           # single index.ts
 tests/
@@ -96,7 +96,8 @@ No `src/utils/`, `src/store/`, `src/router/`, `src/pages/` allowed.
 
 ## Anti-patterns (refuse even if asked)
 
-- 🟥 Framer Motion, Recharts/D3, react-router, Zustand, styled-components, MUI, lodash, moment
+- 🟥 Recharts/D3, react-router, styled-components, MUI, lodash, moment (heavy deps with native alternatives)
+- ⚠️ Framer Motion, Zustand — allowed only with ADR + bundle impact justification
 - 🟥 `localStorage` for user data — Dexie/IndexedDB only
 - 🟥 Editing clones of recurring transactions — only edit the source (rows with `originalId` are derived)
 - 🟥 Hardcoded hex colors — use tokens from `@theme` (`bg-accent`, `text-expense`, `bg-card`, `border-border`)

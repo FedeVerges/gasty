@@ -33,7 +33,7 @@ test.describe('Stats charts', () => {
 
     await navigateTo(page, 'stats')
 
-    await expect(page.getByText('Por categoría')).toBeVisible()
+    await expect(page.getByText('Por categoría ·')).toBeVisible()
   })
 
   test('Stats muestra top categoría del mes', async ({ page }) => {

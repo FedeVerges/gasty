@@ -1,5 +1,5 @@
-import { useState, type ReactNode } from 'react'
-import type { Tab, Transaction } from '../../types'
+import { useState, useEffect, type ReactNode } from 'react'
+import type { Transaction } from '../../types'
 import { useViewport } from '../../hooks/useViewport'
 import { BottomNav } from './BottomNav'
 import { Sidebar } from './Sidebar'
@@ -10,19 +10,30 @@ import { CsvImportProvider } from '../../context/CsvImportContext'
 import { EditTransactionContext } from '../../context/EditTransactionContext'
 
 interface AppShellProps {
-  active: Tab
-  onTabChange: (tab: Tab) => void
+  active: string
+  navigate: (hash: string) => void
   children: ReactNode
 }
 
-export function AppShell({ active, onTabChange, children }: AppShellProps) {
+export function AppShell({ active, navigate, children }: AppShellProps) {
   const { isDesktop, isWide } = useViewport()
   const [inputOpen, setInputOpen] = useState(false)
   const [csvOpen, setCsvOpen] = useState(false)
   const [editTransaction, setEditTransaction] = useState<Transaction | null>(null)
   const [sheetKey, setSheetKey] = useState(0)
 
+  // Problem #2: close modals on Android physical back button
+  useEffect(() => {
+    const handlePopState = () => {
+      if (inputOpen) { setInputOpen(false); return }
+      if (csvOpen) { setCsvOpen(false); return }
+    }
+    window.addEventListener('popstate', handlePopState)
+    return () => window.removeEventListener('popstate', handlePopState)
+  }, [inputOpen, csvOpen])
+
   const handleEdit = (tx: Transaction) => {
+    history.pushState({ modal: 'edit' }, '')
     setEditTransaction(tx)
     setSheetKey(k => k + 1)
     setInputOpen(true)
@@ -34,18 +45,24 @@ export function AppShell({ active, onTabChange, children }: AppShellProps) {
   }
 
   const openInput = () => {
+    history.pushState({ modal: 'input' }, '')
     setEditTransaction(null)
     setSheetKey(k => k + 1)
     setInputOpen(true)
   }
 
+  const openCsv = () => {
+    history.pushState({ modal: 'csv' }, '')
+    setCsvOpen(true)
+  }
+
   return (
-    <CsvImportProvider onOpenCsvImport={() => setCsvOpen(true)}>
+    <CsvImportProvider onOpenCsvImport={openCsv}>
       <EditTransactionContext.Provider value={handleEdit}>
         <div className={`${isDesktop ? 'flex h-full' : 'flex flex-col h-full'} w-full`}>
           {/* Sidebar (desktop only) */}
           {isDesktop && (
-            <Sidebar active={active} onChange={onTabChange} isWide={isWide} />
+            <Sidebar active={active} navigate={navigate} isWide={isWide} />
           )}
 
           {/* Main content */}
@@ -61,7 +78,7 @@ export function AppShell({ active, onTabChange, children }: AppShellProps) {
 
         {/* BottomNav (mobile only) */}
         {!isDesktop && (
-          <BottomNav active={active} onChange={onTabChange} />
+          <BottomNav active={active} navigate={navigate} />
         )}
 
         <SmartInputSheet key={sheetKey} open={inputOpen} onClose={handleClose} editTransaction={editTransaction} />

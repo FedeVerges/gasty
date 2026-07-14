@@ -1,58 +1,48 @@
-import { useState, useCallback } from 'react'
+import { useCallback } from 'react'
 import { AppShell } from './components/layout/AppShell'
 import { Dashboard } from './components/dashboard/Dashboard'
 import { Transactions } from './components/transactions/Transactions'
 import { Stats } from './components/stats/Stats'
 import { Settings } from './components/settings/Settings'
 import { BalanceDetailPage } from './components/dashboard/BalanceDetailPage'
+import { useHashRouter } from './hooks/useHashRouter'
 import type { Tab } from './types'
 
-interface BalanceDetailPageState {
-  month: string
-  monthLabel: string
-}
-
 function App() {
-  const [tab, setTab] = useState<Tab>('dashboard')
-  const [statsCategory, setStatsCategory] = useState<string | null>(null)
-  const [balanceDetailPage, setBalanceDetailPage] = useState<BalanceDetailPageState | null>(null)
+  const { route, params, navigate } = useHashRouter()
 
-  const handlePickCategory = (categoryId: string) => {
-    setStatsCategory(categoryId)
-    setTab('stats')
-  }
+  // Map sub-routes to their parent tab for BottomNav/Sidebar highlighting
+  const activeTab: Tab = route === 'balance' ? 'dashboard' : (route as Tab)
 
   const handleOpenBalanceDetail = useCallback((month: string, monthLabel: string) => {
-    setBalanceDetailPage({ month, monthLabel })
-  }, [])
+    navigate(`#/balance?month=${month}&label=${encodeURIComponent(monthLabel)}`)
+  }, [navigate])
 
-  const handleBackFromBalanceDetail = useCallback(() => {
-    setBalanceDetailPage(null)
-    setTab('dashboard')
-  }, [])
-
-  if (balanceDetailPage) {
+  if (route === 'balance') {
     return (
-      <AppShell active="dashboard" onTabChange={setTab}>
+      <AppShell active={activeTab} navigate={navigate}>
         <BalanceDetailPage
-          month={balanceDetailPage.month}
-          monthLabel={balanceDetailPage.monthLabel}
-          onBack={handleBackFromBalanceDetail}
+          month={params.month ?? ''}
+          monthLabel={decodeURIComponent(params.label ?? '')}
+          onBack={() => history.back()}
         />
       </AppShell>
     )
   }
 
   return (
-    <AppShell active={tab} onTabChange={setTab}>
-      {tab === 'dashboard' && (
+    <AppShell active={activeTab} navigate={navigate}>
+      {route === 'dashboard' && (
         <Dashboard onOpenBalanceDetail={handleOpenBalanceDetail} />
       )}
-      {tab === 'transactions' && (
-        <Transactions onPickCategory={handlePickCategory} onOpenBalanceDetail={handleOpenBalanceDetail} />
+      {route === 'transactions' && (
+        <Transactions
+          onPickCategory={(id) => navigate(`#/stats?category=${id}`)}
+          onOpenBalanceDetail={handleOpenBalanceDetail}
+        />
       )}
-      {tab === 'stats' && <Stats categoryFilter={statsCategory} />}
-      {tab === 'settings' && <Settings />}
+      {route === 'stats' && <Stats categoryFilter={params.category ?? null} />}
+      {route === 'settings' && <Settings />}
     </AppShell>
   )
 }

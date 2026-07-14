@@ -225,6 +225,38 @@ export function Stats({ categoryFilter }: StatsProps) {
         </div>
       </div>
 
+      {/* Category bar breakdown */}
+      {data.categoryData.length > 0 && (
+        <Card>
+          <span className="text-xs uppercase tracking-widest text-body font-medium block mb-3">
+            Desglose por categoría
+          </span>
+          <div className="space-y-2">
+            {data.categoryData.map(({ category, total }) => {
+              const pct = data.monthTotal > 0 ? (total / data.monthTotal) * 100 : 0
+              return (
+                <div key={category.id}>
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-base">{category.emoji}</span>
+                    <span className="flex-1 text-sm text-ink truncate">{category.name}</span>
+                    <span className="text-sm font-medium text-body">
+                      {formatMoney(total, settings.currency)}
+                    </span>
+                    <span className="text-xs text-mute w-10 text-right">{pct.toFixed(0)}%</span>
+                  </div>
+                  <div className="w-full h-2 rounded-full bg-canvas-soft overflow-hidden">
+                    <div
+                      className="h-full rounded-full"
+                      style={{ width: `${pct}%`, background: category.color }}
+                    />
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </Card>
+      )}
+
       {/* Categoría filtrada desde Movimientos */}
       {filteredCategory && (
         <Card>

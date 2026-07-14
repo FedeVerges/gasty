@@ -1,8 +1,8 @@
 import type { Tab } from '../../types'
 
 interface SidebarProps {
-  active: Tab
-  onChange: (tab: Tab) => void
+  active: string
+  navigate: (hash: string) => void
   isWide?: boolean
 }
 
@@ -61,7 +61,7 @@ function Icon({ name, className = 'w-5 h-5' }: { name: string; className?: strin
   }
 }
 
-export function Sidebar({ active, onChange, isWide }: SidebarProps) {
+export function Sidebar({ active, navigate, isWide }: SidebarProps) {
   return (
     <aside
       className={`
@@ -89,7 +89,7 @@ export function Sidebar({ active, onChange, isWide }: SidebarProps) {
           return (
             <button
               key={tab.id}
-              onClick={() => onChange(tab.id)}
+              onClick={() => navigate('#/' + tab.id)}
               className={`
                 flex items-center gap-3
                 px-3 py-2.5 rounded-xl

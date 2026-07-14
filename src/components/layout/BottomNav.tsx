@@ -1,8 +1,8 @@
 import type { Tab } from '../../types'
 
 interface BottomNavProps {
-  active: Tab
-  onChange: (tab: Tab) => void
+  active: string
+  navigate: (hash: string) => void
 }
 
 const TABS: Array<{ id: Tab; label: string; icon: string }> = [
@@ -60,7 +60,7 @@ function Icon({ name, className = 'w-6 h-6' }: { name: string; className?: strin
   }
 }
 
-export function BottomNav({ active, onChange }: BottomNavProps) {
+export function BottomNav({ active, navigate }: BottomNavProps) {
   return (
     <nav
       className="
@@ -77,7 +77,7 @@ export function BottomNav({ active, onChange }: BottomNavProps) {
           return (
             <button
               key={tab.id}
-              onClick={() => onChange(tab.id)}
+              onClick={() => navigate('#/' + tab.id)}
               className={`
                 flex flex-col items-center justify-center gap-1
                 transition-colors

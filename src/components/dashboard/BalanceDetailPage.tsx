@@ -3,12 +3,29 @@ import { Card } from '../ui/Card'
 import { useSettings } from '../../context/SettingsContext'
 import { useProjections } from '../../hooks/useProjections'
 import { useCategories } from '../../hooks/useCategories'
-import { formatMoney } from '../../lib/format'
+import { formatMoney, formatDateGroupHeader } from '../../lib/format'
+import type { Transaction } from '../../types'
 
 interface BalanceDetailPageProps {
   month: string
   monthLabel: string
   onBack: () => void
+}
+
+interface TxEntry {
+  tx: Transaction
+  emoji: string
+  color: string
+  isIncome: boolean
+}
+
+interface DayEntry {
+  date: string
+  label: string
+  transactions: TxEntry[]
+  dayIncome: number
+  dayExpense: number
+  balance: number
 }
 
 export function BalanceDetailPage({ month, monthLabel, onBack }: BalanceDetailPageProps) {
@@ -19,25 +36,68 @@ export function BalanceDetailPage({ month, monthLabel, onBack }: BalanceDetailPa
   const data = useMemo(() => {
     let income = 0
     let expense = 0
-    const byCategory = new Map<string, number>()
     for (const tx of transactions) {
-      if (tx.type === 'income') {
-        income += tx.amount
-      } else {
-        expense += tx.amount
-        byCategory.set(tx.categoryId, (byCategory.get(tx.categoryId) ?? 0) + tx.amount)
-      }
+      if (tx.type === 'income') income += tx.amount
+      else expense += tx.amount
     }
-    const top = Array.from(byCategory.entries())
-      .map(([id, total]) => ({ cat: categories.find((c) => c.id === id), total }))
-      .filter((d) => d.cat)
-      .sort((a, b) => b.total - a.total)
-      .slice(0, 5)
-    return { income, expense, available: income - expense, top }
-  }, [transactions, categories])
+    return { income, expense, available: income - expense }
+  }, [transactions])
 
-  const isPositive = data.available >= 0
-  const balanceColor = isPositive ? 'var(--color-positive)' : 'var(--color-negative)'
+  const timeline = useMemo<DayEntry[]>(() => {
+    if (transactions.length === 0) return []
+
+    // Group transactions by day
+    const dayMap = new Map<string, Transaction[]>()
+    for (const tx of transactions) {
+      const day = tx.date.split('T')[0]
+      const existing = dayMap.get(day)
+      if (existing) existing.push(tx)
+      else dayMap.set(day, [tx])
+    }
+
+    // Sort days chronologically ascending for balance calculation
+    const sortedDays = Array.from(dayMap.keys()).sort()
+
+    let runningBalance = 0
+    const chronological = sortedDays.map((day) => {
+      const dayTxs = dayMap.get(day)!.sort((a, b) => {
+        // Income first, then expenses
+        if (a.type === 'income' && b.type !== 'income') return -1
+        if (a.type !== 'income' && b.type === 'income') return 1
+        return 0
+      })
+
+      let dayIncome = 0
+      let dayExpense = 0
+
+      const entries: TxEntry[] = dayTxs.map((tx) => {
+        const cat = categories.find((c) => c.id === tx.categoryId)
+        const isIncome = tx.type === 'income'
+        if (isIncome) dayIncome += tx.amount
+        else dayExpense += tx.amount
+        return {
+          tx,
+          emoji: tx.emoji ?? cat?.emoji ?? '💸',
+          color: cat?.color ?? 'var(--color-mute)',
+          isIncome,
+        }
+      })
+
+      runningBalance += dayIncome - dayExpense
+
+      return {
+        date: day,
+        label: formatDateGroupHeader(day),
+        transactions: entries,
+        dayIncome,
+        dayExpense,
+        balance: runningBalance,
+      }
+    })
+
+    // Display most recent first
+    return chronological.reverse()
+  }, [transactions, categories])
 
   return (
     <div className="animate-fade-in space-y-4">
@@ -63,7 +123,7 @@ export function BalanceDetailPage({ month, monthLabel, onBack }: BalanceDetailPa
         <span className="text-xs uppercase tracking-widest" style={{ color: 'var(--color-primary-neutral)' }}>
           Disponible
         </span>
-        <span className="block text-4xl font-bold tracking-tight mt-1" style={{ color: balanceColor }}>
+        <span className="block text-4xl font-bold tracking-tight mt-1 text-primary">
           {formatMoney(data.available, settings.currency)}
         </span>
       </Card>
@@ -84,39 +144,85 @@ export function BalanceDetailPage({ month, monthLabel, onBack }: BalanceDetailPa
         </Card>
       </div>
 
-      {/* Category breakdown */}
-      <Card>
-        <span className="text-xs uppercase tracking-widest text-body font-medium block mb-3">
-          Composición del gasto
+      {/* Balance trajectory timeline */}
+      <div>
+        <span className="text-xs uppercase tracking-widest text-body font-medium block mb-3 px-1">
+          Cómo llegás a tu disponible
         </span>
-        {data.top.length === 0 ? (
-          <p className="text-sm text-body">Sin gastos este mes.</p>
+
+        {timeline.length === 0 ? (
+          <Card>
+            <p className="text-sm text-body text-center py-6">Sin movimientos este mes.</p>
+          </Card>
         ) : (
-          <div className="space-y-2">
-            {data.top.map(({ cat, total }) => {
-              const pct = data.expense > 0 ? (total / data.expense) * 100 : 0
-              return (
-                <div key={cat!.id}>
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="text-base">{cat!.emoji}</span>
-                    <span className="flex-1 text-sm text-ink truncate">{cat!.name}</span>
-                    <span className="text-sm font-medium text-body">
-                      {formatMoney(total, settings.currency)}
-                    </span>
-                    <span className="text-xs text-mute w-10 text-right">{pct.toFixed(0)}%</span>
-                  </div>
-                  <div className="w-full h-2 rounded-full bg-canvas-soft overflow-hidden">
+          <div className="relative pl-5">
+            {/* Vertical line */}
+            <div
+              className="absolute left-[7px] top-1 bottom-1 w-0.5"
+              style={{ background: 'var(--color-border)' }}
+            />
+
+            <div className="space-y-1">
+              {timeline.map((day) => {
+                const net = day.dayIncome - day.dayExpense
+                const dotColor = net >= 0 ? 'var(--color-positive)' : 'var(--color-negative)'
+
+                return (
+                  <div key={day.date} className="relative rounded-2xl px-3 py-2.5 bg-primary-pale border-l-4 border-primary">
+                    {/* Dot on the timeline */}
                     <div
-                      className="h-full rounded-full"
-                      style={{ width: `${pct}%`, background: cat!.color }}
+                      className="absolute -left-[13px] top-3.5 w-2.5 h-2.5 rounded-full border-2 border-canvas"
+                      style={{ background: dotColor }}
                     />
+
+                    {/* Day header */}
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-sm font-semibold text-ink">{day.label}</span>
+                      <span className="text-xs text-mute">
+                        {day.dayIncome > 0 && (
+                          <span className="text-positive">+{formatMoney(day.dayIncome, settings.currency)}</span>
+                        )}
+                        {day.dayIncome > 0 && day.dayExpense > 0 && ' / '}
+                        {day.dayExpense > 0 && (
+                          <span className="text-negative">−{formatMoney(day.dayExpense, settings.currency)}</span>
+                        )}
+                      </span>
+                    </div>
+
+                    {/* Transactions */}
+                    <div className="space-y-0.5">
+                      {day.transactions.map((entry) => (
+                        <div key={entry.tx.id} className="flex items-center gap-2 text-xs">
+                          <span className="shrink-0">{entry.emoji}</span>
+                          <span className="flex-1 truncate text-body">{entry.tx.description}</span>
+                          <span
+                            className="shrink-0 font-medium"
+                            style={{ color: entry.isIncome ? 'var(--color-positive)' : 'var(--color-negative)' }}
+                          >
+                            {entry.isIncome ? '+' : '−'}{formatMoney(entry.tx.amount, settings.currency)}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Balance at end of day — always prominent */}
+                    <div className="mt-2 pt-2 border-t border-primary/30">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-medium" style={{ color: 'var(--color-primary-neutral)' }}>
+                          Balance a esta fecha
+                        </span>
+                        <span className={`text-lg font-bold ${day.balance >= 0 ? 'text-positive' : 'text-negative'}`}>
+                          {formatMoney(day.balance, settings.currency)}
+                        </span>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              )
-            })}
+                )
+              })}
+            </div>
           </div>
         )}
-      </Card>
+      </div>
     </div>
   )
 }

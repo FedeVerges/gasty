@@ -165,21 +165,6 @@ export function Transactions({ onPickCategory, onOpenBalanceDetail }: Transactio
         />
       </div>
 
-      {/* Balance — debajo del selector (clicable → detalle) */}
-      <button
-        onClick={openBalanceDetail}
-        className="w-full bg-card border border-border rounded-2xl px-4 py-3 flex justify-between items-center active:scale-[0.99] transition-transform text-left"
-        aria-label="Ver detalle del balance"
-      >
-        <span className="text-sm text-body">Balance</span>
-        <span
-          className={`font-bold ${monthTotal >= 0 ? 'text-positive' : 'text-negative'
-            }`}
-        >
-          {monthTotal >= 0 ? '+' : '−'} {formatMoney(Math.abs(monthTotal), settings.currency)}
-        </span>
-      </button>
-
       {/* Category info cards — resumen del mes (oculto al buscar, B1) */}
       {!searchText && (
         <div className={`grid grid-cols-2 gap-3 mx-auto ${isWide ? 'max-w-xl' : 'max-w-lg'}`}>
@@ -283,6 +268,21 @@ export function Transactions({ onPickCategory, onOpenBalanceDetail }: Transactio
           </button>
         )}
       </div>
+
+      {/* Balance — debajo del buscador (clicable → detalle) */}
+      <button
+        onClick={openBalanceDetail}
+        className="w-full bg-card border border-border rounded-2xl px-4 py-3 flex justify-between items-center active:scale-[0.99] transition-transform text-left"
+        aria-label="Ver detalle del balance"
+      >
+        <span className="text-sm text-body">Balance</span>
+        <span
+          className={`font-bold ${monthTotal >= 0 ? 'text-positive' : 'text-negative'
+            }`}
+        >
+          {monthTotal >= 0 ? '+' : '−'} {formatMoney(Math.abs(monthTotal), settings.currency)}
+        </span>
+      </button>
 
       {isProjection && (
         <div
