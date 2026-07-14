@@ -65,6 +65,12 @@ export function SmartInputSheet({ open, onClose, editTransaction }: SmartInputSh
   const userTouchedRecurrence = useRef(false)
   const keyboardHeight = useKeyboardHeight()
 
+  // iOS: scroll the focused field into view so the keyboard never covers it
+  const scrollInputIntoView = (el: HTMLElement | null) => {
+    if (!el) return
+    requestAnimationFrame(() => el.scrollIntoView({ block: 'center', behavior: 'smooth' }))
+  }
+
   useEffect(() => {
     if (open) {
       const scrollY = window.scrollY
@@ -242,6 +248,11 @@ export function SmartInputSheet({ open, onClose, editTransaction }: SmartInputSh
                   onChange={(e) => setEditDescription(e.target.value)}
                   placeholder="Descripción"
                   className="w-full px-4 py-3 rounded-2xl bg-canvas border-2 border-border text-ink focus:border-primary transition-colors"
+                  enterKeyHint="next"
+                  autoComplete="off"
+                  autoCorrect="off"
+                  spellCheck={false}
+                  onFocus={(e) => scrollInputIntoView(e.currentTarget)}
                 />
               </div>
               <div>
@@ -257,6 +268,8 @@ export function SmartInputSheet({ open, onClose, editTransaction }: SmartInputSh
                   placeholder="Monto"
                   className="w-full px-4 py-3 rounded-2xl bg-canvas border-2 border-border text-ink text-xl focus:border-primary transition-colors"
                   autoFocus
+                  enterKeyHint="next"
+                  onFocus={(e) => scrollInputIntoView(e.currentTarget)}
                 />
               </div>
               <div>
@@ -266,6 +279,8 @@ export function SmartInputSheet({ open, onClose, editTransaction }: SmartInputSh
                   value={editDate}
                   onChange={(e) => setEditDate(e.target.value)}
                   className="w-full px-4 py-3 rounded-2xl bg-canvas border-2 border-border text-ink focus:border-primary transition-colors"
+                  enterKeyHint="done"
+                  onFocus={(e) => scrollInputIntoView(e.currentTarget)}
                 />
               </div>
               <div className="flex items-center gap-2">
@@ -318,6 +333,11 @@ export function SmartInputSheet({ open, onClose, editTransaction }: SmartInputSh
                     transition-colors
                   "
                   autoFocus
+                  enterKeyHint="done"
+                  autoComplete="off"
+                  autoCorrect="off"
+                  spellCheck={false}
+                  onFocus={(e) => scrollInputIntoView(e.currentTarget)}
                 />
               </div>
               <div className="flex items-center gap-2 mt-2 px-1">
@@ -521,22 +541,32 @@ export function SmartInputSheet({ open, onClose, editTransaction }: SmartInputSh
               {recurring.kind === 'fixed_temporary' && (
                 <div className="mt-3 flex items-center gap-2">
                   <span className="text-sm text-body">Por</span>
-                  <input
-                    type="number"
-                    max="240"
-                    value={tempMonths === 0 ? '' : tempMonths}
-                    onChange={(e) => {
-                      const value = e.target.value
-                      if (value === '') {
-                        setTempMonths(0)
-                        return
-                      }
-                      const parsed = parseInt(value, 10)
-                      setTempMonths(Number.isNaN(parsed) ? 0 : Math.max(1, Math.min(240, parsed)))
-                    }}
-                    className="w-20 px-3 py-2 rounded-xl bg-canvas border border-border text-center"
-                  />
-                  <span className="text-sm text-body">meses</span>
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => setTempMonths((m) => Math.max(1, m - 1))}
+                      disabled={tempMonths <= 1}
+                      aria-label="Menos meses"
+                      className="w-9 h-9 rounded-xl bg-canvas-soft border border-border text-lg font-bold text-body active:scale-95 transition-transform disabled:opacity-30 disabled:cursor-not-allowed"
+                    >
+                      −
+                    </button>
+                    <span
+                      aria-live="polite"
+                      className="min-w-[3.5rem] text-center text-sm font-medium text-ink"
+                    >
+                      {tempMonths} {tempMonths === 1 ? 'mes' : 'meses'}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setTempMonths((m) => Math.min(240, m + 1))}
+                      disabled={tempMonths >= 240}
+                      aria-label="Más meses"
+                      className="w-9 h-9 rounded-xl bg-canvas-soft border border-border text-lg font-bold text-body active:scale-95 transition-transform disabled:opacity-30 disabled:cursor-not-allowed"
+                    >
+                      +
+                    </button>
+                  </div>
                 </div>
               )}
             </div>

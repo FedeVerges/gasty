@@ -7,7 +7,6 @@ import { TransactionItem } from './TransactionItem'
 import { MonthSelector } from '../dashboard/MonthSelector'
 import { formatMoney, formatDateGroupHeader, formatMonth } from '../../lib/format'
 import { useSettings } from '../../context/SettingsContext'
-import { useBalanceDetail } from '../../context/BalanceDetailContext'
 
 function monthKey(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
@@ -30,14 +29,14 @@ interface CategorySummary {
 
 interface TransactionsProps {
   onPickCategory?: (categoryId: string) => void
+  onOpenBalanceDetail?: (month: string, monthLabel: string) => void
 }
 
-export function Transactions({ onPickCategory }: TransactionsProps) {
+export function Transactions({ onPickCategory, onOpenBalanceDetail }: TransactionsProps) {
   const categories = useCategories()
   const allTransactions = useAllTransactions()
   const { settings } = useSettings()
   const { isWide } = useViewport()
-  const { open: openBalance } = useBalanceDetail()
 
   const now = useMemo(() => new Date(), [])
   const [selectedMonth, setSelectedMonth] = useState(monthKey(now))
@@ -47,7 +46,7 @@ export function Transactions({ onPickCategory }: TransactionsProps) {
 
   const selectedDate = new Date(parseInt(selectedMonth.slice(0, 4)), parseInt(selectedMonth.slice(5, 7)) - 1)
   const monthLabel = formatMonth(selectedDate)
-  const openBalanceDetail = () => openBalance(selectedMonth, monthLabel)
+  const openBalanceDetail = () => onOpenBalanceDetail?.(selectedMonth, monthLabel)
 
   const filtered = useMemo(() => {
     const search = searchText.toLowerCase().trim()

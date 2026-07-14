@@ -2,7 +2,6 @@ import { useMemo, useState, useEffect, useRef } from 'react'
 import { useAllTransactions } from '../../hooks/useTransactions'
 import { useProjections } from '../../hooks/useProjections'
 import { useViewport } from '../../hooks/useViewport'
-import { useBalanceDetail } from '../../context/BalanceDetailContext'
 import { BalanceCard } from './BalanceCard'
 import { TransactionItem } from '../transactions/TransactionItem'
 import { Inversiones } from './Inversiones'
@@ -14,10 +13,13 @@ function monthKey(d: Date): string {
 
 type DashboardTab = 'resumen' | 'inversiones'
 
-export function Dashboard() {
+interface DashboardProps {
+  onOpenBalanceDetail?: (month: string, monthLabel: string) => void
+}
+
+export function Dashboard({ onOpenBalanceDetail }: DashboardProps) {
   const transactions = useAllTransactions()
   const { isWide } = useViewport()
-  const { open } = useBalanceDetail()
   const [tab, setTab] = useState<DashboardTab>('resumen')
   const [showTop, setShowTop] = useState(false)
   const rootRef = useRef<HTMLDivElement>(null)
@@ -156,7 +158,7 @@ export function Dashboard() {
             prevMonthExpense={summary.prevMonthSpent}
             monthLabel={monthLabel}
             isProjection={isProjection}
-            onOpenDetail={() => open(selectedMonth, monthLabel)}
+            onOpenDetail={() => onOpenBalanceDetail?.(selectedMonth, monthLabel)}
           />
 
           {sorted.length === 0 ? (
