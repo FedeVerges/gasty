@@ -148,6 +148,22 @@ await seedDatabase()
 `SettingsContext` sets `document.documentElement.setAttribute('data-theme', settings.theme)` — the
 CSS `@theme` tokens and `[data-theme="dark"]` overrides are in `src/index.css`.
 
+### Viewport height — `dvh` obligatorio en mobile sheets
+
+En mobile, **nunca** usar `100vh` para calcular maxHeight de sheets/modales.
+`100vh` no se reduce cuando el teclado abre en Android (Samsung A55 y otros),
+tapando el input.
+
+Usar `100dvh` con fallback:
+
+```ts
+const supportsDvh = typeof CSS !== 'undefined' && CSS.supports?.('height', '100dvh')
+const mobileMaxHeight = supportsDvh ? '90dvh' : '90vh'
+```
+
+También: **nunca** `position: fixed` en `<body>` para bloquear scroll — usar
+`overflow: hidden` que es compatible con Android's `scrollIntoView`.
+
 ### Build pipeline
 
 `npm run build` runs **`tsc -b` first** (type-checks both `tsconfig.app.json` and

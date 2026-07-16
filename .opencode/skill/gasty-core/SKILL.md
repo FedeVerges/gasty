@@ -20,6 +20,8 @@ Gasty is a mobile-first PWA for personal expense tracking in es-AR. This skill c
 - **Use helpers for formatting.** Use `formatMoney`, `formatDate`, `formatDateFull`, `formatMonth` from `src/lib/format.ts`; avoid `toLocaleString()` directly.
 - **Strings in es-AR only.** User-facing text must be Spanish, no i18n library.
 - **Stable keys in lists.** Use stable IDs in `.map()`, not array indices.
+- **`100dvh` for mobile sheet maxHeight.** Never use `100vh` — it doesn't shrink when the keyboard opens on Android. Use `CSS.supports?.('height', '100dvh')` with `100vh` fallback.
+- **No `position: fixed` on `<body>`.** Use `overflow: hidden` to lock scroll — `position: fixed` breaks `scrollIntoView` on Android.
 
 ## Re-render (React 19 — aplicable a esta PWA client-side)
 
@@ -81,3 +83,4 @@ After any non-trivial change, run:
 - [ ] No editing of recurring clones (only source rows)
 - [ ] Bundle size <250KB JS / < 15KB CSS gzipped
 - [ ] Stable keys in `.map()`, not array indices
+- [ ] Mobile sheets use `100dvh`, not `100vh`

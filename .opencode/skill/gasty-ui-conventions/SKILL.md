@@ -131,6 +131,20 @@ Patrón `SmartInputSheet`:
 - `paddingBottom: env(safe-area-inset-bottom)` para no tapar el home indicator del iPhone.
 - `useEffect(() => { document.body.style.overflow = 'hidden'; ... return () => { overflow = '' } }, [open])` para bloquear scroll del body.
 
+### Viewport & teclado (mobile)
+
+En Android (Samsung A55 y otros), `100vh` no se reduce cuando el teclado abre → el
+input queda tapado. Usar `100dvh` (dynamic viewport height) que se adapta automáticamente.
+
+- **maxHeight del sheet**: `100dvh` con fallback a `100vh`:
+  ```ts
+  const supportsDvh = typeof CSS !== 'undefined' && CSS.supports?.('height', '100dvh')
+  // maxHeight: supportsDvh ? '90dvh' : '90vh'
+  ```
+- **Body scroll lock**: `document.body.style.overflow = 'hidden'` — **nunca** `position: fixed` (rompe `scrollIntoView` en Android).
+- **Input focus**: `scrollIntoView({ block: 'nearest' })` en vez de `'center'` para mejor compatibilidad con Android.
+- **useKeyboardHeight**: se mantiene como fallback para browsers sin soporte `dvh`.
+
 ### FAB (Floating Action Button)
 
 ```tsx
