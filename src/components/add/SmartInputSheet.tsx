@@ -11,6 +11,10 @@ import { Badge } from '../ui/Badge'
 import { FlashChips } from './FlashChips'
 import type { ParsedTransaction, RecurringConfig, Transaction, TransactionType } from '../../types'
 
+// dvh (dynamic viewport height) automatically shrinks when mobile keyboard opens.
+// Supported: Chrome 108+, Safari 15.4+, Firefox 101+ — covers Samsung A55 and modern iOS.
+const SUPPORTS_DVH = typeof CSS !== 'undefined' && CSS.supports?.('height', '100dvh')
+
 interface SmartInputSheetProps {
   open: boolean
   onClose: () => void
@@ -65,23 +69,23 @@ export function SmartInputSheet({ open, onClose, editTransaction }: SmartInputSh
   const userTouchedRecurrence = useRef(false)
   const keyboardHeight = useKeyboardHeight()
 
-  // iOS: scroll the focused field into view so the keyboard never covers it
+  // Scroll focused field into view when keyboard opens.
+  // Uses 'nearest' instead of 'center' — more reliable on Android where the sheet
+  // has overflow:hidden (position:fixed body hack was removed for dvh compatibility).
   const scrollInputIntoView = (el: HTMLElement | null) => {
     if (!el) return
-    requestAnimationFrame(() => el.scrollIntoView({ block: 'center', behavior: 'smooth' }))
+    requestAnimationFrame(() => el.scrollIntoView({ block: 'nearest', behavior: 'smooth' }))
   }
 
+  // Prevent background scroll while sheet is open.
+  // The old position:fixed hack broke scrollIntoView on Android — overflow:hidden
+  // is lighter and works well with dvh which already accounts for the keyboard.
   useEffect(() => {
     if (open) {
-      const scrollY = window.scrollY
-      document.body.style.position = 'fixed'
-      document.body.style.top = `-${scrollY}px`
-      document.body.style.width = '100%'
+      const prev = document.body.style.overflow
+      document.body.style.overflow = 'hidden'
       return () => {
-        document.body.style.position = ''
-        document.body.style.top = ''
-        document.body.style.width = ''
-        window.scrollTo(0, scrollY)
+        document.body.style.overflow = prev
       }
     }
   }, [open])
@@ -210,12 +214,16 @@ export function SmartInputSheet({ open, onClose, editTransaction }: SmartInputSh
         `}
         style={{
           paddingBottom: 'env(safe-area-inset-bottom)',
-          marginBottom: !isDesktop && keyboardHeight ? keyboardHeight : undefined,
+          // When dvh is supported, the viewport already shrinks for the keyboard —
+          // marginBottom is only needed as fallback for browsers without dvh.
+          marginBottom: !isDesktop && !SUPPORTS_DVH && keyboardHeight ? keyboardHeight : undefined,
           maxHeight: isDesktop
             ? '85vh'
-            : keyboardHeight > 0
-              ? `calc(100vh - ${keyboardHeight + 80}px)`
-              : '90vh',
+            : SUPPORTS_DVH
+              ? '90dvh'
+              : keyboardHeight > 0
+                ? `calc(100vh - ${keyboardHeight + 80}px)`
+                : '90vh',
         }}
       >
         <div className="sticky top-0 bg-canvas px-5 pt-4 pb-2 z-10">
