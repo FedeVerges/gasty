@@ -28,7 +28,9 @@
         "task": {
           "gasty-review": "allow",
           "gasty-test": "allow"
-        }
+        },
+        "codegraph_*": "allow",
+        "engram_*": "allow"
       }
     },
     "gasty-review": {
@@ -51,7 +53,9 @@
           "git log*": "allow",
           "git status*": "allow"
         },
-        "task": "deny"
+        "task": "deny",
+        "codegraph_*": "allow",
+        "engram_*": "allow"
       }
     },
     "gasty-test": {
@@ -73,7 +77,9 @@
           "npm run test*": "allow",
           "vitest*": "allow"
         },
-        "task": "deny"
+        "task": "deny",
+        "codegraph_*": "allow",
+        "engram_*": "allow"
       }
     }
   }

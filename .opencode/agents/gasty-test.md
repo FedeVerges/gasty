@@ -108,6 +108,15 @@ When reviewing parser changes, verify:
 5. **Run** `npm test -- <file>` to verify, then `npm test` to confirm nothing else broke.
 6. **Report**: test count delta, files touched, coverage of the new behavior.
 
+## Memoria persistente (Engram)
+
+Usá `mem_search` para encontrar test patterns previos o bugs relacionados.
+
+## CodeGraph (grafo del código)
+
+Usá `codegraph_explore` con las funciones/módulos a testear para entender
+sus dependencias y el contrato completo antes de escribir tests.
+
 ## Test patterns
 
 ### Pure parser test (no DB)
