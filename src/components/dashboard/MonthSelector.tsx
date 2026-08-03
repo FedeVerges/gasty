@@ -41,9 +41,9 @@ export function MonthSelector({ selectedMonth, onChange }: MonthSelectorProps) {
     <div className="flex items-center justify-between gap-3 py-1">
       <button
         onClick={() => onChange(prevMonth)}
-        className="w-11 h-11 rounded-xl flex items-center justify-center
-                   bg-card border border-border text-body
-                   active:scale-95 transition-transform"
+        className="w-11 h-11 rounded-maguito-md flex items-center justify-center
+                   bg-card border-maguito shadow-maguito text-body
+                   active:translate-x-[var(--maguito-shadow-depth)] active:translate-y-[var(--maguito-shadow-depth)] active:shadow-none transition-all"
         aria-label="Mes anterior"
       >
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} className="w-5 h-5">
@@ -56,10 +56,10 @@ export function MonthSelector({ selectedMonth, onChange }: MonthSelectorProps) {
           {label}
         </span>
         {isFuture && (
-          <span className="text-xs px-2 py-0.5 rounded-full"
+          <span className="text-xs px-2 py-0.5 rounded-maguito-sm"
             style={{
-              background: 'var(--color-proyector-accent)',
-              color: 'var(--color-proyector-bg)',
+              background: 'var(--color-projection-accent)',
+              color: 'var(--color-projection-bg)',
             }}
           >
             Proy.
@@ -73,9 +73,9 @@ export function MonthSelector({ selectedMonth, onChange }: MonthSelectorProps) {
       <button
         onClick={() => canGoNext && onChange(nextMonth)}
         disabled={!canGoNext}
-        className="w-11 h-11 rounded-xl flex items-center justify-center
-                   bg-card border border-border text-body
-                   active:scale-95 transition-transform
+        className="w-11 h-11 rounded-maguito-md flex items-center justify-center
+                   bg-card border-maguito shadow-maguito text-body
+                   active:translate-x-[var(--maguito-shadow-depth)] active:translate-y-[var(--maguito-shadow-depth)] active:shadow-none transition-all
                    disabled:opacity-30 disabled:cursor-not-allowed"
         aria-label="Mes siguiente"
       >

@@ -171,8 +171,8 @@ export function BalanceDetailPage({ month, monthLabel, onBack }: BalanceDetailPa
                   <div key={day.date} className="relative rounded-2xl px-3 py-2.5 bg-primary-pale border-l-4 border-primary">
                     {/* Dot on the timeline */}
                     <div
-                      className="absolute -left-[13px] top-3.5 w-2.5 h-2.5 rounded-full border-2 border-canvas"
-                      style={{ background: dotColor }}
+                      className="absolute -left-[13px] top-3.5 w-2.5 h-2.5 rounded-full border-2"
+                      style={{ background: dotColor, borderColor: 'var(--color-canvas)' }}
                     />
 
                     {/* Day header */}

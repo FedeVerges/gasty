@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Card } from '../ui/Card'
+import { Button } from '../ui/Button'
 import { useSettings } from '../../context/SettingsContext'
 import { useInvestments, useSavingsTotal } from '../../hooks/useInvestments'
 import { db, generateId } from '../../lib/db'
@@ -119,7 +120,7 @@ export function Inversiones() {
           const allocated = (totalSaved * inv.allocationPct) / 100
           const projected = allocated * Math.pow(1 + inv.monthlyReturnPct / 100, MONTHS)
           return (
-            <div key={inv.id} className="bg-card border border-border rounded-2xl p-4">
+            <div key={inv.id} className="bg-card border-maguito shadow-maguito rounded-lg p-4">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl flex items-center justify-center text-lg shrink-0 bg-canvas-soft">
                   {inv.emoji}
@@ -160,14 +161,14 @@ export function Inversiones() {
               value={emoji}
               onChange={(e) => setEmoji(e.target.value)}
               maxLength={4}
-              className="w-14 px-2 py-2 text-lg rounded-xl bg-canvas border border-border text-center outline-none focus:border-primary"
+               className="w-14 px-2 py-2 text-lg rounded-xl bg-canvas border-maguito text-center outline-none focus:ring-2 focus:ring-primary"
               aria-label="Emoji"
             />
             <input
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Ej: Acciones"
-              className="flex-1 px-3 py-2 text-sm rounded-xl bg-canvas border border-border text-ink outline-none focus:border-primary"
+               className="flex-1 px-3 py-2 text-sm rounded-xl bg-canvas border-maguito text-ink outline-none focus:ring-2 focus:ring-primary"
             />
           </div>
           <div className="flex items-center gap-2">
@@ -178,7 +179,7 @@ export function Inversiones() {
               max="100"
               value={allocationPct}
               onChange={(e) => setAllocationPct(Math.max(0, Math.min(100, parseInt(e.target.value) || 0)))}
-              className="flex-1 px-3 py-2 rounded-xl bg-canvas border border-border text-center"
+              className="flex-1 px-3 py-2 rounded-xl bg-canvas border-maguito text-center"
             />
           </div>
           <div className="flex items-center gap-2">
@@ -190,28 +191,22 @@ export function Inversiones() {
               step="0.1"
               value={monthlyReturnPct}
               onChange={(e) => setMonthlyReturnPct(parseFloat(e.target.value) || 0)}
-              className="flex-1 px-3 py-2 rounded-xl bg-canvas border border-border text-center"
+              className="flex-1 px-3 py-2 rounded-xl bg-canvas border-maguito text-center"
             />
           </div>
           <div className="flex gap-2">
-            <button
-              onClick={addInvestment}
-              className="flex-1 py-2.5 text-sm font-semibold rounded-xl bg-primary text-on-primary"
-            >
+            <Button fullWidth onClick={addInvestment}>
               Agregar
-            </button>
-            <button
-              onClick={() => setAdding(false)}
-              className="px-4 py-2.5 text-sm font-semibold rounded-xl bg-canvas text-body border border-border"
-            >
+            </Button>
+            <Button variant="tertiary" onClick={() => setAdding(false)}>
               Cancelar
-            </button>
+            </Button>
           </div>
         </div>
       ) : (
         <button
           onClick={() => setAdding(true)}
-          className="w-full py-3 rounded-2xl border-2 border-dashed border-border text-body text-sm font-medium active:scale-[0.98] transition-transform"
+           className="w-full py-3 rounded-2xl border-2 border-dashed border-border-soft text-body text-sm font-medium active:scale-[0.98] transition-transform"
         >
           + Agregar destino de inversión
         </button>

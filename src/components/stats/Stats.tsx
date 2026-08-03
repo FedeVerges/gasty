@@ -137,10 +137,10 @@ export function Stats({ categoryFilter }: StatsProps) {
       {isProjection && (
         <div
           className="rounded-2xl px-4 py-2 text-sm font-medium text-center"
-          style={{
-            background: 'var(--color-proyector-card)',
-            color: 'var(--color-proyector-text)',
-            border: '1px solid var(--color-proyector-accent)',
+           style={{
+            background: 'var(--color-projection-card)',
+            color: 'var(--color-projection-text)',
+            border: '1px solid var(--color-projection-accent)',
           }}
         >
           🚀 Proyección — stats basados en gastos estimados

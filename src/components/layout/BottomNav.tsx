@@ -66,12 +66,12 @@ export function BottomNav({ active, navigate }: BottomNavProps) {
       className="
         fixed bottom-0 left-1/2 -translate-x-1/2
         w-full max-w-[480px]
-        bg-canvas/80 backdrop-blur-lg
-        border-t border-border
+        bg-canvas
+        border-t-[3px] border-ink
         z-40
       "
     >
-      <div className="grid grid-cols-4 h-16">
+      <div className="grid grid-cols-4 h-16 gap-1 p-1">
         {TABS.map((tab) => {
           const isActive = active === tab.id
           return (
@@ -80,12 +80,15 @@ export function BottomNav({ active, navigate }: BottomNavProps) {
               onClick={() => navigate('#/' + tab.id)}
               className={`
                 flex flex-col items-center justify-center gap-1
-                transition-colors
-                ${isActive ? 'text-ink' : 'text-mute'}
+                rounded-maguito-sm border-[3px] transition-all
+                ${isActive
+                  ? 'bg-primary text-on-primary border-ink shadow-maguito active:translate-x-[var(--maguito-shadow-depth)] active:translate-y-[var(--maguito-shadow-depth)] active:shadow-none'
+                  : 'bg-canvas text-mute border-transparent'
+                }
               `}
             >
               <Icon name={tab.icon} className="w-5 h-5" />
-              <span className="text-[11px] font-medium">{tab.label}</span>
+              <span className="text-[11px] font-bold">{tab.label}</span>
             </button>
           )
         })}

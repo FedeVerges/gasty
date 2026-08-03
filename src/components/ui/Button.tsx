@@ -1,50 +1,44 @@
-import type { ReactNode, ButtonHTMLAttributes } from 'react'
+import { Button as MaguitoButton } from 'maguitoui'
+import type { ButtonHTMLAttributes, ReactNode } from 'react'
+
+type GastyVariant = 'primary' | 'secondary' | 'tertiary' | 'danger'
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   children: ReactNode
-  variant?: 'primary' | 'secondary' | 'tertiary' | 'danger'
+  variant?: GastyVariant
   size?: 'sm' | 'md' | 'lg'
+  shape?: 'rounded' | 'circle'
   fullWidth?: boolean
+}
+
+/** Maps Gasty variant names to Maguito ColorVariant */
+const VARIANT_MAP: Record<GastyVariant, string> = {
+  primary: 'primary',
+  secondary: 'secondary',
+  tertiary: 'ghost',
+  danger: 'danger',
 }
 
 export function Button({
   children,
   variant = 'primary',
   size = 'md',
+  shape = 'rounded',
   fullWidth = false,
   className = '',
   ...rest
 }: ButtonProps) {
-  const variants: Record<string, string> = {
-    primary:
-      'bg-primary text-on-primary active:brightness-90',
-    secondary:
-      'bg-canvas-soft text-ink active:brightness-95',
-    tertiary:
-      'bg-canvas text-ink border border-ink active:bg-canvas-soft',
-    danger:
-      'bg-negative text-white active:brightness-90',
-  }
-
-  const sizes: Record<string, string> = {
-    sm: 'px-3 py-2 text-sm rounded-xl',
-    md: 'px-4 py-3 text-base rounded-3xl',
-    lg: 'px-5 py-4 text-lg rounded-3xl',
-  }
-
   return (
-    <button
-      className={`
-        font-semibold transition-all cursor-pointer touch-manipulation
-        ${variants[variant]}
-        ${sizes[size]}
-        ${fullWidth ? 'w-full' : ''}
-        disabled:opacity-50 disabled:cursor-not-allowed
-        ${className}
-      `}
+    <MaguitoButton
+      variant={VARIANT_MAP[variant] as 'primary'}
+      size={size}
+      shape={shape}
+      fullWidth={fullWidth}
+      shadow={variant !== 'tertiary'}
+      className={className}
       {...rest}
     >
       {children}
-    </button>
+    </MaguitoButton>
   )
 }

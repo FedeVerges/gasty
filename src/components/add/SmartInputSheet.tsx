@@ -208,11 +208,13 @@ export function SmartInputSheet({ open, onClose, editTransaction }: SmartInputSh
       <div
         className={`
           w-full max-w-[480px]
-          bg-canvas
-          overflow-y-auto
-          ${isDesktop ? 'rounded-3xl' : 'rounded-t-3xl animate-slide-up'}
-        `}
-        style={{
+           bg-canvas
+           border-t-[3px] border-x-[3px]
+           overflow-y-auto
+           ${isDesktop ? 'rounded-3xl' : 'rounded-t-3xl animate-slide-up'}
+         `}
+         style={{
+           borderColor: 'var(--color-ink)',
           paddingBottom: 'env(safe-area-inset-bottom)',
           // When dvh is supported, the viewport already shrinks for the keyboard —
           // marginBottom is only needed as fallback for browsers without dvh.
@@ -255,7 +257,7 @@ export function SmartInputSheet({ open, onClose, editTransaction }: SmartInputSh
                   value={editDescription}
                   onChange={(e) => setEditDescription(e.target.value)}
                   placeholder="Descripción"
-                  className="w-full px-4 py-3 rounded-2xl bg-canvas border-2 border-border text-ink focus:border-primary transition-colors"
+                   className="w-full px-4 py-3 rounded-2xl bg-canvas border-maguito text-ink focus:ring-2 focus:ring-primary transition-colors"
                   enterKeyHint="next"
                   autoComplete="off"
                   autoCorrect="off"
@@ -274,7 +276,7 @@ export function SmartInputSheet({ open, onClose, editTransaction }: SmartInputSh
                   value={editAmount}
                   onChange={(e) => setEditAmount(e.target.value)}
                   placeholder="Monto"
-                  className="w-full px-4 py-3 rounded-2xl bg-canvas border-2 border-border text-ink text-xl focus:border-primary transition-colors"
+                   className="w-full px-4 py-3 rounded-2xl bg-canvas border-maguito text-ink text-xl focus:ring-2 focus:ring-primary transition-colors"
                   autoFocus
                   enterKeyHint="next"
                   onFocus={(e) => scrollInputIntoView(e.currentTarget)}
@@ -286,7 +288,7 @@ export function SmartInputSheet({ open, onClose, editTransaction }: SmartInputSh
                   type="date"
                   value={editDate}
                   onChange={(e) => setEditDate(e.target.value)}
-                  className="w-full px-4 py-3 rounded-2xl bg-canvas border-2 border-border text-ink focus:border-primary transition-colors"
+                   className="w-full px-4 py-3 rounded-2xl bg-canvas border-maguito text-ink focus:ring-2 focus:ring-primary transition-colors"
                   enterKeyHint="done"
                   onFocus={(e) => scrollInputIntoView(e.currentTarget)}
                 />
@@ -299,7 +301,7 @@ export function SmartInputSheet({ open, onClose, editTransaction }: SmartInputSh
                     w-11 h-11 rounded-xl flex items-center justify-center text-lg font-bold transition-colors
                     ${typeOverride === 'expense'
                       ? 'bg-negative text-white'
-                      : 'bg-canvas-soft text-body border border-border'}
+                      : 'bg-canvas-soft text-body border-maguito'}
                   `}
                   aria-label="Marcar como gasto"
                 >
@@ -312,7 +314,7 @@ export function SmartInputSheet({ open, onClose, editTransaction }: SmartInputSh
                     w-11 h-11 rounded-xl flex items-center justify-center text-lg font-bold transition-colors
                     ${typeOverride === 'income'
                       ? 'bg-positive text-white'
-                      : 'bg-canvas-soft text-body border border-border'}
+                      : 'bg-canvas-soft text-body border-maguito'}
                   `}
                   aria-label="Marcar como ingreso"
                 >
@@ -325,6 +327,7 @@ export function SmartInputSheet({ open, onClose, editTransaction }: SmartInputSh
             </div>
           ) : (
             <div>
+              {/* Row 1: compact input + add button inline */}
               <div className="flex items-center gap-2">
                 <input
                   ref={inputRef}
@@ -333,10 +336,10 @@ export function SmartInputSheet({ open, onClose, editTransaction }: SmartInputSh
                   onChange={(e) => setText(e.target.value)}
                   placeholder="Ej: birra 1500"
                   className="
-                    flex-1 text-xl p-4
+                    flex-1 px-4 py-3 text-base
                     rounded-2xl
-                    bg-canvas border-2 border-border
-                    focus:border-primary
+                    bg-canvas border-maguito
+                    focus:ring-2 focus:ring-primary
                     placeholder:text-mute
                     transition-colors
                   "
@@ -347,63 +350,51 @@ export function SmartInputSheet({ open, onClose, editTransaction }: SmartInputSh
                   spellCheck={false}
                   onFocus={(e) => scrollInputIntoView(e.currentTarget)}
                 />
-              </div>
-              <div className="flex items-center gap-2 mt-2 px-1">
                 <button
-                  type="button"
-                  onClick={() => setTypeOverride(typeOverride === 'expense' ? null : 'expense')}
-                  className={`
-                    w-11 h-11 rounded-xl flex items-center justify-center text-lg font-bold
-                    transition-colors
-                    ${typeOverride === 'expense'
-                      ? 'bg-negative text-white'
-                      : 'bg-canvas-soft text-body border border-border'}
-                  `}
-                  aria-label="Marcar como gasto"
+                  type="submit"
+                  disabled={!parsed}
+                  className="
+                    w-11 h-11 shrink-0 rounded-full
+                    bg-primary text-on-primary border-maguito
+                    flex items-center justify-center
+                    disabled:opacity-30 disabled:cursor-not-allowed
+                    active:translate-x-[var(--maguito-shadow-depth)] active:translate-y-[var(--maguito-shadow-depth)] active:shadow-none
+                    transition-all
+                  "
+                  aria-label="Agregar transacción"
                 >
-                  −
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3}
+                       strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6">
+                    <line x1="12" y1="5" x2="12" y2="19" />
+                    <line x1="5" y1="12" x2="19" y2="12" />
+                  </svg>
                 </button>
-                <button
-                  type="button"
-                  onClick={() => setTypeOverride(typeOverride === 'income' ? null : 'income')}
-                  className={`
-                    w-11 h-11 rounded-xl flex items-center justify-center text-lg font-bold
-                    transition-colors
-                    ${typeOverride === 'income'
-                      ? 'bg-positive text-white'
-                      : 'bg-canvas-soft text-body border border-border'}
-                  `}
-                  aria-label="Marcar como ingreso"
-                >
-                  +
-                </button>
-                <p className="text-xs text-body flex-1 ml-1">
-                  Ej: birra 1500
-                </p>
               </div>
             </div>
           )}
 
-          {/* Submit — always visible (new + edit mode) */}
-          <div className="flex justify-end">
-            <button
-              type="submit"
-              disabled={editTransaction ? (parseFloat(editAmount.replace(',', '.')) <= 0) : !parsed}
-              className="
-                w-11 h-11 shrink-0 rounded-full
-                bg-primary text-on-primary
-                flex items-center justify-center
-                disabled:opacity-30 disabled:cursor-not-allowed
-                active:scale-95 transition-transform
-              "
-              aria-label="Confirmar transacción"
-            >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3}
-                   strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6">
-                <polyline points="20 6 9 17 4 12" />
-              </svg>
-            </button>
-          </div>
+          {/* Submit — edit mode only (new mode has the inline + in the input row) */}
+          {editTransaction && (
+            <div className="flex justify-end">
+              <button
+                type="submit"
+                disabled={parseFloat(editAmount.replace(',', '.')) <= 0}
+                className="
+                  w-11 h-11 shrink-0 rounded-full
+                  bg-primary text-on-primary
+                  flex items-center justify-center
+                  disabled:opacity-30 disabled:cursor-not-allowed
+                  active:scale-95 transition-transform
+                "
+                aria-label="Confirmar transacción"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3}
+                     strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+              </button>
+            </div>
+          )}
 
           {/* DYNAMIC ZONE — content fades in/out; input stays anchored above */}
           <div className="space-y-4 min-h-[56px]">
@@ -413,13 +404,13 @@ export function SmartInputSheet({ open, onClose, editTransaction }: SmartInputSh
 
             {parsed && category && (
               <div
-                className="rounded-2xl p-5 border animate-fade-in motion-reduce:animate-none"
+                className="rounded-2xl p-3 border animate-fade-in motion-reduce:animate-none flex items-center gap-3"
                 style={{
                   background: `${category.color}10`,
                   borderColor: `${category.color}30`,
                 }}
               >
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-3 flex-1 min-w-0">
                   <div
                     className="w-11 h-11 rounded-2xl flex items-center justify-center text-xl shrink-0"
                     style={{ background: `${category.color}20` }}
@@ -456,6 +447,37 @@ export function SmartInputSheet({ open, onClose, editTransaction }: SmartInputSh
                     </span>
                   </div>
                 </div>
+
+                <div className="flex flex-col gap-1.5 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => setTypeOverride(typeOverride === 'income' ? null : 'income')}
+                    className={`
+                      w-11 h-11 rounded-xl flex items-center justify-center text-lg font-bold
+                      transition-colors
+                      ${typeOverride === 'income'
+                        ? 'bg-positive text-white border-maguito'
+                        : 'bg-canvas-soft text-body border-maguito'}
+                    `}
+                    aria-label="Marcar como ingreso"
+                  >
+                    +
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setTypeOverride(typeOverride === 'expense' ? null : 'expense')}
+                    className={`
+                      w-11 h-11 rounded-xl flex items-center justify-center text-lg font-bold
+                      transition-colors
+                      ${typeOverride === 'expense'
+                        ? 'bg-negative text-white border-maguito'
+                        : 'bg-canvas-soft text-body border-maguito'}
+                    `}
+                    aria-label="Marcar como gasto"
+                  >
+                    −
+                  </button>
+                </div>
               </div>
             )}
 
@@ -491,10 +513,10 @@ export function SmartInputSheet({ open, onClose, editTransaction }: SmartInputSh
                         onClick={() => setCategoryOverride(c.id)}
                         className={`
                           shrink-0 px-3.5 py-2 rounded-full text-sm font-medium
-                          flex items-center gap-1.5 transition-all
-                          ${selected
+                          flex items-center gap-1.5 transition-colors
+                           ${selected
                             ? 'text-white'
-                            : 'bg-canvas-soft border border-border text-body hover:bg-card-hover'
+                            : 'bg-canvas-soft border-maguito text-body hover:bg-card-hover'
                           }
                         `}
                         style={selected ? { background: c.color } : undefined}
@@ -519,7 +541,7 @@ export function SmartInputSheet({ open, onClose, editTransaction }: SmartInputSh
                   onClick={() => { userTouchedRecurrence.current = true; setRecurring({ kind: 'none' }) }}
                   className={`
                     py-3 px-2 rounded-2xl text-sm font-medium border-2 transition-colors
-                    ${recurring.kind === 'none' ? 'border-primary bg-primary-pale text-on-primary' : 'border-border text-body'}
+                     ${recurring.kind === 'none' ? 'border-primary bg-primary-pale text-on-primary' : 'border-maguito text-body'}
                   `}
                 >
                   No
@@ -529,7 +551,7 @@ export function SmartInputSheet({ open, onClose, editTransaction }: SmartInputSh
                   onClick={() => { userTouchedRecurrence.current = true; setRecurring({ kind: 'fixed' }) }}
                   className={`
                     py-3 px-2 rounded-2xl text-sm font-medium border-2 transition-colors
-                    ${recurring.kind === 'fixed' ? 'border-recurring bg-recurring-soft text-recurring' : 'border-border text-body'}
+                     ${recurring.kind === 'fixed' ? 'border-recurring bg-recurring-soft text-recurring' : 'border-maguito text-body'}
                   `}
                 >
                   🔄 Todos los meses
@@ -539,7 +561,7 @@ export function SmartInputSheet({ open, onClose, editTransaction }: SmartInputSh
                   onClick={() => { userTouchedRecurrence.current = true; setRecurring({ kind: 'fixed_temporary' }) }}
                   className={`
                     py-3 px-2 rounded-2xl text-sm font-medium border-2 transition-colors
-                    ${recurring.kind === 'fixed_temporary' ? 'border-recurring bg-recurring-soft text-recurring' : 'border-border text-body'}
+                     ${recurring.kind === 'fixed_temporary' ? 'border-recurring bg-recurring-soft text-recurring' : 'border-maguito text-body'}
                   `}
                 >
                   ⏱️ Por un tiempo
@@ -555,7 +577,7 @@ export function SmartInputSheet({ open, onClose, editTransaction }: SmartInputSh
                       onClick={() => setTempMonths((m) => Math.max(1, m - 1))}
                       disabled={tempMonths <= 1}
                       aria-label="Menos meses"
-                      className="w-9 h-9 rounded-xl bg-canvas-soft border border-border text-lg font-bold text-body active:scale-95 transition-transform disabled:opacity-30 disabled:cursor-not-allowed"
+                       className="w-9 h-9 rounded-xl bg-canvas-soft border-maguito text-lg font-bold text-body active:scale-95 transition-transform disabled:opacity-30 disabled:cursor-not-allowed"
                     >
                       −
                     </button>
@@ -570,7 +592,7 @@ export function SmartInputSheet({ open, onClose, editTransaction }: SmartInputSh
                       onClick={() => setTempMonths((m) => Math.min(240, m + 1))}
                       disabled={tempMonths >= 240}
                       aria-label="Más meses"
-                      className="w-9 h-9 rounded-xl bg-canvas-soft border border-border text-lg font-bold text-body active:scale-95 transition-transform disabled:opacity-30 disabled:cursor-not-allowed"
+                       className="w-9 h-9 rounded-xl bg-canvas-soft border-maguito text-lg font-bold text-body active:scale-95 transition-transform disabled:opacity-30 disabled:cursor-not-allowed"
                     >
                       +
                     </button>

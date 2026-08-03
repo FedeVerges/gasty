@@ -1,33 +1,32 @@
+import { Badge as MaguitoBadge } from 'maguitoui'
 import type { ReactNode } from 'react'
+
+type GastyColor = 'default' | 'recurring' | 'income' | 'expense' | 'accent' | 'positive' | 'negative'
 
 interface BadgeProps {
   children: ReactNode
-  color?: 'default' | 'recurring' | 'income' | 'expense' | 'accent' | 'positive' | 'negative'
+  color?: GastyColor
   className?: string
 }
 
-const COLORS: Record<string, string> = {
-  default: 'bg-canvas-soft text-body',
-  recurring: 'bg-recurring-soft text-recurring',
-  income: 'bg-income-soft text-income',
-  expense: 'bg-expense-soft text-expense',
-  accent: 'bg-primary-pale text-on-primary',
-  positive: 'bg-primary-pale text-positive-deep',
-  negative: 'bg-negative-bg text-white',
+/** Maps Gasty color names to Maguito ColorVariant */
+const COLOR_MAP: Record<GastyColor, string> = {
+  default: 'neutral',
+  recurring: 'accent',
+  income: 'success',
+  expense: 'danger',
+  accent: 'primary',
+  positive: 'success',
+  negative: 'danger',
 }
 
 export function Badge({ children, color = 'default', className = '' }: BadgeProps) {
   return (
-    <span
-      className={`
-        inline-flex items-center gap-1
-        px-2 py-0.5 text-xs font-medium
-        rounded-full whitespace-nowrap
-        ${COLORS[color]}
-        ${className}
-      `}
+    <MaguitoBadge
+      variant={COLOR_MAP[color] as 'neutral'}
+      className={className}
     >
       {children}
-    </span>
+    </MaguitoBadge>
   )
 }

@@ -18,14 +18,14 @@ Rediseñar el dashboard principal para:
 
 ## Cambios confirmados
 
-| # | Cambio | Archivos afectados |
-|---|--------|-------------------|
-| 1 | Quitar tabs Resumen/Inversiones | `Dashboard.tsx` |
-| 2 | Input inteligente inline (reemplaza FAB + sheet) | **Nuevo** `InlineSmartInput.tsx`, `Dashboard.tsx`, `AppShell.tsx` |
-| 3 | Quitar FAB y SmartInputSheet del AppShell | `AppShell.tsx` |
-| 4 | TransactionItem: expand/edit inline + badge categoría | `TransactionItem.tsx` |
-| 5 | Inversiones al final del dashboard | `Dashboard.tsx` |
-| 6 | EditTransactionContext se adapta al inline edit | `EditTransactionContext.tsx`, `AppShell.tsx` |
+| # | Cambio | Archivos afectados | Estado |
+|---|--------|-------------------|--------|
+| 1 | Quitar tabs Resumen/Inversiones | `Dashboard.tsx` | ✅ Completado |
+| 2 | Input inteligente inline (reemplaza FAB + sheet) | **Nuevo** `InlineSmartInput.tsx`, `Dashboard.tsx`, `AppShell.tsx` | ✅ Completado |
+| 3 | Quitar FAB y SmartInputSheet del AppShell | `AppShell.tsx` | ✅ Completado |
+| 4 | TransactionItem: expand/edit inline + badge categoría | `TransactionItem.tsx` | ✅ Completado |
+| 5 | Inversiones al final del dashboard | `Dashboard.tsx` | ✅ Completado |
+| 6 | EditTransactionContext se adapta al inline edit | `EditTransactionContext.tsx`, `AppShell.tsx` | ✅ Completado |
 
 **Nota:** MonthSelector NO es parte del dashboard. El dashboard siempre muestra el mes actual.
 
@@ -35,9 +35,9 @@ Rediseñar el dashboard principal para:
 
 ```
 Header: "Gasty" + "Tus gastos, simples."
-InlineSmartInput                          ← Nuevo componente
-BalanceCard                               ← Sin cambios
 [Projection banner si aplica]
+BalanceCard                               ← Sin cambios
+InlineSmartInput                          ← Nuevo componente, debajo de BalanceCard
 Transacciones agrupadas por día
   └─ TransactionItem (con expand/edit)
 Inversiones (al final)
@@ -82,6 +82,16 @@ Scroll-to-top button
 - `max-height` + `opacity` con `transition-all duration-200`
 - Solo se anima lo permitido por las reglas del proyecto (sin animar `width`, `height`, `top`, `left`)
 
+#### Estado implementado ✅
+
+- [x] Modo colapsado con badge de categoría (color + nombre)
+- [x] Modo expandido con campos editables (descripción, monto, fecha)
+- [x] Selector vertical de categorías
+- [x] Botones confirmar (✓) y cancelar (✕)
+- [x] Botón eliminar en modo colapsado
+- [x] Transición animada con `max-height`
+- [x] Lógica de guardado en Dexie (`db.transactions.update`)
+
 ---
 
 ### 2. `InlineSmartInput.tsx` (Nuevo componente)
@@ -121,6 +131,16 @@ Scroll-to-top button
 - FlashChips se muestran como chips scrollables debajo del input
 - Rediseño visual de FlashChips queda pendiente (primero ver espacios con el nuevo layout)
 
+#### Estado implementado ✅
+
+- [x] Input field con placeholder
+- [x] Type toggle (− gasto / + ingreso)
+- [x] Live preview con emoji + descripción + categoría + monto + fecha
+- [x] Flash chips de sugerencias contextuales
+- [x] Submit button (flecha +)
+- [x] Lógica de parseo extraída de SmartInputSheet
+- [x] Integración con Dexie para crear transacciones
+
 ---
 
 ### 3. `Dashboard.tsx`
@@ -133,11 +153,19 @@ Scroll-to-top button
 
 #### Cambios
 
-- Se agrega `InlineSmartInput` primero (lo primero que ve el usuario)
+- Se agrega `InlineSmartInput` debajo de BalanceCard (lo primero que ve el usuario después del balance)
 - Se elimina el selector de tabs y la lógica condicional
 - Inversiones se mueve al final de la lista de transacciones
 - El `expandedTxId` se pasa a cada TransactionItem
 - Al expandir un item, los demás se colapsan automáticamente
+
+#### Estado implementado ✅
+
+- [x] Eliminación de tabs (Resumen/Inversiones)
+- [x] State `expandedTxId` para controlar item expandido
+- [x] Inversiones al final del dashboard
+- [x] TransactionItem recibe props `isExpanded` y `onToggle`
+- [x] InlineSmartInput debajo de BalanceCard
 
 ---
 
@@ -163,6 +191,15 @@ Scroll-to-top button
 - Dashboard maneja `expandedTxId`
 - Ya no se abre ningún sheet
 
+#### Estado implementado ✅
+
+- [x] Eliminación de FAB y SmartInputSheet
+- [x] Eliminación de states relacionados (inputOpen, editTransaction, sheetKey)
+- [x] Eliminación de funciones (openInput, handleClose, handleEdit)
+- [x] Eliminación de pushState/popState para el sheet
+- [x] Mantenimiento de CsvImportSheet y CsvImportProvider
+- [x] EditTransactionContext como no-op (compatible con inline editing)
+
 ---
 
 ### 5. `EditTransactionContext.tsx`
@@ -172,15 +209,30 @@ Scroll-to-top button
 
 ---
 
+### 6. `Transactions.tsx` (actualizado para compatibilidad)
+
+- Se agregó state `expandedTxId` para soportar el nuevo interface de TransactionItem
+- Se agregó función `handleToggleExpand` para manejar la expansión de items
+- TransactionItem recibe props `isExpanded` y `onToggle`
+- Se cambió el contenedor de `bg-card border-maguito shadow-maguito rounded-lg` a `space-y-2` para mejor compatibilidad con items expandidos
+
+#### Estado implementado ✅
+
+- [x] Soporte para TransactionItem expandido
+- [x] Compatibilidad con nuevo interface de props
+
+---
+
 ## Orden de ejecución
 
-| Paso | Archivo | Tarea |
-|------|---------|-------|
-| 1 | `TransactionItem.tsx` | Modo expandido + badge de categoría + selector vertical |
-| 2 | `InlineSmartInput.tsx` | Crear componente nuevo (input + preview + submit) |
-| 3 | `Dashboard.tsx` | Reestructurar (sin tabs, expandedId, Inversiones al final) |
-| 4 | `AppShell.tsx` | Quitar FAB + SmartInputSheet, adaptar context |
-| 5 | — | `npm run lint && npm test` |
+| Paso | Archivo | Tarea | Estado |
+|------|---------|-------|--------|
+| 1 | `TransactionItem.tsx` | Modo expandido + badge de categoría + selector vertical | ✅ Completado |
+| 2 | `Dashboard.tsx` | Reestructurar (sin tabs, expandedId, Inversiones al final) | ✅ Completado |
+| 3 | `Transactions.tsx` | Actualizar para compatibilidad con nuevo TransactionItem | ✅ Completado |
+| 4 | `InlineSmartInput.tsx` | Crear componente nuevo (input + preview + submit) | ✅ Completado |
+| 5 | `AppShell.tsx` | Quitar FAB + SmartInputSheet, adaptar context | ✅ Completado |
+| 6 | — | `npm run lint && npm test` | ✅ Completado |
 
 ---
 

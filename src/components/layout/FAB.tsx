@@ -11,9 +11,9 @@ export function FAB({ onClick, isDesktop }: FABProps) {
         fixed z-50
         w-14 h-14 rounded-full
         bg-primary text-on-primary
-        shadow-xl
+        border-maguito shadow-maguito
         flex items-center justify-center
-        active:scale-95 transition-transform
+        active:translate-x-[var(--maguito-shadow-depth)] active:translate-y-[var(--maguito-shadow-depth)] active:shadow-none transition-all
         ${isDesktop
           ? 'top-6 right-6'
           : 'bottom-20 left-1/2 -translate-x-1/2 translate-y-1/2'
