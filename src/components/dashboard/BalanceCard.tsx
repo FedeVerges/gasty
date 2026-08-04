@@ -1,4 +1,5 @@
 import { Card } from '../ui/Card'
+import { Button } from '../ui/Button'
 import { useSettings } from '../../context/SettingsContext'
 import { useViewport } from '../../hooks/useViewport'
 import { formatMoney } from '../../lib/format'
@@ -56,7 +57,7 @@ export function BalanceCard({
       <div className="flex flex-col gap-1 mb-5">
         <span
           className="text-xs uppercase tracking-widest"
-          style={{ color: isProjection ? 'var(--color-proyector-accent)' : 'var(--color-primary-neutral)' }}
+           style={{ color: isProjection ? 'var(--color-projection-accent)' : 'var(--color-primary-neutral)' }}
         >
           {isProjection ? 'Proyección · ' : ''}Disponible
         </span>
@@ -75,7 +76,7 @@ export function BalanceCard({
         </div>
         <div className="w-full h-2.5 bg-primary-pale rounded-full overflow-hidden">
           <div
-            className="h-full rounded-full transition-all duration-500"
+            className="h-full rounded-full transition-[width] duration-300"
             style={{
               width: `${Math.min(progress * 100, 100)}%`,
               background: overBudget ? 'var(--color-negative)' : barColor,
@@ -95,7 +96,7 @@ export function BalanceCard({
           {prevMonthExpense > 0 ? (
             <>
               <span
-                className={`inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-xs font-medium ${isLower ? 'bg-positive/20' : 'bg-negative/20'
+                className={`inline-flex items-center gap-0.5 px-2 py-0.5 rounded-lg text-xs font-medium ${isLower ? 'bg-positive-soft' : 'bg-negative-soft'
                   }`}
                 style={{ color: isLower ? 'var(--color-positive)' : 'var(--color-negative)' }}
               >
@@ -111,14 +112,13 @@ export function BalanceCard({
         </div>
 
         {onOpenDetail && (
-          <button
+          <Button
+            size="sm"
             onClick={onOpenDetail}
-            className="shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold transition-colors active:scale-[0.98]"
-            style={{ background: 'var(--color-primary)', color: 'var(--color-on-primary)' }}
             aria-label="Ver detalles del balance"
           >
             Ver detalles
-          </button>
+          </Button>
         )}
       </div>
     </Card>

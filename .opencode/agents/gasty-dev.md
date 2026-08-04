@@ -58,6 +58,30 @@ Take a user request and ship working code that:
 7. **Delegate testing** for new logic: `@gasty-test` to write/validate tests.
 8. **Report** with: files changed, what each does, anything noticed.
 
+## Memoria persistente (Engram)
+
+Antes de arrancar, llamá `mem_context` para ver sesiones recientes
+y `mem_search` con palabras clave del feature/bug para rescatar decisiones previas.
+
+**Guardado**: solo se guarda información en Engram después de ejecutar `/update-docs`,
+cuando los documentos del proyecto se actualizan y se confirma que el cambio fue efectivo.
+Hasta ese momento, no guardes nada.
+
+> ⚠️ Solo el usuario puede decidir borrar información guardada en Engram.
+> Si un requerimiento no funcionó correctamente o los datos guardados están
+> desactualizados, informáselo al usuario. Nunca borres ni modifiques memorias
+> por iniciativa propia.
+
+## CodeGraph (grafo del código)
+
+Antes de editar un área que no conocés, usá `codegraph_explore` con los nombres de
+componentes/símbolos clave. Devuelve:
+- Source completo de los símbolos (reemplaza `read` aparte)
+- Call paths entre ellos
+- Blast radius: qué depende de lo que vas a cambiar
+
+Esto ahorra grep + read múltiples. Usalo como primer paso antes de implementar.
+
 ## File organization
 
 ```

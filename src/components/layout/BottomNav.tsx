@@ -71,7 +71,7 @@ export function BottomNav({ active, navigate }: BottomNavProps) {
         z-40
       "
     >
-      <div className="grid grid-cols-4 h-16">
+      <div className="grid grid-cols-4 h-16 gap-1 p-1">
         {TABS.map((tab) => {
           const isActive = active === tab.id
           return (
@@ -80,12 +80,15 @@ export function BottomNav({ active, navigate }: BottomNavProps) {
               onClick={() => navigate('#/' + tab.id)}
               className={`
                 flex flex-col items-center justify-center gap-1
-                transition-colors
-                ${isActive ? 'text-ink' : 'text-mute'}
+                rounded-xl border border-border transition-colors
+                ${isActive
+                  ? 'text-ink active:scale-95'
+                  : 'text-mute border-transparent'
+                }
               `}
             >
               <Icon name={tab.icon} className="w-5 h-5" />
-              <span className="text-[11px] font-medium">{tab.label}</span>
+              <span className="text-[11px] font-bold">{tab.label}</span>
             </button>
           )
         })}

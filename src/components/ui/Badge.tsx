@@ -12,17 +12,15 @@ const COLORS: Record<string, string> = {
   income: 'bg-income-soft text-income',
   expense: 'bg-expense-soft text-expense',
   accent: 'bg-primary-pale text-on-primary',
-  positive: 'bg-primary-pale text-positive-deep',
-  negative: 'bg-negative-bg text-white',
+  positive: 'bg-positive-soft text-positive-deep',
+  negative: 'bg-negative-soft text-negative-deep',
 }
 
 export function Badge({ children, color = 'default', className = '' }: BadgeProps) {
   return (
     <span
       className={`
-        inline-flex items-center gap-1
-        px-2 py-0.5 text-xs font-medium
-        rounded-full whitespace-nowrap
+        inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
         ${COLORS[color]}
         ${className}
       `}

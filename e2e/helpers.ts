@@ -36,14 +36,12 @@ export async function navigateTo(page: Page, tab: string) {
 }
 
 export async function addTransaction(page: Page, text: string) {
-  await page.locator('[aria-label="Agregar transacción"]').click()
-  await page.waitForTimeout(300)
-  // TODO: change locator with another property, because placeholder can change in the future. Try some testId or aria-label, or something else that is more stable and less likely to change.  
   const input = page.locator('input[placeholder="Ej: birra 1500"]')
   await input.fill(text)
   await page.waitForTimeout(200)
 
-  await page.getByRole('button', { name: 'Confirmar' }).click()
+  const submitBtn = page.locator('button[aria-label="Agregar transacción"]:not([disabled])')
+  await submitBtn.click()
   await page.waitForTimeout(400)
 }
 

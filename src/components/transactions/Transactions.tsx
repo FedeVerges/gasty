@@ -41,6 +41,7 @@ export function Transactions({ onPickCategory, onOpenBalanceDetail }: Transactio
   const now = useMemo(() => new Date(), [])
   const [selectedMonth, setSelectedMonth] = useState(monthKey(now))
   const [searchText, setSearchText] = useState('')
+  const [expandedTxId, setExpandedTxId] = useState<string | null>(null)
 
   const { transactions: monthTransactions, isProjection } = useProjections(selectedMonth)
 
@@ -151,6 +152,10 @@ export function Transactions({ onPickCategory, onOpenBalanceDetail }: Transactio
     return Array.from(groups.entries())
   }, [filtered])
 
+  const handleToggleExpand = (txId: string) => {
+    setExpandedTxId(prev => prev === txId ? null : txId)
+  }
+
   return (
     <div className="space-y-4">
       <header className="pt-2 pb-1">
@@ -172,7 +177,7 @@ export function Transactions({ onPickCategory, onOpenBalanceDetail }: Transactio
           {topCategory && (
             <button
               onClick={() => onPickCategory?.(topCategory.id)}
-              className="bg-card border border-border rounded-2xl p-4 text-left active:scale-[0.98] transition-transform"
+              className="bg-card border border-border rounded-lg p-4 text-left active:scale-[0.98] transition-transform"
               aria-label={`Ver detalle de ${topCategory.name} en Stats`}
             >
               <p className="text-[10px] text-body uppercase tracking-wide font-medium mb-3">
@@ -197,7 +202,7 @@ export function Transactions({ onPickCategory, onOpenBalanceDetail }: Transactio
 
           {/* Categoría que más creció */}
           {growthCategory ? (
-            <div className="bg-card border border-border rounded-2xl p-4">
+             <div className="bg-card border border-border rounded-lg p-4">
               <p className="text-[10px] text-body uppercase tracking-wide font-medium mb-3">
                 Mayor crecimiento
               </p>
@@ -217,7 +222,7 @@ export function Transactions({ onPickCategory, onOpenBalanceDetail }: Transactio
               </div>
             </div>
           ) : (
-            <div className="bg-card border border-border rounded-2xl p-4">
+             <div className="bg-card border border-border rounded-lg p-4">
               <p className="text-[10px] text-body uppercase tracking-wide font-medium mb-3">
                 Mayor crecimiento
               </p>
@@ -249,7 +254,7 @@ export function Transactions({ onPickCategory, onOpenBalanceDetail }: Transactio
           className="
             w-full pl-10 pr-10 py-3
             rounded-2xl
-            bg-card border-2 border-border
+            bg-card border border-border
             text-sm text-ink placeholder:text-mute
             focus:border-primary focus:bg-canvas
             transition-colors
@@ -272,7 +277,7 @@ export function Transactions({ onPickCategory, onOpenBalanceDetail }: Transactio
       {/* Balance — debajo del buscador (clicable → detalle) */}
       <button
         onClick={openBalanceDetail}
-        className="w-full bg-card border border-border rounded-2xl px-4 py-3 flex justify-between items-center active:scale-[0.99] transition-transform text-left"
+           className="w-full bg-card border border-border rounded-lg px-4 py-3 flex justify-between items-center active:scale-[0.99] transition-transform text-left"
         aria-label="Ver detalle del balance"
       >
         <span className="text-sm text-body">Balance</span>
@@ -287,10 +292,10 @@ export function Transactions({ onPickCategory, onOpenBalanceDetail }: Transactio
       {isProjection && (
         <div
           className="rounded-2xl px-4 py-2 text-sm font-medium text-center"
-          style={{
-            background: 'var(--color-proyector-card)',
-            color: 'var(--color-proyector-text)',
-            border: '1px solid var(--color-proyector-accent)',
+            style={{
+            background: 'var(--color-projection-card)',
+            color: 'var(--color-projection-text)',
+            border: '1px solid var(--color-projection-accent)',
           }}
         >
           Modo proyección — los gastos futuros son estimados según tus recurrentes
@@ -318,9 +323,14 @@ export function Transactions({ onPickCategory, onOpenBalanceDetail }: Transactio
                 <p className="text-xs font-medium text-mute uppercase tracking-wide px-1 mb-1.5">
                   {formatDateGroupHeader(day)}
                 </p>
-                <div className="bg-card rounded-2xl">
+                <div className="space-y-2">
                   {txs.map((tx) => (
-                    <TransactionItem key={tx.id} transaction={tx} />
+                    <TransactionItem
+                      key={tx.id}
+                      transaction={tx}
+                      isExpanded={expandedTxId === tx.id}
+                      onToggle={() => handleToggleExpand(tx.id)}
+                    />
                   ))}
                 </div>
               </div>

@@ -54,3 +54,19 @@ Compará el estado actual del codebase (lo que dice el reporte y los archivos fu
 - No agregues secciones que no correspondan al código actual
 - Si algo ya está documentado correctamente, no lo modifiques
 - Reportá al final qué cambios hiciste en cada archivo
+
+## Memoria persistente (Engram)
+
+Después de actualizar los documentos, analizá los cambios de git y guardá
+en Engram todo lo relevante detectado. Usá `mem_save` con el tipo adecuado:
+
+| Tipo | Cuándo usarlo | Qué incluir |
+|---|---|---|
+| `bugfix` | Se corrigió un bug | Qué fallaba, por qué, dónde, cómo se arregló, edge cases |
+| `decision` | Se tomó una decisión de diseño/arquitectura | Alternativas consideradas, por qué se eligió esta, tradeoffs |
+| `architecture` | Cambió la estructura del proyecto | Archivos nuevos, reorgs, nuevos patrones de capas |
+| `pattern` | Se estableció una convención nueva | Nombre del patrón, dónde se aplica, ejemplo breve |
+| `config` | Cambió configuración (deps, vite, tsconfig, etc.) | Qué cambió, por qué, impacto |
+| `discovery` | Se encontró algo no obvio | Gotcha técnico, comportamiento inesperado, limitación |
+| `learning` | Lección general del cambio | Algo que valga la pena recordar para el futuro |
+| `manual` | Cualquier otra cosa importante | Según criterio |

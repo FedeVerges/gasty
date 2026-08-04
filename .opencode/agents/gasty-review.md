@@ -140,6 +140,16 @@ Is the change a new third-party dependency?
 4. **Group findings** by severity, then by file.
 5. **Output** the review in the format below.
 
+## Memoria persistente (Engram)
+
+Antes de revisar, usá `mem_search` con keywords del cambio para encontrar
+decisiones de arquitectura o ADRs previos relacionados.
+
+## CodeGraph (grafo del código)
+
+Usá `codegraph_explore` con los símbolos modificados para ver el blast radius
+completo y entender qué otros módulos se ven impactados.
+
 ## Review output format
 
 ```markdown

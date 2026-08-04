@@ -3,6 +3,7 @@ import { db } from '../../lib/db'
 import { syncKeywordMaps, getPaletteColor } from '../../lib/categories'
 import { useCategories } from '../../hooks/useCategories'
 import { Card } from '../ui/Card'
+import { Button } from '../ui/Button'
 import { Badge } from '../ui/Badge'
 import type { CategoryType } from '../../types'
 
@@ -118,17 +119,17 @@ export function CategoryManager() {
                     onChange={(e) => saveEmoji(cat.id, e.target.value)}
                     placeholder="📦"
                     maxLength={4}
-                    className="w-14 px-2 py-2 text-lg rounded-xl bg-canvas border border-border text-center outline-none focus:border-primary transition-colors"
+                    className="w-14 px-2 py-2 text-lg rounded-xl bg-card border border-border text-center outline-none focus:ring-2 focus:ring-primary transition-colors"
                     aria-label={`Emoji de ${cat.name}`}
                   />
                 </div>
 
                 <div className="flex flex-wrap gap-1 mb-2">
                   {cat.keywords.map((kw) => (
-                    <span
-                      key={kw}
-                      className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-full bg-canvas text-body border border-border"
-                    >
+                     <span
+                       key={kw}
+                       className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-full bg-card text-body border border-border"
+                     >
                       {kw}
                       <button
                         onClick={() => removeKeyword(cat.id, kw)}
@@ -149,14 +150,14 @@ export function CategoryManager() {
                       if (e.key === 'Enter') addKeyword(cat.id)
                     }}
                     placeholder="nueva palabra clave..."
-                    className="flex-1 px-3 py-2 text-sm rounded-xl bg-canvas border border-border text-ink outline-none focus:border-primary transition-colors"
+                    className="flex-1 px-3 py-2 text-sm rounded-xl bg-card border border-border text-ink outline-none focus:ring-2 focus:ring-primary transition-colors"
                   />
-                  <button
+                  <Button
+                    size="sm"
                     onClick={() => addKeyword(cat.id)}
-                    className="px-3 py-2 text-sm font-semibold rounded-xl bg-primary text-on-primary"
                   >
                     +
-                  </button>
+                  </Button>
                 </div>
 
                 {!isDefault(cat.id) && (
@@ -179,49 +180,43 @@ export function CategoryManager() {
             value={newName}
             onChange={(e) => setNewName(e.target.value)}
             placeholder="Nombre de la categoría"
-            className="w-full px-3 py-2 text-sm rounded-xl bg-canvas border border-border text-ink outline-none focus:border-primary transition-colors"
+            className="w-full px-3 py-2 text-sm rounded-xl bg-card border border-border text-ink outline-none focus:ring-2 focus:ring-primary transition-colors"
           />
           <div className="flex gap-2">
             <input
               value={newEmoji}
               onChange={(e) => setNewEmoji(e.target.value)}
               placeholder="📦"
-              className="w-14 px-2 py-2 text-sm rounded-xl bg-canvas border border-border text-center outline-none focus:border-primary transition-colors"
+              className="w-14 px-2 py-2 text-sm rounded-xl bg-card border border-border text-center outline-none focus:ring-2 focus:ring-primary transition-colors"
             />
             <div className="flex gap-1">
               <button
                 onClick={() => setNewType('expense')}
-                className={`px-3 py-2 text-xs font-medium rounded-xl ${newType === 'expense' ? 'bg-expense-soft text-expense' : 'bg-canvas text-body border border-border'}`}
+                className={`px-3 py-2 text-xs font-medium rounded-xl ${newType === 'expense' ? 'bg-expense-soft text-expense' : 'bg-card text-body border border-border'}`}
               >
                 Gasto
               </button>
               <button
                 onClick={() => setNewType('income')}
-                className={`px-3 py-2 text-xs font-medium rounded-xl ${newType === 'income' ? 'bg-income-soft text-income' : 'bg-canvas text-body border border-border'}`}
+                className={`px-3 py-2 text-xs font-medium rounded-xl ${newType === 'income' ? 'bg-income-soft text-income' : 'bg-card text-body border border-border'}`}
               >
                 Ingreso
               </button>
             </div>
           </div>
           <div className="flex gap-1">
-            <button
-              onClick={addCategory}
-              className="flex-1 py-2 text-sm font-semibold rounded-xl bg-primary text-on-primary"
-            >
+            <Button fullWidth onClick={addCategory}>
               Agregar
-            </button>
-            <button
-              onClick={() => setAdding(false)}
-              className="px-4 py-2 text-sm font-semibold rounded-xl bg-canvas text-body border border-border"
-            >
+            </Button>
+            <Button variant="tertiary" onClick={() => setAdding(false)}>
               Cancelar
-            </button>
+            </Button>
           </div>
         </div>
       ) : (
         <button
           onClick={() => setAdding(true)}
-          className="mt-3 w-full py-3 rounded-2xl border-2 border-dashed border-border text-body text-sm font-medium active:scale-[0.98] transition-transform"
+           className="mt-3 w-full py-3 rounded-2xl border-2 border-dashed border-border-soft text-body text-sm font-medium active:scale-[0.98] transition-transform"
         >
           + Agregar categoría
         </button>

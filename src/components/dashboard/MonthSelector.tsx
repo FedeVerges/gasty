@@ -56,10 +56,10 @@ export function MonthSelector({ selectedMonth, onChange }: MonthSelectorProps) {
           {label}
         </span>
         {isFuture && (
-          <span className="text-xs px-2 py-0.5 rounded-full"
+          <span className="text-xs px-2 py-0.5 rounded-lg"
             style={{
-              background: 'var(--color-proyector-accent)',
-              color: 'var(--color-proyector-bg)',
+              background: 'var(--color-projection-accent)',
+              color: 'var(--color-projection-bg)',
             }}
           >
             Proy.

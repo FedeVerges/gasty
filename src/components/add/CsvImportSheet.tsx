@@ -90,11 +90,13 @@ export function CsvImportSheet({ open, onClose }: CsvImportSheetProps) {
       <div
         className={`
           w-full max-w-[480px]
-          bg-canvas
-          overflow-y-auto
-          ${isDesktop ? 'rounded-3xl' : 'rounded-t-3xl animate-slide-up'}
-        `}
-        style={{
+           bg-canvas
+           border-t-[3px] border-x-[3px]
+           overflow-y-auto
+           ${isDesktop ? 'rounded-3xl' : 'rounded-t-3xl animate-slide-up'}
+         `}
+         style={{
+           borderColor: 'var(--color-border)',
           paddingBottom: 'env(safe-area-inset-bottom)',
           maxHeight: isDesktop ? '85vh' : '90vh',
         }}
@@ -143,7 +145,7 @@ export function CsvImportSheet({ open, onClose }: CsvImportSheetProps) {
                 Seleccionar archivo CSV
               </Button>
 
-              <div className="rounded-2xl border border-border p-4 bg-canvas-soft">
+                 <div className="rounded-2xl border border-border p-4 bg-canvas-soft">
                 <p className="text-xs text-body font-medium mb-2">Formato esperado:</p>
                 <pre className="text-xs text-mute font-mono overflow-x-auto">
 {`nombre,importe,fecha,categoría
@@ -283,7 +285,7 @@ Birra,2500,15/6,Salidas`}
 
           {step === 'result' && importResult && (
             <div className="space-y-4">
-              <div className="rounded-2xl border border-border p-6 text-center">
+               <div className="rounded-2xl border border-border p-6 text-center">
                 <span className="text-5xl mb-3 block">
                   {importResult.imported > 0 ? '✅' : '⚠️'}
                 </span>

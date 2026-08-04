@@ -92,12 +92,12 @@ export function Sidebar({ active, navigate, isWide }: SidebarProps) {
               onClick={() => navigate('#/' + tab.id)}
               className={`
                 flex items-center gap-3
-                px-3 py-2.5 rounded-xl
-                text-sm font-medium
+                px-3 py-2.5 rounded-xl border border-border
+                text-sm font-bold
                 transition-colors
                 ${isActive
                   ? 'bg-primary-pale text-ink'
-                  : 'text-mute hover:bg-canvas-soft hover:text-ink'
+                  : 'text-mute border-transparent hover:bg-canvas-soft hover:text-ink'
                 }
               `}
             >

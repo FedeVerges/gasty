@@ -5,13 +5,12 @@ import { useViewport } from '../../hooks/useViewport'
 import { BalanceCard } from './BalanceCard'
 import { TransactionItem } from '../transactions/TransactionItem'
 import { Inversiones } from './Inversiones'
+import { InlineSmartInput } from '../add/InlineSmartInput'
 import { formatMonth, formatDateGroupHeader } from '../../lib/format'
 
 function monthKey(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
 }
-
-type DashboardTab = 'resumen' | 'inversiones'
 
 interface DashboardProps {
   onOpenBalanceDetail?: (month: string, monthLabel: string) => void
@@ -20,7 +19,7 @@ interface DashboardProps {
 export function Dashboard({ onOpenBalanceDetail }: DashboardProps) {
   const transactions = useAllTransactions()
   const { isWide } = useViewport()
-  const [tab, setTab] = useState<DashboardTab>('resumen')
+  const [expandedTxId, setExpandedTxId] = useState<string | null>(null)
   const [showTop, setShowTop] = useState(false)
   const rootRef = useRef<HTMLDivElement>(null)
 
@@ -88,15 +87,16 @@ export function Dashboard({ onOpenBalanceDetail }: DashboardProps) {
     return Array.from(groups.entries())
   }, [sorted])
 
-  // Scroll-to-top detection (capture scroll from the main scroll container)
+  // Scroll-to-top detection — the scroll container is <main> inside AppShell
   useEffect(() => {
-    const onScroll = (e: Event) => {
-      const el = e.target as HTMLElement
-      const y = el?.scrollTop ?? window.scrollY
-      setShowTop(y > 400)
+    const main = rootRef.current?.closest('main')
+    if (!main) return
+
+    const onScroll = () => {
+      setShowTop(main.scrollTop > 400)
     }
-    window.addEventListener('scroll', onScroll, true)
-    return () => window.removeEventListener('scroll', onScroll, true)
+    main.addEventListener('scroll', onScroll, { passive: true })
+    return () => main.removeEventListener('scroll', onScroll)
   }, [])
 
   const scrollToTop = () => {
@@ -108,96 +108,98 @@ export function Dashboard({ onOpenBalanceDetail }: DashboardProps) {
     }
   }
 
+  const handleToggleExpand = (txId: string) => {
+    setExpandedTxId(prev => prev === txId ? null : txId)
+  }
+
   return (
     <div className="space-y-4" ref={rootRef}>
       <header className="pt-2 pb-1 flex items-center justify-between">
         <div>
           <h1 className={`${isWide ? 'text-5xl' : 'text-4xl'} font-black tracking-tight leading-none`}>Gasty</h1>
-          <p className="text-sm text-body mt-2">Tus gastos, simples.</p>
         </div>
       </header>
 
-      {/* Internal tabs */}
-      <div className="flex gap-2 bg-canvas-soft rounded-2xl p-1">
-        <button
-          onClick={() => setTab('resumen')}
-          className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-colors ${tab === 'resumen' ? 'bg-primary text-on-primary' : 'text-body'}`}
+      {isProjection && (
+        <div
+          className="px-4 py-2 text-sm font-medium text-center"
+          style={{
+            background: 'var(--color-projection-card)',
+            color: 'var(--color-projection-text)',
+            border: '1px solid var(--color-projection-accent)',
+          }}
         >
-          Resumen
-        </button>
-        <button
-          onClick={() => setTab('inversiones')}
-          className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-colors ${tab === 'inversiones' ? 'bg-primary text-on-primary' : 'text-body'}`}
-        >
-          Inversiones
-        </button>
-      </div>
-
-      {tab === 'inversiones' ? (
-        <Inversiones />
-      ) : (
-        <>
-          {isProjection && (
-            <div
-              className="rounded-2xl px-4 py-2 text-sm font-medium text-center"
-              style={{
-                background: 'var(--color-proyector-card)',
-                color: 'var(--color-proyector-text)',
-                border: '1px solid var(--color-proyector-accent)',
-              }}
-            >
-              🚀 Modo proyección — los gastos futuros son estimados según tus recurrentes
-            </div>
-          )}
-
-          <BalanceCard
-            totalIncome={summary.totalIncome}
-            totalExpense={summary.totalExpense}
-            monthSpent={summary.monthSpent}
-            monthIncome={summary.monthIncome}
-            prevMonthExpense={summary.prevMonthSpent}
-            monthLabel={monthLabel}
-            isProjection={isProjection}
-            onOpenDetail={() => onOpenBalanceDetail?.(selectedMonth, monthLabel)}
-          />
-
-          {sorted.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-16 text-center">
-              <span className="text-5xl mb-3">🫥</span>
-              <p className="text-ink font-medium">Sin movimientos</p>
-              <p className="text-sm text-body mt-1">
-                {isProjection
-                  ? 'No hay recurrentes activos para proyectar este mes'
-                  : 'Tocá el botón + para registrar uno'}
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {groupedByDay.map(([day, txs]) => (
-                <div key={day}>
-                  <p className="text-xs font-medium text-mute uppercase tracking-wide px-1 mb-1.5">
-                    {formatDateGroupHeader(day)}
-                  </p>
-                  <div className="bg-card rounded-2xl">
-                    {txs.map((tx) => (
-                      <TransactionItem key={tx.id} transaction={tx} />
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </>
+          🚀 Modo proyección — los gastos futuros son estimados según tus recurrentes
+        </div>
       )}
+
+      <BalanceCard
+        totalIncome={summary.totalIncome}
+        totalExpense={summary.totalExpense}
+        monthSpent={summary.monthSpent}
+        monthIncome={summary.monthIncome}
+        prevMonthExpense={summary.prevMonthSpent}
+        monthLabel={monthLabel}
+        isProjection={isProjection}
+        onOpenDetail={() => onOpenBalanceDetail?.(selectedMonth, monthLabel)}
+      />
+
+      {/* Inline Smart Input — debajo de BalanceCard */}
+      <InlineSmartInput />
+
+      {sorted.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-16 text-center">
+          <span className="text-5xl mb-3">🫥</span>
+          <p className="text-ink font-medium">Sin movimientos</p>
+          <p className="text-sm text-body mt-1">
+            {isProjection
+              ? 'No hay recurrentes activos para proyectar este mes'
+              : 'Usá el input arriba para registrar uno'}
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {groupedByDay.map(([day, txs]) => (
+            <div key={day}>
+              <p className="text-xs font-medium text-mute uppercase tracking-wide px-1 mb-1.5">
+                {formatDateGroupHeader(day)}
+              </p>
+              <div className="space-y-2">
+                {txs.map((tx) => (
+                  <TransactionItem
+                    key={tx.id}
+                    transaction={tx}
+                    isExpanded={expandedTxId === tx.id}
+                    onToggle={() => handleToggleExpand(tx.id)}
+                  />
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Inversiones al final */}
+      <div className="mt-8 pt-6 border-t border-border-soft">
+        <Inversiones />
+      </div>
 
       {/* Scroll to top */}
       {showTop && (
         <button
+          type="button"
           onClick={scrollToTop}
-          className="fixed bottom-24 right-4 z-30 w-11 h-11 rounded-full bg-primary text-on-primary flex items-center justify-center shadow-lg active:scale-95 transition-transform"
+          className="
+            fixed bottom-24 right-4 z-30
+            w-11 h-11 rounded-full
+            bg-primary text-on-primary border-2 border-positive-deep
+            flex items-center justify-center
+            active:scale-95 transition-transform
+          "
           aria-label="Volver arriba"
         >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} className="w-5 h-5">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}
+            strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
             <polyline points="18 15 12 9 6 15" />
           </svg>
         </button>

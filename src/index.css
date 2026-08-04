@@ -25,6 +25,7 @@
   /* ── Semantic ── */
   --color-positive: #1a7a35;
   --color-positive-deep: #054d28;
+  --color-positive-soft: #e4f3e4;
   --color-warning: #ffd11a;
   --color-warning-deep: #b86700;
   --color-warning-content: #4a3b1c;
@@ -32,12 +33,22 @@
   --color-negative-deep: #a72027;
   --color-negative-darkest: #a7000d;
   --color-negative-bg: #320707;
+  --color-negative-soft: #fbe4e4;
 
   /* ── Accent tertiary ── */
   --color-accent-orange: #ffc091;
   --color-accent-cyan: #38c8ff;
 
-  /* ── Legacy aliases (point to new tokens) ── */
+  /* ── Geometry ── */
+  --color-border-soft: #e2e5df;
+
+  /* ── Projection tokens (future month projection) ── */
+  --color-projection-bg: #0c4a6e;
+  --color-projection-text: #e0f2fe;
+  --color-projection-accent: #22d3ee;
+  --color-projection-card: #0e3a5c;
+
+  /* ── Legacy aliases ── */
   --color-bg: var(--color-canvas);
   --color-card: var(--color-canvas);
   --color-card-hover: #ececeb;
@@ -60,12 +71,6 @@
   --color-card-dark: #0e0f0c;
   --color-card-dark-text: var(--color-primary);
 
-  /* ── Proyector tokens (future month projection) ── */
-  --color-proyector-bg: #0c4a6e;
-  --color-proyector-text: #e0f2fe;
-  --color-proyector-accent: #22d3ee;
-  --color-proyector-card: #0e3a5c;
-
   /* ── Typography ── */
   --font-display: "Inter", system-ui, sans-serif;
   --font-body: "Inter", system-ui, sans-serif;
@@ -87,6 +92,7 @@
   /* ── Semantic ── */
   --color-positive: #4ade80;
   --color-positive-deep: #22c55e;
+  --color-positive-soft: #1a2e1a;
   --color-warning: #fbbf24;
   --color-warning-deep: #f59e0b;
   --color-warning-content: #fef3c7;
@@ -94,18 +100,22 @@
   --color-negative-deep: #ef4444;
   --color-negative-darkest: #fca5a5;
   --color-negative-bg: #3b1a1a;
+  --color-negative-soft: #3b1a1a;
 
-  /* ── Card dark variant (maintain dark feel) ── */
+  /* ── Geometry ── */
+  --color-border-soft: #2e352b;
+
+  /* ── Projection tokens ── */
+  --color-projection-bg: #0c4a6e;
+  --color-projection-text: #e0f2fe;
+  --color-projection-accent: #22d3ee;
+  --color-projection-card: #0e3a5c;
+
+  /* ── Card dark variant ── */
   --color-card-dark: #11140e;
   --color-card-dark-text: var(--color-primary);
 
-  /* ── Proyector tokens (same in dark — keeps the cyan contrast) ── */
-  --color-proyector-bg: #0c4a6e;
-  --color-proyector-text: #e0f2fe;
-  --color-proyector-accent: #22d3ee;
-  --color-proyector-card: #0e3a5c;
-
-  /* ── Brand (maintain same green) ── */
+  /* ── Brand ── */
   --color-primary: #9fe870;
   --color-on-primary: #0e0f0c;
   --color-primary-active: #cdffad;

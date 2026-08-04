@@ -30,9 +30,9 @@ export function FlashChips({ onSelect, maxChips = 6 }: FlashChipsProps) {
           className="
             shrink-0 flex items-center gap-1.5
             px-3.5 py-2.5 rounded-full text-sm font-medium
-            bg-canvas-soft border border-border text-body
+             bg-card border border-border text-body
             hover:bg-card-hover active:scale-95
-            transition-all touch-manipulation
+            transition-transform touch-manipulation
             min-h-[44px]
           "
           aria-label={`Sugerir ${chip.label}`}

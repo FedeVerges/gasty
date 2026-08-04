@@ -1,5 +1,6 @@
 import { useContext, useEffect, useState } from 'react'
 import { Card } from '../ui/Card'
+import { Button } from '../ui/Button'
 import { useSettings } from '../../context/SettingsContext'
 import { getRecurringSources, deleteRecurringSource } from '../../lib/recurring'
 import { useCategories } from '../../hooks/useCategories'
@@ -104,16 +105,9 @@ export function Settings() {
         <p className="text-xs text-body mb-3">
           Administrá las categorías y las palabras clave para detección automática al cargar gastos.
         </p>
-        <button
-          onClick={() => setView('categories')}
-          className="
-            w-full py-3 px-4 rounded-2xl
-            bg-primary text-on-primary font-semibold
-            active:scale-[0.98] transition-transform
-          "
-        >
+        <Button fullWidth onClick={() => setView('categories')}>
           Editar
-        </button>
+        </Button>
       </Card>
 
       {/* 2. Movimientos recurrentes */}
@@ -145,7 +139,7 @@ export function Settings() {
             value={recurringSearch}
             onChange={(e) => setRecurringSearch(e.target.value)}
             placeholder="Buscar recurrente..."
-            className="w-full pl-9 pr-3 py-2.5 rounded-2xl bg-canvas border border-border text-sm text-ink placeholder:text-mute focus:border-primary transition-colors"
+             className="w-full pl-9 pr-3 py-2.5 rounded-2xl bg-card border border-border text-sm text-ink placeholder:text-mute focus:ring-2 focus:ring-primary transition-colors"
           />
         </div>
 
@@ -218,7 +212,7 @@ export function Settings() {
             onClick={() => setCurrency('ARS')}
             className={`
               p-3 rounded-2xl border-2 transition-colors font-semibold
-              ${settings.currency === 'ARS' ? 'border-primary bg-primary-pale text-on-primary' : 'border-border text-body'}
+               ${settings.currency === 'ARS' ? 'border-primary bg-primary-pale text-on-primary' : 'border border-border text-body'}
             `}
           >
             $ ARS
@@ -227,7 +221,7 @@ export function Settings() {
             onClick={() => setCurrency('USD')}
             className={`
               p-3 rounded-2xl border-2 transition-colors font-semibold
-              ${settings.currency === 'USD' ? 'border-primary bg-primary-pale text-on-primary' : 'border-border text-body'}
+               ${settings.currency === 'USD' ? 'border-primary bg-primary-pale text-on-primary' : 'border border-border text-body'}
             `}
           >
             US$ USD
@@ -304,7 +298,7 @@ export function Settings() {
             onClick={() => setCsvFormat({ stripCurrencyPrefix: !settings.csvFormat.stripCurrencyPrefix })}
             className={`
               relative w-11 h-8 rounded-full transition-colors
-              ${settings.csvFormat.stripCurrencyPrefix ? 'bg-primary' : 'bg-canvas-soft border border-border'}
+               ${settings.csvFormat.stripCurrencyPrefix ? 'bg-primary' : 'bg-canvas-soft border border-border'}
             `}
             role="switch"
             aria-checked={settings.csvFormat.stripCurrencyPrefix}
@@ -327,37 +321,26 @@ export function Settings() {
         <p className="text-sm text-body mb-3">
           Cargá gastos desde un archivo CSV (nombre, importe, fecha, categoría).
         </p>
-        <button
-          onClick={csvImport?.openCsvImport}
-          className="
-            w-full py-3 px-4 rounded-2xl
-            bg-primary text-on-primary font-semibold
-            active:scale-[0.98] transition-transform
-          "
-        >
+        <Button fullWidth onClick={csvImport?.openCsvImport}>
           Importar CSV
-        </button>
+        </Button>
       </Card>
 
-      <div className="border-2 border-negative rounded-2xl p-4">
+       <div className="border-2 border-negative rounded-2xl p-4 shadow-lg">
         <span className="text-xs uppercase tracking-widest text-negative font-medium block mb-3">
           Zona de peligro
         </span>
         <p className="text-sm text-body mb-3">
           Borrar todos los datos de la aplicación. Esta acción no se puede deshacer.
         </p>
-        <button
+        <Button
+          variant="danger"
+          fullWidth
           onClick={handleClearDatabase}
           disabled={clearing}
-          className="
-            w-full py-3 px-4 rounded-2xl
-            bg-negative text-white font-semibold
-            active:scale-[0.98] transition-transform
-            disabled:opacity-50 disabled:pointer-events-none
-          "
         >
           {clearing ? 'Borrando...' : 'Borrar todos los datos'}
-        </button>
+        </Button>
       </div>
 
       <Card>

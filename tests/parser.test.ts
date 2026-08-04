@@ -58,12 +58,18 @@ describe('parser: fechas', () => {
 
   it('parsea fecha con guión', () => {
     const result = parseInput('lomito 3000 20-5')
-    expect(result?.date).toBe('2027-05-20')
+    const now = new Date()
+    // sin año: el mes ya pasó este año → año siguiente
+    const expectedYear = 4 < now.getMonth() ? now.getFullYear() + 1 : now.getFullYear()
+    expect(result?.date).toBe(`${expectedYear}-05-20`)
   })
 
   it('parsea fecha con barra', () => {
     const result = parseInput('lomito 3000 20/7')
-    expect(result?.date).toBe('2026-07-20')
+    const now = new Date()
+    // sin año: el mes ya pasó este año → año siguiente
+    const expectedYear = 6 < now.getMonth() ? now.getFullYear() + 1 : now.getFullYear()
+    expect(result?.date).toBe(`${expectedYear}-07-20`)
   })
 
   it('parsea ayer', () => {
