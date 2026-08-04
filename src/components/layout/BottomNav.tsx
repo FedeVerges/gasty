@@ -66,8 +66,8 @@ export function BottomNav({ active, navigate }: BottomNavProps) {
       className="
         fixed bottom-0 left-1/2 -translate-x-1/2
         w-full max-w-[480px]
-        bg-canvas
-        border-t-[3px] border-ink
+        bg-canvas/80 backdrop-blur-lg
+        border-t border-border
         z-40
       "
     >
@@ -80,10 +80,10 @@ export function BottomNav({ active, navigate }: BottomNavProps) {
               onClick={() => navigate('#/' + tab.id)}
               className={`
                 flex flex-col items-center justify-center gap-1
-                rounded-maguito-sm border-[3px] transition-all
+                rounded-xl border border-border transition-colors
                 ${isActive
-                  ? 'bg-primary text-on-primary border-ink shadow-maguito active:translate-x-[var(--maguito-shadow-depth)] active:translate-y-[var(--maguito-shadow-depth)] active:shadow-none'
-                  : 'bg-canvas text-mute border-transparent'
+                  ? 'text-ink active:scale-95'
+                  : 'text-mute border-transparent'
                 }
               `}
             >

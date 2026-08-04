@@ -122,7 +122,7 @@ export function Dashboard({ onOpenBalanceDetail }: DashboardProps) {
 
       {isProjection && (
         <div
-          className="border-maguito px-4 py-2 text-sm font-medium text-center"
+          className="px-4 py-2 text-sm font-medium text-center"
           style={{
             background: 'var(--color-projection-card)',
             color: 'var(--color-projection-text)',
@@ -193,10 +193,8 @@ export function Dashboard({ onOpenBalanceDetail }: DashboardProps) {
             fixed bottom-24 right-4 z-30
             w-11 h-11 rounded-full
             bg-primary text-on-primary border-2 border-positive-deep
-            shadow-maguito
             flex items-center justify-center
-            active:translate-y-[2px] active:shadow-none
-            transition-[transform,box-shadow] duration-150
+            active:scale-95 transition-transform
           "
           aria-label="Volver arriba"
         >

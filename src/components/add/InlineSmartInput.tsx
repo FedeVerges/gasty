@@ -6,7 +6,7 @@ import { useCategories } from '../../hooks/useCategories'
 import { useSettings } from '../../context/SettingsContext'
 import { formatMoney } from '../../lib/format'
 import { FlashChips } from './FlashChips'
-import type { ParsedTransaction, RecurringConfig, TransactionType } from '../../types'
+import type { ParsedTransaction, TransactionType } from '../../types'
 
 interface InlineSmartInputProps {
   /** Called after a transaction is successfully created */
@@ -20,7 +20,6 @@ export function InlineSmartInput({ onTransactionCreated }: InlineSmartInputProps
   const [typeOverride, setTypeOverride] = useState<TransactionType | null>(null)
   const [categoryOverride, setCategoryOverride] = useState<string | null>(null)
   const [dateOverride, setDateOverride] = useState<string | null>(null)
-  const [recurring] = useState<RecurringConfig>({ kind: 'none' })
   const inputRef = useRef<HTMLInputElement>(null)
 
   const parsed: ParsedTransaction | null = useMemo(() => {
@@ -60,12 +59,13 @@ export function InlineSmartInput({ onTransactionCreated }: InlineSmartInputProps
 
     inputRef.current?.blur()
 
+    const finalRecurring = parsed.recurring
     const tx = createTransactionFromParsed({
       ...parsed,
-      recurring,
+      recurring: finalRecurring,
     })
 
-    if (recurring.kind !== 'none') {
+    if (finalRecurring.kind !== 'none') {
       await db.transaction('rw', db.transactions, async () => {
         await db.transactions.add(tx)
         await createFutureClones(tx)
@@ -84,7 +84,7 @@ export function InlineSmartInput({ onTransactionCreated }: InlineSmartInputProps
   return (
     <div className="sticky top-0 z-20 bg-canvas pt-1 pb-1 space-y-2">
       {/* ── Input card ── */}
-      <div className="bg-card border-maguito shadow-maguito rounded-maguito-md p-3">
+      <div className="bg-card border border-border shadow-xl rounded-xl p-3">
           <form onSubmit={handleSubmit}>
             <div className="flex items-center gap-2">
               <input
@@ -96,8 +96,8 @@ export function InlineSmartInput({ onTransactionCreated }: InlineSmartInputProps
                 className="
                   flex-1 px-4 py-3 text-base
                   rounded-xl
-                  bg-canvas border-maguito
-                  focus:ring-2 focus:ring-primary
+                  bg-canvas border border-border
+                  focus:border-primary
                   placeholder:text-mute
                   transition-colors
                 "
@@ -130,11 +130,10 @@ export function InlineSmartInput({ onTransactionCreated }: InlineSmartInputProps
                 className="
                   w-11 h-11 shrink-0 rounded-xl
                   bg-positive text-white border-2 border-positive-deep
-                  shadow-maguito
                   flex items-center justify-center
                   disabled:opacity-30 disabled:cursor-not-allowed
-                  active:translate-y-[2px] active:shadow-none
-                  transition-[transform,box-shadow] duration-150
+                  active:scale-95
+                  transition-transform duration-150
                 "
                 aria-label="Agregar transacción"
               >
@@ -157,7 +156,7 @@ export function InlineSmartInput({ onTransactionCreated }: InlineSmartInputProps
 
       {/* ── Preview card — compact, editable ── */}
       {parsed && category && (
-        <div className="bg-card border-maguito shadow-maguito rounded-maguito-md animate-fade-in motion-reduce:animate-none">
+        <div className="bg-card border border-border shadow-xl rounded-xl animate-fade-in motion-reduce:animate-none">
           {/* Main row — like TransactionItem but editable */}
           <div className="flex items-center gap-3 py-3 px-3">
             {/* Emoji */}
@@ -237,7 +236,7 @@ export function InlineSmartInput({ onTransactionCreated }: InlineSmartInputProps
                   setCategoryOverride(null)
                 }}
                 className={`
-                  w-10 h-10 rounded-xl border-maguito flex items-center justify-center text-lg font-bold transition-colors
+                  w-10 h-10 rounded-xl border border-border flex items-center justify-center text-lg font-bold transition-colors
                   ${typeOverride === 'income'
                     ? 'bg-positive text-white'
                     : 'bg-canvas-soft text-body'}
@@ -254,7 +253,7 @@ export function InlineSmartInput({ onTransactionCreated }: InlineSmartInputProps
                   setCategoryOverride(null)
                 }}
                 className={`
-                  w-10 h-10 rounded-xl border-maguito flex items-center justify-center text-lg font-bold transition-colors
+                  w-10 h-10 rounded-xl border border-border flex items-center justify-center text-lg font-bold transition-colors
                   ${typeOverride === 'expense'
                     ? 'bg-negative text-white'
                     : 'bg-canvas-soft text-body'}

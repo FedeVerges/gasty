@@ -139,7 +139,7 @@ export function Settings() {
             value={recurringSearch}
             onChange={(e) => setRecurringSearch(e.target.value)}
             placeholder="Buscar recurrente..."
-             className="w-full pl-9 pr-3 py-2.5 rounded-2xl bg-canvas border-maguito text-sm text-ink placeholder:text-mute focus:ring-2 focus:ring-primary transition-colors"
+             className="w-full pl-9 pr-3 py-2.5 rounded-2xl bg-card border border-border text-sm text-ink placeholder:text-mute focus:ring-2 focus:ring-primary transition-colors"
           />
         </div>
 
@@ -212,7 +212,7 @@ export function Settings() {
             onClick={() => setCurrency('ARS')}
             className={`
               p-3 rounded-2xl border-2 transition-colors font-semibold
-               ${settings.currency === 'ARS' ? 'border-primary bg-primary-pale text-on-primary' : 'border-maguito text-body'}
+               ${settings.currency === 'ARS' ? 'border-primary bg-primary-pale text-on-primary' : 'border border-border text-body'}
             `}
           >
             $ ARS
@@ -221,7 +221,7 @@ export function Settings() {
             onClick={() => setCurrency('USD')}
             className={`
               p-3 rounded-2xl border-2 transition-colors font-semibold
-               ${settings.currency === 'USD' ? 'border-primary bg-primary-pale text-on-primary' : 'border-maguito text-body'}
+               ${settings.currency === 'USD' ? 'border-primary bg-primary-pale text-on-primary' : 'border border-border text-body'}
             `}
           >
             US$ USD
@@ -298,7 +298,7 @@ export function Settings() {
             onClick={() => setCsvFormat({ stripCurrencyPrefix: !settings.csvFormat.stripCurrencyPrefix })}
             className={`
               relative w-11 h-8 rounded-full transition-colors
-               ${settings.csvFormat.stripCurrencyPrefix ? 'bg-primary' : 'bg-canvas-soft border-maguito'}
+               ${settings.csvFormat.stripCurrencyPrefix ? 'bg-primary' : 'bg-canvas-soft border border-border'}
             `}
             role="switch"
             aria-checked={settings.csvFormat.stripCurrencyPrefix}
@@ -326,7 +326,7 @@ export function Settings() {
         </Button>
       </Card>
 
-       <div className="border-2 border-negative rounded-2xl p-4 shadow-maguito">
+       <div className="border-2 border-negative rounded-2xl p-4 shadow-lg">
         <span className="text-xs uppercase tracking-widest text-negative font-medium block mb-3">
           Zona de peligro
         </span>

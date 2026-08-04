@@ -177,7 +177,7 @@ export function Transactions({ onPickCategory, onOpenBalanceDetail }: Transactio
           {topCategory && (
             <button
               onClick={() => onPickCategory?.(topCategory.id)}
-              className="bg-card border-maguito shadow-maguito rounded-lg p-4 text-left active:scale-[0.98] transition-transform"
+              className="bg-card border border-border rounded-lg p-4 text-left active:scale-[0.98] transition-transform"
               aria-label={`Ver detalle de ${topCategory.name} en Stats`}
             >
               <p className="text-[10px] text-body uppercase tracking-wide font-medium mb-3">
@@ -202,7 +202,7 @@ export function Transactions({ onPickCategory, onOpenBalanceDetail }: Transactio
 
           {/* Categoría que más creció */}
           {growthCategory ? (
-             <div className="bg-card border-maguito shadow-maguito rounded-lg p-4">
+             <div className="bg-card border border-border rounded-lg p-4">
               <p className="text-[10px] text-body uppercase tracking-wide font-medium mb-3">
                 Mayor crecimiento
               </p>
@@ -222,7 +222,7 @@ export function Transactions({ onPickCategory, onOpenBalanceDetail }: Transactio
               </div>
             </div>
           ) : (
-             <div className="bg-card border-maguito shadow-maguito rounded-lg p-4">
+             <div className="bg-card border border-border rounded-lg p-4">
               <p className="text-[10px] text-body uppercase tracking-wide font-medium mb-3">
                 Mayor crecimiento
               </p>
@@ -254,7 +254,7 @@ export function Transactions({ onPickCategory, onOpenBalanceDetail }: Transactio
           className="
             w-full pl-10 pr-10 py-3
             rounded-2xl
-            bg-card border-maguito
+            bg-card border border-border
             text-sm text-ink placeholder:text-mute
             focus:border-primary focus:bg-canvas
             transition-colors
@@ -277,7 +277,7 @@ export function Transactions({ onPickCategory, onOpenBalanceDetail }: Transactio
       {/* Balance — debajo del buscador (clicable → detalle) */}
       <button
         onClick={openBalanceDetail}
-           className="w-full bg-card border-maguito shadow-maguito rounded-lg px-4 py-3 flex justify-between items-center active:scale-[0.99] transition-transform text-left"
+           className="w-full bg-card border border-border rounded-lg px-4 py-3 flex justify-between items-center active:scale-[0.99] transition-transform text-left"
         aria-label="Ver detalle del balance"
       >
         <span className="text-sm text-body">Balance</span>

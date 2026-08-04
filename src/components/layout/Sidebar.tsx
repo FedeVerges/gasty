@@ -68,7 +68,7 @@ export function Sidebar({ active, navigate, isWide }: SidebarProps) {
         hidden md:flex
         flex-col
         shrink-0
-        bg-canvas border-r-[3px] border-ink shadow-maguito
+        bg-canvas border-r border-border
         py-6
         h-full
         ${isWide ? 'w-64 px-4' : 'w-56 px-3'}
@@ -76,7 +76,7 @@ export function Sidebar({ active, navigate, isWide }: SidebarProps) {
     >
       {/* Logo */}
       <div className={`flex items-center gap-2.5 px-3 ${isWide ? 'mb-10' : 'mb-8'}`}>
-        <div className="w-8 h-8 rounded-maguito-sm bg-primary flex items-center justify-center">
+        <div className="w-8 h-8 rounded-xl bg-primary flex items-center justify-center">
           <span className="text-on-primary font-bold text-sm">$</span>
         </div>
         <span className="text-xl font-black text-ink tracking-tight">Gasty</span>
@@ -92,11 +92,11 @@ export function Sidebar({ active, navigate, isWide }: SidebarProps) {
               onClick={() => navigate('#/' + tab.id)}
               className={`
                 flex items-center gap-3
-                px-3 py-2.5 rounded-maguito-md border-[3px]
+                px-3 py-2.5 rounded-xl border border-border
                 text-sm font-bold
-                transition-all
+                transition-colors
                 ${isActive
-                  ? 'bg-primary text-on-primary border-ink shadow-maguito active:translate-x-[var(--maguito-shadow-depth)] active:translate-y-[var(--maguito-shadow-depth)] active:shadow-none'
+                  ? 'bg-primary-pale text-ink'
                   : 'text-mute border-transparent hover:bg-canvas-soft hover:text-ink'
                 }
               `}

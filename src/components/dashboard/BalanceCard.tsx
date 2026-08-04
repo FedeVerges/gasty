@@ -74,9 +74,9 @@ export function BalanceCard({
           </span>
           {hasIncome && <span>{formatMoney(monthIncome, settings.currency)}</span>}
         </div>
-        <div className="w-full h-2.5 bg-primary-pale rounded-maguito-sm overflow-hidden">
+        <div className="w-full h-2.5 bg-primary-pale rounded-full overflow-hidden">
           <div
-            className="h-full rounded-maguito-sm transition-[width] duration-300"
+            className="h-full rounded-full transition-[width] duration-300"
             style={{
               width: `${Math.min(progress * 100, 100)}%`,
               background: overBudget ? 'var(--color-negative)' : barColor,
@@ -96,7 +96,7 @@ export function BalanceCard({
           {prevMonthExpense > 0 ? (
             <>
               <span
-                className={`inline-flex items-center gap-0.5 px-2 py-0.5 rounded-maguito-sm text-xs font-medium ${isLower ? 'bg-positive-soft' : 'bg-negative-soft'
+                className={`inline-flex items-center gap-0.5 px-2 py-0.5 rounded-lg text-xs font-medium ${isLower ? 'bg-positive-soft' : 'bg-negative-soft'
                   }`}
                 style={{ color: isLower ? 'var(--color-positive)' : 'var(--color-negative)' }}
               >

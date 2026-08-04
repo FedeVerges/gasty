@@ -17,15 +17,11 @@
     "docs:report": "bash scripts/docs-report.sh"
   },
   "dependencies": {
-    "@fontsource/fredoka": "^5.2.10",
     "@fontsource/inter": "5.2.8",
-    "@fontsource/plus-jakarta-sans": "5.2.8",
     "@tailwindcss/vite": "4.3.2",
     "@tanstack/react-virtual": "3.14.6",
     "dexie": "4.0.4",
     "dexie-react-hooks": "1.1.7",
-    "lucide-react": "1.24.0",
-    "maguitoui": "1.1.5",
     "react": "19.2.7",
     "react-dom": "19.2.7",
     "tailwindcss": "4.3.3"

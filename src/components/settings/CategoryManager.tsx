@@ -119,7 +119,7 @@ export function CategoryManager() {
                     onChange={(e) => saveEmoji(cat.id, e.target.value)}
                     placeholder="📦"
                     maxLength={4}
-                    className="w-14 px-2 py-2 text-lg rounded-xl bg-canvas border-maguito text-center outline-none focus:ring-2 focus:ring-primary transition-colors"
+                    className="w-14 px-2 py-2 text-lg rounded-xl bg-card border border-border text-center outline-none focus:ring-2 focus:ring-primary transition-colors"
                     aria-label={`Emoji de ${cat.name}`}
                   />
                 </div>
@@ -128,7 +128,7 @@ export function CategoryManager() {
                   {cat.keywords.map((kw) => (
                      <span
                        key={kw}
-                       className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-full bg-canvas text-body border-maguito"
+                       className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-full bg-card text-body border border-border"
                      >
                       {kw}
                       <button
@@ -150,7 +150,7 @@ export function CategoryManager() {
                       if (e.key === 'Enter') addKeyword(cat.id)
                     }}
                     placeholder="nueva palabra clave..."
-                    className="flex-1 px-3 py-2 text-sm rounded-xl bg-canvas border-maguito text-ink outline-none focus:ring-2 focus:ring-primary transition-colors"
+                    className="flex-1 px-3 py-2 text-sm rounded-xl bg-card border border-border text-ink outline-none focus:ring-2 focus:ring-primary transition-colors"
                   />
                   <Button
                     size="sm"
@@ -180,25 +180,25 @@ export function CategoryManager() {
             value={newName}
             onChange={(e) => setNewName(e.target.value)}
             placeholder="Nombre de la categoría"
-            className="w-full px-3 py-2 text-sm rounded-xl bg-canvas border-maguito text-ink outline-none focus:ring-2 focus:ring-primary transition-colors"
+            className="w-full px-3 py-2 text-sm rounded-xl bg-card border border-border text-ink outline-none focus:ring-2 focus:ring-primary transition-colors"
           />
           <div className="flex gap-2">
             <input
               value={newEmoji}
               onChange={(e) => setNewEmoji(e.target.value)}
               placeholder="📦"
-              className="w-14 px-2 py-2 text-sm rounded-xl bg-canvas border-maguito text-center outline-none focus:ring-2 focus:ring-primary transition-colors"
+              className="w-14 px-2 py-2 text-sm rounded-xl bg-card border border-border text-center outline-none focus:ring-2 focus:ring-primary transition-colors"
             />
             <div className="flex gap-1">
               <button
                 onClick={() => setNewType('expense')}
-                className={`px-3 py-2 text-xs font-medium rounded-xl ${newType === 'expense' ? 'bg-expense-soft text-expense' : 'bg-canvas text-body border-maguito'}`}
+                className={`px-3 py-2 text-xs font-medium rounded-xl ${newType === 'expense' ? 'bg-expense-soft text-expense' : 'bg-card text-body border border-border'}`}
               >
                 Gasto
               </button>
               <button
                 onClick={() => setNewType('income')}
-                className={`px-3 py-2 text-xs font-medium rounded-xl ${newType === 'income' ? 'bg-income-soft text-income' : 'bg-canvas text-body border-maguito'}`}
+                className={`px-3 py-2 text-xs font-medium rounded-xl ${newType === 'income' ? 'bg-income-soft text-income' : 'bg-card text-body border border-border'}`}
               >
                 Ingreso
               </button>

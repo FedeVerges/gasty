@@ -76,7 +76,7 @@ export function TransactionItem({ transaction, isExpanded = false, onToggle }: T
   return (
     <div
       className={`
-        border-maguito rounded-maguito-sm overflow-hidden
+        border border-border rounded-xl overflow-hidden
         transition-all duration-200 ease-in-out
         ${isExpanded ? 'bg-canvas-soft' : 'active:bg-card-hover cursor-pointer'}
       `}

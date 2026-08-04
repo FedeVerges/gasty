@@ -214,7 +214,7 @@ export function SmartInputSheet({ open, onClose, editTransaction }: SmartInputSh
            ${isDesktop ? 'rounded-3xl' : 'rounded-t-3xl animate-slide-up'}
          `}
          style={{
-           borderColor: 'var(--color-ink)',
+           borderColor: 'var(--color-border)',
           paddingBottom: 'env(safe-area-inset-bottom)',
           // When dvh is supported, the viewport already shrinks for the keyboard —
           // marginBottom is only needed as fallback for browsers without dvh.
@@ -257,7 +257,7 @@ export function SmartInputSheet({ open, onClose, editTransaction }: SmartInputSh
                   value={editDescription}
                   onChange={(e) => setEditDescription(e.target.value)}
                   placeholder="Descripción"
-                   className="w-full px-4 py-3 rounded-2xl bg-canvas border-maguito text-ink focus:ring-2 focus:ring-primary transition-colors"
+                   className="w-full px-4 py-3 rounded-2xl bg-canvas border border-border text-ink focus:border-primary transition-colors"
                   enterKeyHint="next"
                   autoComplete="off"
                   autoCorrect="off"
@@ -276,7 +276,7 @@ export function SmartInputSheet({ open, onClose, editTransaction }: SmartInputSh
                   value={editAmount}
                   onChange={(e) => setEditAmount(e.target.value)}
                   placeholder="Monto"
-                   className="w-full px-4 py-3 rounded-2xl bg-canvas border-maguito text-ink text-xl focus:ring-2 focus:ring-primary transition-colors"
+                   className="w-full px-4 py-3 rounded-2xl bg-canvas border border-border text-ink text-xl focus:border-primary transition-colors"
                   autoFocus
                   enterKeyHint="next"
                   onFocus={(e) => scrollInputIntoView(e.currentTarget)}
@@ -288,7 +288,7 @@ export function SmartInputSheet({ open, onClose, editTransaction }: SmartInputSh
                   type="date"
                   value={editDate}
                   onChange={(e) => setEditDate(e.target.value)}
-                   className="w-full px-4 py-3 rounded-2xl bg-canvas border-maguito text-ink focus:ring-2 focus:ring-primary transition-colors"
+                   className="w-full px-4 py-3 rounded-2xl bg-canvas border border-border text-ink focus:border-primary transition-colors"
                   enterKeyHint="done"
                   onFocus={(e) => scrollInputIntoView(e.currentTarget)}
                 />
@@ -301,7 +301,7 @@ export function SmartInputSheet({ open, onClose, editTransaction }: SmartInputSh
                     w-11 h-11 rounded-xl flex items-center justify-center text-lg font-bold transition-colors
                     ${typeOverride === 'expense'
                       ? 'bg-negative text-white'
-                      : 'bg-canvas-soft text-body border-maguito'}
+                      : 'bg-card text-body border border-border'}
                   `}
                   aria-label="Marcar como gasto"
                 >
@@ -314,7 +314,7 @@ export function SmartInputSheet({ open, onClose, editTransaction }: SmartInputSh
                     w-11 h-11 rounded-xl flex items-center justify-center text-lg font-bold transition-colors
                     ${typeOverride === 'income'
                       ? 'bg-positive text-white'
-                      : 'bg-canvas-soft text-body border-maguito'}
+                      : 'bg-card text-body border border-border'}
                   `}
                   aria-label="Marcar como ingreso"
                 >
@@ -338,8 +338,8 @@ export function SmartInputSheet({ open, onClose, editTransaction }: SmartInputSh
                   className="
                     flex-1 px-4 py-3 text-base
                     rounded-2xl
-                    bg-canvas border-maguito
-                    focus:ring-2 focus:ring-primary
+                    bg-canvas border border-border
+                    focus:border-primary
                     placeholder:text-mute
                     transition-colors
                   "
@@ -355,11 +355,11 @@ export function SmartInputSheet({ open, onClose, editTransaction }: SmartInputSh
                   disabled={!parsed}
                   className="
                     w-11 h-11 shrink-0 rounded-full
-                    bg-primary text-on-primary border-maguito
+                    bg-primary text-on-primary border border-border
                     flex items-center justify-center
                     disabled:opacity-30 disabled:cursor-not-allowed
-                    active:translate-x-[var(--maguito-shadow-depth)] active:translate-y-[var(--maguito-shadow-depth)] active:shadow-none
-                    transition-all
+                    active:scale-95
+                    transition-transform
                   "
                   aria-label="Agregar transacción"
                 >
@@ -456,8 +456,8 @@ export function SmartInputSheet({ open, onClose, editTransaction }: SmartInputSh
                       w-11 h-11 rounded-xl flex items-center justify-center text-lg font-bold
                       transition-colors
                       ${typeOverride === 'income'
-                        ? 'bg-positive text-white border-maguito'
-                        : 'bg-canvas-soft text-body border-maguito'}
+                        ? 'bg-positive text-white border border-border'
+                        : 'bg-card text-body border border-border'}
                     `}
                     aria-label="Marcar como ingreso"
                   >
@@ -470,8 +470,8 @@ export function SmartInputSheet({ open, onClose, editTransaction }: SmartInputSh
                       w-11 h-11 rounded-xl flex items-center justify-center text-lg font-bold
                       transition-colors
                       ${typeOverride === 'expense'
-                        ? 'bg-negative text-white border-maguito'
-                        : 'bg-canvas-soft text-body border-maguito'}
+                        ? 'bg-negative text-white border border-border'
+                        : 'bg-card text-body border border-border'}
                     `}
                     aria-label="Marcar como gasto"
                   >
@@ -516,7 +516,7 @@ export function SmartInputSheet({ open, onClose, editTransaction }: SmartInputSh
                           flex items-center gap-1.5 transition-colors
                            ${selected
                             ? 'text-white'
-                            : 'bg-canvas-soft border-maguito text-body hover:bg-card-hover'
+                            : 'bg-card border border-border text-body hover:bg-card-hover'
                           }
                         `}
                         style={selected ? { background: c.color } : undefined}
@@ -541,7 +541,7 @@ export function SmartInputSheet({ open, onClose, editTransaction }: SmartInputSh
                   onClick={() => { userTouchedRecurrence.current = true; setRecurring({ kind: 'none' }) }}
                   className={`
                     py-3 px-2 rounded-2xl text-sm font-medium border-2 transition-colors
-                     ${recurring.kind === 'none' ? 'border-primary bg-primary-pale text-on-primary' : 'border-maguito text-body'}
+                     ${recurring.kind === 'none' ? 'border-primary bg-primary-pale text-on-primary' : 'border border-border text-body'}
                   `}
                 >
                   No
@@ -551,7 +551,7 @@ export function SmartInputSheet({ open, onClose, editTransaction }: SmartInputSh
                   onClick={() => { userTouchedRecurrence.current = true; setRecurring({ kind: 'fixed' }) }}
                   className={`
                     py-3 px-2 rounded-2xl text-sm font-medium border-2 transition-colors
-                     ${recurring.kind === 'fixed' ? 'border-recurring bg-recurring-soft text-recurring' : 'border-maguito text-body'}
+                     ${recurring.kind === 'fixed' ? 'border-recurring bg-recurring-soft text-recurring' : 'border border-border text-body'}
                   `}
                 >
                   🔄 Todos los meses
@@ -561,7 +561,7 @@ export function SmartInputSheet({ open, onClose, editTransaction }: SmartInputSh
                   onClick={() => { userTouchedRecurrence.current = true; setRecurring({ kind: 'fixed_temporary' }) }}
                   className={`
                     py-3 px-2 rounded-2xl text-sm font-medium border-2 transition-colors
-                     ${recurring.kind === 'fixed_temporary' ? 'border-recurring bg-recurring-soft text-recurring' : 'border-maguito text-body'}
+                     ${recurring.kind === 'fixed_temporary' ? 'border-recurring bg-recurring-soft text-recurring' : 'border border-border text-body'}
                   `}
                 >
                   ⏱️ Por un tiempo
@@ -577,7 +577,7 @@ export function SmartInputSheet({ open, onClose, editTransaction }: SmartInputSh
                       onClick={() => setTempMonths((m) => Math.max(1, m - 1))}
                       disabled={tempMonths <= 1}
                       aria-label="Menos meses"
-                       className="w-9 h-9 rounded-xl bg-canvas-soft border-maguito text-lg font-bold text-body active:scale-95 transition-transform disabled:opacity-30 disabled:cursor-not-allowed"
+                       className="w-9 h-9 rounded-xl bg-card border border-border text-lg font-bold text-body active:scale-95 transition-transform disabled:opacity-30 disabled:cursor-not-allowed"
                     >
                       −
                     </button>
@@ -592,7 +592,7 @@ export function SmartInputSheet({ open, onClose, editTransaction }: SmartInputSh
                       onClick={() => setTempMonths((m) => Math.min(240, m + 1))}
                       disabled={tempMonths >= 240}
                       aria-label="Más meses"
-                       className="w-9 h-9 rounded-xl bg-canvas-soft border-maguito text-lg font-bold text-body active:scale-95 transition-transform disabled:opacity-30 disabled:cursor-not-allowed"
+                       className="w-9 h-9 rounded-xl bg-card border border-border text-lg font-bold text-body active:scale-95 transition-transform disabled:opacity-30 disabled:cursor-not-allowed"
                     >
                       +
                     </button>

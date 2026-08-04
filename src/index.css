@@ -1,79 +1,64 @@
-/* Maguito must be inside a layer so Tailwind's @layer utilities can override it
-   (e.g. active:shadow-none beats shadow-maguito on :active).
-   Layer order: maguito → theme → base → components → utilities. */
-@layer maguito {
-  @import "maguitoui/styles";
-}
 @import "tailwindcss";
-
 @import "@fontsource/inter/latin-400.css";
 @import "@fontsource/inter/latin-600.css";
 @import "@fontsource/inter/latin-900.css";
-@import "@fontsource/plus-jakarta-sans/latin-400.css";
-@import "@fontsource/plus-jakarta-sans/latin-600.css";
-@import "@fontsource/plus-jakarta-sans/latin-700.css";
-@import "@fontsource/fredoka/latin-400.css";
-@import "@fontsource/fredoka/latin-600.css";
-@import "@fontsource/fredoka/latin-700.css";
-
-/* ── Gasty overrides on Maguito defaults ── */
-:root {
-  --maguito-primary: #A2D149;
-  --maguito-shadow-depth: 4px;
-}
 
 @theme {
   /* ── Brand & Accent ── */
-  --color-primary: var(--maguito-primary);
+  --color-primary: #9fe870;
   --color-on-primary: #0e0f0c;
   --color-primary-active: #cdffad;
   --color-primary-neutral: #c5edab;
   --color-primary-pale: #e2f6d5;
 
   /* ── Surface ── */
-  --color-canvas: var(--maguito-bg);
-  --color-canvas-soft: #ececeb;
+  --color-canvas: #ffffff;
+  --color-canvas-soft: #f5f5f4;
   --color-overlay: rgba(0, 0, 0, 0.4);
 
   /* ── Text ── */
-  --color-ink: var(--maguito-text);
-  --color-ink-deep: #1a1a1a;
-  --color-body: #5a5a5a;
-  --color-mute: #8a8a8a;
+  --color-ink: #0e0f0c;
+  --color-ink-deep: #163300;
+  --color-body: #454745;
+  --color-mute: #5c5e59;
 
   /* ── Semantic ── */
-  --color-positive: var(--maguito-success);
-  --color-positive-deep: #6b9a2e;
-  --color-warning: var(--maguito-warning);
+  --color-positive: #1a7a35;
+  --color-positive-deep: #054d28;
+  --color-positive-soft: #e4f3e4;
+  --color-warning: #ffd11a;
   --color-warning-deep: #b86700;
   --color-warning-content: #4a3b1c;
-  --color-negative: var(--maguito-danger);
-  --color-negative-deep: #c4394e;
+  --color-negative: #d03238;
+  --color-negative-deep: #a72027;
   --color-negative-darkest: #a7000d;
   --color-negative-bg: #320707;
+  --color-negative-soft: #fbe4e4;
 
   /* ── Accent tertiary ── */
-  --color-accent-orange: var(--maguito-primary);
-  --color-accent-cyan: var(--maguito-accent);
+  --color-accent-orange: #ffc091;
+  --color-accent-cyan: #38c8ff;
 
-  /* ── Maguito geometry tokens ── */
+  /* ── Geometry ── */
   --color-border-soft: #e2e5df;
-  --color-projection-bg: rgba(103, 232, 249, 0.1);
-  --color-projection-text: var(--maguito-info);
-  --color-projection-accent: var(--maguito-info);
-  --color-projection-card: rgba(103, 232, 249, 0.15);
+
+  /* ── Projection tokens (future month projection) ── */
+  --color-projection-bg: #0c4a6e;
+  --color-projection-text: #e0f2fe;
+  --color-projection-accent: #22d3ee;
+  --color-projection-card: #0e3a5c;
 
   /* ── Legacy aliases ── */
   --color-bg: var(--color-canvas);
   --color-card: var(--color-canvas);
-  --color-card-hover: #e5e4e0;
+  --color-card-hover: #ececeb;
   --color-text: var(--color-ink);
   --color-text-muted: var(--color-body);
   --color-text-subtle: var(--color-mute);
   --color-border: #d6d9d3;
   --color-border-strong: #c1c4be;
   --color-accent: var(--color-primary);
-  --color-accent-2: var(--maguito-accent);
+  --color-accent-2: var(--color-primary);
   --color-accent-soft: var(--color-primary-pale);
   --color-expense: var(--color-negative);
   --color-expense-soft: #fbe4e4;
@@ -83,26 +68,16 @@
   --color-recurring-soft: #fef3c7;
 
   /* ── Card dark variant ── */
-  --color-card-dark: #11140e;
+  --color-card-dark: #0e0f0c;
   --color-card-dark-text: var(--color-primary);
 
   /* ── Typography ── */
-  --font-display: "Fredoka", "Inter", system-ui, sans-serif;
-  --font-body: "Plus Jakarta Sans", "Inter", system-ui, sans-serif;
-  --font-sans: "Plus Jakarta Sans", "Inter", system-ui, -apple-system, sans-serif;
+  --font-display: "Inter", system-ui, sans-serif;
+  --font-body: "Inter", system-ui, sans-serif;
+  --font-sans: "Inter", system-ui, -apple-system, sans-serif;
 }
 
 [data-theme="dark"] {
-  /* ── Maguito dark overrides ── */
-  --maguito-bg: #1A1E17;
-  --maguito-text: #EEF0EA;
-  --maguito-primary: #b2db65;
-  --maguito-secondary: #fdd47a;
-  --maguito-accent: #8ccbf5;
-  --maguito-danger: #f07485;
-  --maguito-success: #b2db65;
-  --maguito-warning: #fbbf24;
-
   /* ── Surface ── */
   --color-canvas: #1a1e17;
   --color-canvas-soft: #22261f;
@@ -110,13 +85,14 @@
 
   /* ── Text ── */
   --color-ink: #eef0ea;
-  --color-ink-deep: #c8ead0;
+  --color-ink-deep: #b4e89a;
   --color-body: #abada7;
   --color-mute: #8f918b;
 
   /* ── Semantic ── */
   --color-positive: #4ade80;
   --color-positive-deep: #22c55e;
+  --color-positive-soft: #1a2e1a;
   --color-warning: #fbbf24;
   --color-warning-deep: #f59e0b;
   --color-warning-content: #fef3c7;
@@ -124,21 +100,27 @@
   --color-negative-deep: #ef4444;
   --color-negative-darkest: #fca5a5;
   --color-negative-bg: #3b1a1a;
+  --color-negative-soft: #3b1a1a;
 
-  /* ── Accent tertiary ── */
-  --color-accent-orange: var(--maguito-primary);
-  --color-accent-cyan: var(--maguito-accent);
-
-  /* ── Maguito geometry tokens ── */
+  /* ── Geometry ── */
   --color-border-soft: #2e352b;
-  --color-projection-bg: rgba(103, 232, 249, 0.12);
-  --color-projection-text: #67E8F9;
-  --color-projection-accent: #67E8F9;
-  --color-projection-card: rgba(103, 232, 249, 0.15);
 
-  /* ── Card dark variant (maintain dark feel) ── */
+  /* ── Projection tokens ── */
+  --color-projection-bg: #0c4a6e;
+  --color-projection-text: #e0f2fe;
+  --color-projection-accent: #22d3ee;
+  --color-projection-card: #0e3a5c;
+
+  /* ── Card dark variant ── */
   --color-card-dark: #11140e;
   --color-card-dark-text: var(--color-primary);
+
+  /* ── Brand ── */
+  --color-primary: #9fe870;
+  --color-on-primary: #0e0f0c;
+  --color-primary-active: #cdffad;
+  --color-primary-neutral: #c5edab;
+  --color-primary-pale: #2a3324;
 
   /* ── Legacy aliases ── */
   --color-bg: var(--color-canvas-soft);
@@ -150,7 +132,7 @@
   --color-border: #2d322a;
   --color-border-strong: #3d4339;
   --color-accent: var(--color-primary);
-  --color-accent-2: var(--maguito-accent);
+  --color-accent-2: var(--color-primary);
   --color-accent-soft: var(--color-primary-pale);
   --color-expense: var(--color-negative);
   --color-expense-soft: #3b1a1a;
@@ -158,13 +140,6 @@
   --color-income-soft: #1a2e1a;
   --color-recurring: var(--color-warning);
   --color-recurring-soft: #3a2f1a;
-
-  /* ── Brand (maguito primary in dark) ── */
-  --color-primary: var(--maguito-primary);
-  --color-on-primary: #1A1E17;
-  --color-primary-active: #cdffad;
-  --color-primary-neutral: #c5edab;
-  --color-primary-pale: #2a3324;
 }
 
 @layer base {
@@ -228,11 +203,6 @@
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
-
-  /* Maguito rounded utilities — bridge the CSS variables to Tailwind */
-  .rounded-maguito-lg { border-radius: var(--maguito-radius-lg); }
-  .rounded-maguito-md { border-radius: var(--maguito-radius-md); }
-  .rounded-maguito-sm { border-radius: var(--maguito-radius-sm); }
 }
 
 @keyframes slide-up {

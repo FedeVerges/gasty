@@ -571,17 +571,21 @@ describe('recurring: deleteRecurringSource', () => {
     }
     await db.transactions.add(pastClone)
 
-    // Future clone (August)
+    // Future clone (2 months from now)
+    const futureDate = new Date()
+    futureDate.setMonth(futureDate.getMonth() + 2)
+    const futureY = futureDate.getFullYear()
+    const futureM = String(futureDate.getMonth() + 1).padStart(2, '0')
     const futureClone: Transaction = {
       id: 'clone-future',
       type: 'expense',
       amount: 45000,
       description: 'Alquiler',
       categoryId: 'home',
-      date: '2026-08-01',
+      date: `${futureY}-${futureM}-01`,
       recurring: { kind: 'fixed', invoiceDay: 1 },
       originalId: 'src-001',
-      createdAt: '2026-07-01T10:00',
+      createdAt: new Date().toISOString().slice(0, 16),
     }
     await db.transactions.add(futureClone)
 

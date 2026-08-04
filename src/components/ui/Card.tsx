@@ -1,20 +1,12 @@
-import { Card as MaguitoCard } from 'maguitoui'
 import type { ReactNode } from 'react'
 
 interface CardProps {
   children: ReactNode
   className?: string
   onClick?: () => void
-  variant?: 'default' | 'sage' | 'green' | 'dark'
+  variant?: 'default' | 'dark'
   /** For proyector mode (future month projection) */
   isProjection?: boolean
-}
-
-const variantClasses: Record<string, string> = {
-  default: '',
-  sage: 'bg-canvas-soft',
-  green: 'bg-primary-pale',
-  dark: '',
 }
 
 const variantStyles: Record<string, React.CSSProperties> = {
@@ -25,7 +17,10 @@ const variantStyles: Record<string, React.CSSProperties> = {
 }
 
 export function Card({ children, variant = 'default', isProjection = false, className = '', onClick }: CardProps) {
-  const interactive = onClick ? 'cursor-pointer active:scale-[0.98] hover:bg-card-hover' : ''
+  const base = 'rounded-3xl p-5 bg-canvas border border-border transition-colors'
+  const interactive = onClick
+    ? 'cursor-pointer active:scale-[0.98] hover:bg-card-hover'
+    : ''
 
   const projectionStyle: React.CSSProperties = isProjection
     ? {
@@ -42,13 +37,12 @@ export function Card({ children, variant = 'default', isProjection = false, clas
       : undefined
 
   return (
-    <MaguitoCard
-      paddingSize="sm"
-      className={`${variantClasses[variant]} ${interactive} ${className}`}
-      style={style}
+    <div
       onClick={onClick}
+      className={`${base} ${interactive} ${className}`}
+      style={style}
     >
       {children}
-    </MaguitoCard>
+    </div>
   )
 }
