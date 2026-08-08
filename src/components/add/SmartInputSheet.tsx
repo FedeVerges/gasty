@@ -209,13 +209,11 @@ export function SmartInputSheet({ open, onClose, editTransaction }: SmartInputSh
         className={`
           w-full max-w-[480px]
            bg-canvas
-           border-t-[3px] border-x-[3px]
            overflow-y-auto
            ${isDesktop ? 'rounded-3xl' : 'rounded-t-3xl animate-slide-up'}
          `}
-         style={{
-           borderColor: 'var(--color-border)',
-          paddingBottom: 'env(safe-area-inset-bottom)',
+          style={{
+           paddingBottom: 'env(safe-area-inset-bottom)',
           // When dvh is supported, the viewport already shrinks for the keyboard —
           // marginBottom is only needed as fallback for browsers without dvh.
           marginBottom: !isDesktop && !SUPPORTS_DVH && keyboardHeight ? keyboardHeight : undefined,
@@ -338,7 +336,7 @@ export function SmartInputSheet({ open, onClose, editTransaction }: SmartInputSh
                   className="
                     flex-1 px-4 py-3 text-base
                     rounded-2xl
-                    bg-canvas border border-border
+                    bg-canvas border-2 border-border
                     focus:border-primary
                     placeholder:text-mute
                     transition-colors

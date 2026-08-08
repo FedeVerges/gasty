@@ -91,13 +91,11 @@ export function CsvImportSheet({ open, onClose }: CsvImportSheetProps) {
         className={`
           w-full max-w-[480px]
            bg-canvas
-           border-t-[3px] border-x-[3px]
            overflow-y-auto
            ${isDesktop ? 'rounded-3xl' : 'rounded-t-3xl animate-slide-up'}
          `}
-         style={{
-           borderColor: 'var(--color-border)',
-          paddingBottom: 'env(safe-area-inset-bottom)',
+          style={{
+           paddingBottom: 'env(safe-area-inset-bottom)',
           maxHeight: isDesktop ? '85vh' : '90vh',
         }}
       >

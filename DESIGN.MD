@@ -118,11 +118,13 @@ Gasty uses a **single-font** typographic stack:
 ## 4. Component Stylings
 
 ### Buttons (`<Button />`)
-- **Primary:** `bg-primary text-on-primary border border-border rounded-3xl` — Filled sage green, graphite border. Press state: `active:scale-95 transition-transform`.
-- **Secondary:** `bg-canvas-soft text-ink border border-border rounded-3xl`.
-- **Tertiary:** `bg-canvas text-ink border border-border rounded-3xl` — Outlined, no shadow.
-- **Danger:** `bg-negative text-white border border-border rounded-3xl`.
-- **Dimensions:** Minimum vertical padding must ensure an interaction target of at least **`44px`** for mobile comfort (`py-3` min).
+- **Primary:** `bg-primary text-on-primary` — Filled sage green, no border. Press state: `active:brightness-90`.
+- **Secondary:** `bg-canvas-soft text-ink` — Soft warm fill, no border. Press state: `active:brightness-95`.
+- **Tertiary:** `bg-canvas text-ink border border-ink` — Outlined (1px ink), no shadow. Press state: `active:bg-canvas-soft`.
+- **Danger:** `bg-negative text-white` — Filled red, no border. Press state: `active:brightness-90`.
+- **Base:** `font-semibold transition-all` shared by all variants.
+- **Radii:** `sm`/`md`/`lg` → `rounded-xl` / `rounded-3xl` / `rounded-3xl`.
+- **Dimensions:** `md` uses `px-4 py-3` (~44px touch target), `lg` uses `px-5 py-4`. Exception: `sm` is `px-3 py-2` (~36px), used only for compact in-card actions (BalanceCard, CategoryManager); all other interactive targets are ≥44px.
 - **Full-width variant** available via `fullWidth` prop.
 
 ### Cards (`<Card />`)
@@ -139,8 +141,8 @@ Gasty uses a **single-font** typographic stack:
 - **Colors mapped to semantics:** default, recurring, income, expense, accent, positive, negative.
 
 ### Inputs
-- **Smart Input Field:** `text-xl p-4 rounded-2xl bg-canvas border-2 border-border focus:border-primary` — Large, prominent, with 2px border that transitions to green on focus.
-- **Number Inputs:** `w-20 px-3 py-2 rounded-xl bg-canvas border-2 border-border text-center`.
+- **Smart Input Field:** `flex-1 px-4 py-3 text-base rounded-2xl bg-canvas border-2 border-border focus:border-primary` — Prominent, with a 2px border (one of only two `border-2` elements, alongside the Settings danger-zone card), transitioning to green on focus. The inline composer variant uses the same field with `rounded-xl`.
+- **Inline Edit Fields:** `bg-transparent border-b border-border focus:border-primary` — Underline-style inputs (description, amount, date) inside an expanded transaction row; the amount is `w-24 text-right font-bold text-lg`.
 - **Pattern:** Label above input, helper text below (small, `text-xs text-body`). No floating labels.
 - **Placeholder:** `placeholder:text-mute` — muted gray.
 
@@ -151,11 +153,12 @@ Gasty uses a **single-font** typographic stack:
 - **Inactive state:** `bg-card border border-border text-body`.
 
 ### Transaction Item — Anti-Clutter Rule
-**Critical:** Individual transaction rows do NOT get `border-border` or `shadow-xl`. Instead:
-- **List container:** Single `bg-card border border-border rounded-lg` wrapper for all rows in a day group.
-- **Row separators:** Individual rows use `border-b border-border-soft last:border-b-0` — subtle 1px dividers.
+**Critical:** Transaction rows avoid heavy chrome — no shadows, no extra grouping container. The real pattern:
+- **List container:** Day groups use `space-y-2`; each row renders as its own card (`border border-border rounded-xl overflow-hidden`).
+- **Row separators:** The expanded edit section separates from the collapsed row with `border-t border-border-soft` — a subtle 1px divider.
 - **Row layout:** 3-column flex: emoji icon (44px square with tinted background) | description + badge + date | amount + edit/delete buttons.
-- **Row styling:** `px-1 py-3` — no individual rounding or borders. Rows are flat within the container.
+- **Row styling:** `px-3 py-3` inner padding, `rounded-xl` outline only — no shadows.
+- **Expansion:** Rows expand in place via a `max-height` transition; the expanded state swaps the background to `bg-canvas-soft` and reveals the inline underline inputs plus a vertical category selector.
 - **Active state:** `active:bg-card-hover` — subtle tint feedback on tap.
 
 ### Loading States
@@ -166,7 +169,7 @@ Gasty uses a **single-font** typographic stack:
 
 ### Navigation (BottomNav)
 - Fixed bottom bar, 4-column grid (`grid-cols-4 h-16`), glass effect (`bg-canvas/80 backdrop-blur-lg`).
-- Each tab: SVG icon (24px) + text label (11px).
+- Each tab: SVG icon (`w-5 h-5`, 20px, 2px stroke) + text label (`text-[11px]`).
 - Active: `text-ink`, Inactive: `text-mute`.
 - `border-t border-border` top separator.
 - Wrapped in `max-w-[480px]` centered within viewport.
@@ -175,12 +178,12 @@ Gasty uses a **single-font** typographic stack:
 - Fixed bottom center, `bottom-20` (above BottomNav), `-translate-x-1/2` centered.
 - `w-14 h-14 rounded-full bg-primary text-on-primary shadow-xl`.
 - Active: `active:scale-95 transition-transform`.
-- Plus icon via inline SVG (24px, 2.5px stroke).
+- Plus icon via inline SVG (`w-7 h-7`, 28px, 2.5px stroke).
 
 ### Sheet / SmartInputSheet
 - Full-screen fixed overlay with scrim (`var(--color-overlay)`).
 - Bottom-anchored sheet (`items-end`), `w-full max-w-[480px]`.
-- Mobile: `bg-canvas border-t border-x border-ink rounded-t-3xl`.
+- Mobile: `bg-canvas rounded-t-3xl` — no border.
 - Desktop: `bg-canvas rounded-3xl`.
 - Entry animation: `animate-slide-up` (0.3s cubic-bezier(0.16, 1, 0.3, 1)).
 - Exit: overlay tap-to-dismiss via `animate-fade-in`.
@@ -217,7 +220,7 @@ Gasty uses a **single-font** typographic stack:
 ### Spacing System
 - Page padding: `px-5` (1.25rem) horizontal, `pt-6 pb-4` vertical.
 - Card padding: `p-5` (1.25rem).
-- List spacing: Transaction rows use `border-b border-border-soft` inside a `border border-border` container.
+- List spacing: Transaction rows are per-row cards (`border border-border rounded-xl`) in `space-y-2` day groups; the expanded edit section adds a `border-t border-border-soft` divider.
 - Section gaps: `space-y-4` (16px) between cards.
 
 ### Dark Mode Strategy
@@ -237,11 +240,11 @@ Gasty uses a **single-font** typographic stack:
 - Only `transform` and `opacity` are animated — never `width`, `height`, `top`, `left`.
 
 ### Interactive Feedback
-- Buttons: `active:scale-95 transition-transform` — clear press feedback via scale.
+- Buttons: primary/danger `active:brightness-90`, secondary `active:brightness-95`, tertiary `active:bg-canvas-soft` — press feedback via brightness/background tint.
 - Cards: `active:scale-[0.98]` — subtle press-down.
 - FAB: `active:scale-95 transition-transform` — clear press feedback.
 - List rows: `active:bg-card-hover` — background tint on tap.
-- Interactive elements use `transition-transform` or `transition-colors` (never `transition-all` on shadow-xl).
+- Never `transition-all` on elements with `shadow-xl` — use `transition-transform` instead. (Buttons carry `transition-all` in their base class, but they have no shadow.)
 
 ### Sheet Animation
 - Bottom sheet: slides up from below viewport using `cubic-bezier(0.16, 1, 0.3, 1)`.
@@ -263,9 +266,9 @@ Gasty uses a **single-font** typographic stack:
 
 ### Color & Style
 - No pure black (`#000000`). Use `#0e0f0c` (Ink) or olive-charcoal instead.
-- No 3px borders. All borders are 1px (`border`, `border-t`, `border-b`, etc.).
+- No 3px borders. Standard borders are 1px (`border`, `border-t`, `border-b`, etc.). The only 2px (`border-2`) exceptions, by design: the smart input field (`border-2 border-border`) and the Settings danger-zone card (`border-2 border-negative`).
 - No hardcoded hex colors in components — all colors through CSS custom properties.
-- No soft box-shadows on cards or buttons. `shadow-xl` is used only for the FAB. `shadow-lg` is forbidden.
+- No soft box-shadows on cards or buttons except `shadow-xl`, which appears only on the FAB, the inline smart-input composer, and its live preview card. `shadow-lg` is forbidden.
 
 ### Typography
 - No serif fonts anywhere.
@@ -294,7 +297,7 @@ Gasty uses a **single-font** typographic stack:
 ### Accessibility
 - No emoji as the sole signifier of state — pair with text or color.
 - No interactive element without an accessible label.
-- No touch targets smaller than 44px.
+- No touch targets smaller than 44px — except `Button size="sm"` (`py-2`, ~36px), used only for compact in-card actions (BalanceCard, CategoryManager).
 
 ### Motion
 - No animation of `width`, `height`, `top`, `left` — use `transform` and `opacity` only.
