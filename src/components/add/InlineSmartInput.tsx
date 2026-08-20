@@ -84,50 +84,49 @@ export function InlineSmartInput({ onTransactionCreated }: InlineSmartInputProps
   return (
     <div className="sticky top-0 z-20 bg-canvas pt-1 pb-1 space-y-2">
       {/* ── Input card ── */}
-      <div className="bg-card border border-border shadow-xl rounded-xl p-3">
-          <form onSubmit={handleSubmit}>
-            <div className="flex items-center gap-2">
-              <input
-                ref={inputRef}
-                type="text"
-                value={text}
-                onChange={(e) => { setText(e.target.value); setCategoryOverride(null); setDateOverride(null) }}
-                placeholder="Ej: birra 1500"
-                className="
+      <form onSubmit={handleSubmit}>
+        <div className="flex items-center gap-2">
+          <input
+            ref={inputRef}
+            type="text"
+            value={text}
+            onChange={(e) => { setText(e.target.value); setCategoryOverride(null); setDateOverride(null) }}
+            placeholder="Ej: birra 1500"
+            className="
                   flex-1 px-4 py-3 text-base
                   rounded-xl
-                  bg-canvas border border-border
+                  bg-canvas border-2 border-border
                   focus:border-primary
                   placeholder:text-mute
                   transition-colors
                 "
-                autoComplete="off"
-                autoCorrect="off"
-                spellCheck={false}
-              />
-              {text && (
-                <button
-                  type="button"
-                  onClick={() => { setText(''); setCategoryOverride(null); setDateOverride(null); inputRef.current?.focus() }}
-                  className="
+            autoComplete="off"
+            autoCorrect="off"
+            spellCheck={false}
+          />
+          {text && (
+            <button
+              type="button"
+              onClick={() => { setText(''); setCategoryOverride(null); setDateOverride(null); inputRef.current?.focus() }}
+              className="
                     w-8 h-8 shrink-0 rounded-full
                     flex items-center justify-center
                     text-mute hover:text-ink hover:bg-canvas-soft
                     active:scale-90 transition-[transform,color,background-color] duration-150
                   "
-                  aria-label="Limpiar texto"
-                >
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}
-                       strokeLinecap="round" className="w-4 h-4">
-                    <line x1="18" y1="6" x2="6" y2="18" />
-                    <line x1="6" y1="6" x2="18" y2="18" />
-                  </svg>
-                </button>
-              )}
-              <button
-                type="submit"
-                disabled={!parsed}
-                className="
+              aria-label="Limpiar texto"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}
+                strokeLinecap="round" className="w-4 h-4">
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
+          )}
+          <button
+            type="submit"
+            disabled={!parsed}
+            className="
                   w-11 h-11 shrink-0 rounded-xl
                   bg-positive text-white border-2 border-positive-deep
                   flex items-center justify-center
@@ -135,24 +134,23 @@ export function InlineSmartInput({ onTransactionCreated }: InlineSmartInputProps
                   active:scale-95
                   transition-transform duration-150
                 "
-                aria-label="Agregar transacción"
-              >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}
-                     strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
-                  <line x1="12" y1="5" x2="12" y2="19" />
-                  <line x1="5" y1="12" x2="19" y2="12" />
-                </svg>
-              </button>
-            </div>
-          </form>
-
-          {/* Flash chips — show when input is empty */}
-          {!text && (
-            <div className="mt-2">
-              <FlashChips onSelect={(suggestionText) => setText(suggestionText)} />
-            </div>
-          )}
+            aria-label="Agregar transacción"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}
+              strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
+              <line x1="12" y1="5" x2="12" y2="19" />
+              <line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+          </button>
         </div>
+      </form>
+
+      {/* Flash chips — show when input is empty */}
+      {!text && (
+        <div className="mt-2">
+          <FlashChips onSelect={(suggestionText) => setText(suggestionText)} />
+        </div>
+      )}
 
       {/* ── Preview card — compact, editable ── */}
       {parsed && category && (
@@ -264,7 +262,7 @@ export function InlineSmartInput({ onTransactionCreated }: InlineSmartInputProps
               </button>
             </div>
           </div>
-          </div>
+        </div>
       )}
     </div>
   )

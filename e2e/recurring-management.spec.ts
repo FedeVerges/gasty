@@ -124,8 +124,8 @@ test.describe('Gestión de recurrencias', () => {
     await addTransaction(page, 'servicio internet 5000')
 
     // La fuente debería tener un badge de recurrencia visible
-    // El badge usa la clase bg-recurring-soft y contiene "🔄"
-    const recurringBadge = page.locator('.bg-recurring-soft').first()
+    // El badge usa la clase bg-recurring/20 y contiene "🔄"
+    const recurringBadge = page.getByText('🔄').first()
     await expect(recurringBadge).toBeVisible()
   })
 
@@ -165,13 +165,13 @@ test.describe('Gestión de recurrencias', () => {
     await page.getByText('Alquiler').first().click()
     await page.waitForTimeout(300)
 
-    // Modificar el monto (modo edición: campo numérico)
-    const amountInput = page.locator('input[placeholder="Monto"]')
+    // Modificar el monto (modo edición: campo numérico sin placeholder)
+    const amountInput = page.locator('input[type="number"]')
     await amountInput.fill('50000')
     await page.waitForTimeout(200)
 
     // Confirmar edición
-    await page.getByRole('button', { name: 'Confirmar' }).click()
+    await page.getByRole('button', { name: 'Confirmar edición' }).click()
     await page.waitForTimeout(400)
 
     // Verificar que el monto se actualizó en el dashboard

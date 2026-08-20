@@ -12,14 +12,14 @@ test.describe('Editar y eliminar transacciones', () => {
     await page.getByText('prueba').first().click()
     await page.waitForTimeout(300)
 
-    // Modo edición: campos individuales (descripción + monto)
-    const descInput = page.locator('input[placeholder="Descripción"]')
+    // Modo edición: campos individuales (descripción + monto), sin placeholders
+    const descInput = page.locator('input[type="text"]:not([placeholder])')
     await descInput.fill('prueba editada 5000')
-    const amountInput = page.locator('input[placeholder="Monto"]')
+    const amountInput = page.locator('input[type="number"]')
     await amountInput.fill('5000')
     await page.waitForTimeout(200)
 
-    await page.getByRole('button', { name: 'Confirmar' }).click()
+    await page.getByRole('button', { name: 'Confirmar edición' }).click()
     await page.waitForTimeout(300)
 
     await expect(page.getByText('prueba editada').first()).toBeVisible()

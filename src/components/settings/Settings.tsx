@@ -326,7 +326,7 @@ export function Settings() {
         </Button>
       </Card>
 
-       <div className="border-2 border-negative rounded-2xl p-4 shadow-lg">
+       <div className="border-2 border-negative rounded-2xl p-4">
         <span className="text-xs uppercase tracking-widest text-negative font-medium block mb-3">
           Zona de peligro
         </span>

@@ -38,9 +38,9 @@ export async function navigateTo(page: Page, tab: string) {
 export async function addTransaction(page: Page, text: string) {
   const input = page.locator('input[placeholder="Ej: birra 1500"]')
   await input.fill(text)
-  await page.waitForTimeout(200)
 
-  const submitBtn = page.locator('button[aria-label="Agregar transacción"]:not([disabled])')
+  const submitBtn = page.locator('button[aria-label="Agregar transacción"]')
+  await expect(submitBtn).toBeEnabled()
   await submitBtn.click()
   await page.waitForTimeout(400)
 }

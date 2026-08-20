@@ -92,7 +92,7 @@ test.describe('Navegación y filtros', () => {
 
   test('Dashboard muestra empty state cuando no hay transacciones', async ({ page }) => {
     await expect(page.getByText('Sin movimientos')).toBeVisible()
-    await expect(page.getByText('Tocá el botón + para registrar uno')).toBeVisible()
+    await expect(page.getByText('Usá el input arriba para registrar uno')).toBeVisible()
   })
 
   test('bottom nav cambia entre tabs correctamente', async ({ page }) => {

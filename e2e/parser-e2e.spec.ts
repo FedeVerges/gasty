@@ -68,18 +68,13 @@ test.describe('Parser de lenguaje natural', () => {
   })
 
   test('preview muestra categoría y monto formateado', async ({ page }) => {
-    await page.locator('[aria-label="Agregar transacción"]').click()
-    await page.waitForTimeout(300)
-
     const input = page.locator('input[placeholder="Ej: birra 1500"]')
     await input.fill('birra 1500')
     await page.waitForTimeout(300)
 
     await expect(page.getByText('−').first()).toBeVisible()
     await expect(page.getByText(/1\.500/).first()).toBeVisible()
-    await expect(page.getByText('Salidas').first()).toBeVisible()
-
-    await page.getByRole('button', { name: 'Cerrar' }).click()
+    await expect(page.getByRole('combobox', { name: 'Categoría' })).toBeVisible()
   })
 
   test('formato DD/MM/YYYY se parsea correctamente', async ({ page }) => {
