@@ -24,31 +24,6 @@ npm run test:watch # tests en watch mode
 npm run lint       # eslint
 ```
 
-## Estructura
-
-```
-src/
-├── components/
-│   ├── add/         # SmartInputSheet (input inteligente)
-│   ├── dashboard/   # BalanceCard, MonthSummary, CategoryDonutChart
-│   ├── layout/      # AppShell, BottomNav, FAB
-│   ├── settings/    # Theme, currency, recurring manager
-│   ├── stats/       # Barras mensuales, top categoría
-│   ├── transactions/# Lista con filtros
-│   └── ui/          # Card, Button, Badge
-├── context/         # SettingsContext (theme + currency)
-├── hooks/           # useTransactions, useCategories, useRecurringCheck
-├── lib/             # db (Dexie), parser, recurring, format, categories
-├── types/           # Tipos compartidos
-├── App.tsx
-├── main.tsx
-└── index.css
-tests/
-├── parser.test.ts
-├── integration.test.ts
-└── recurring.test.ts
-```
-
 ## Smart Input
 
 El input interpreta lenguaje natural y clasifica automáticamente:
