@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest'
 import 'fake-indexeddb/auto'
 import { db, seedDatabase } from '../src/lib/db'
 import { parseInput, createTransactionFromParsed } from '../src/lib/parser'
+import { saveTransactionsAtomically } from '../src/lib/batch'
 
 describe('integration: db + parser', () => {
   beforeEach(async () => {
@@ -33,6 +34,18 @@ describe('integration: db + parser', () => {
     expect(all[0].amount).toBe(1500)
     expect(all[0].categoryId).toBe('leisure')
     expect(all[0].type).toBe('expense')
+  })
+
+  it('no guarda una parte del lote si IndexedDB rechaza una transacción', async () => {
+    const parsed = parseInput('birra 1500')!
+    const transaction = createTransactionFromParsed(parsed)
+
+    await expect(saveTransactionsAtomically([
+      transaction,
+      { ...transaction, description: 'birra duplicada' },
+    ])).rejects.toThrow()
+
+    expect(await db.transactions.count()).toBe(0)
   })
 
 })

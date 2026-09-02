@@ -1,6 +1,7 @@
 import { useState, useMemo, useRef } from 'react'
 import { db } from '../../lib/db'
-import { parseInput, createTransactionFromParsed } from '../../lib/parser'
+import { parseBatchInput, parseInput, createTransactionFromParsed } from '../../lib/parser'
+import { saveTransactionsAtomically } from '../../lib/batch'
 import { createFutureClones } from '../../lib/recurring'
 import { useCategories } from '../../hooks/useCategories'
 import { useSettings } from '../../context/SettingsContext'
@@ -22,7 +23,13 @@ export function InlineSmartInput({ onTransactionCreated }: InlineSmartInputProps
   const [dateOverride, setDateOverride] = useState<string | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
+  const batch = useMemo(() => (
+    text.includes(', ') ? parseBatchInput(text) : null
+  ), [text])
+
   const parsed: ParsedTransaction | null = useMemo(() => {
+    if (batch) return null
+
     const base = parseInput(text)
     if (!base) return null
 
@@ -47,7 +54,7 @@ export function InlineSmartInput({ onTransactionCreated }: InlineSmartInputProps
     const date = dateOverride ?? base.date
 
     return { ...base, type: effectiveType, categoryId: catId, description, date }
-  }, [text, typeOverride, categoryOverride, dateOverride, categories])
+  }, [text, typeOverride, categoryOverride, dateOverride, categories, batch])
 
   const category = parsed
     ? categories.find((c) => c.id === parsed.categoryId)
@@ -55,9 +62,23 @@ export function InlineSmartInput({ onTransactionCreated }: InlineSmartInputProps
 
   const handleSubmit = async (e: React.PointerEvent | React.FormEvent) => {
     e.preventDefault()
-    if (!parsed) return
-
     inputRef.current?.blur()
+
+    if (batch) {
+      if (batch.transactions.length === 0) return
+
+      const transactions = batch.transactions.map(createTransactionFromParsed)
+      await saveTransactionsAtomically(transactions)
+
+      setText('')
+      setTypeOverride(null)
+      setCategoryOverride(null)
+      setDateOverride(null)
+      onTransactionCreated?.()
+      return
+    }
+
+    if (!parsed) return
 
     const finalRecurring = parsed.recurring
     const tx = createTransactionFromParsed({
@@ -80,6 +101,11 @@ export function InlineSmartInput({ onTransactionCreated }: InlineSmartInputProps
     setDateOverride(null)
     onTransactionCreated?.()
   }
+
+  const canSubmit = batch ? batch.transactions.length > 0 : Boolean(parsed)
+  const submitLabel = batch
+    ? `Guardar ${batch.transactions.length} ${batch.transactions.length === 1 ? 'movimiento' : 'movimientos'}`
+    : 'Guardar transacción'
 
   return (
     <div className="sticky top-0 z-20 bg-canvas pt-1 pb-1 space-y-2">
@@ -125,7 +151,7 @@ export function InlineSmartInput({ onTransactionCreated }: InlineSmartInputProps
           )}
           <button
             type="submit"
-            disabled={!parsed}
+            disabled={!canSubmit}
             className="
                   w-11 h-11 shrink-0 rounded-xl
                   bg-positive text-white border-2 border-positive-deep
@@ -134,7 +160,7 @@ export function InlineSmartInput({ onTransactionCreated }: InlineSmartInputProps
                   active:scale-95
                   transition-transform duration-150
                 "
-            aria-label="Agregar transacción"
+            aria-label={submitLabel}
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}
               strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
@@ -149,6 +175,44 @@ export function InlineSmartInput({ onTransactionCreated }: InlineSmartInputProps
       {!text && (
         <div className="mt-2">
           <FlashChips onSelect={(suggestionText) => setText(suggestionText)} />
+        </div>
+      )}
+
+      {batch && (
+        <div
+          aria-label="Vista previa de carga múltiple"
+          className="bg-card border border-border shadow-xl rounded-xl animate-fade-in motion-reduce:animate-none"
+        >
+          <div className="px-3 pt-3 pb-2">
+            <p className="text-sm font-semibold text-ink">
+              {batch.transactions.length} {batch.transactions.length === 1 ? 'movimiento listo' : 'movimientos listos'}
+            </p>
+            {batch.ignored.length > 0 && (
+              <p className="mt-1 text-xs text-negative">
+                {batch.ignored.length} {batch.ignored.length === 1 ? 'entrada ignorada' : 'entradas ignoradas'}
+              </p>
+            )}
+          </div>
+          <div className="divide-y divide-border">
+            {batch.transactions.map((transaction, index) => {
+              const batchCategory = categories.find((item) => item.id === transaction.categoryId)
+              return (
+                <div key={`${transaction.description}-${index}`} className="flex items-center gap-2 px-3 py-2.5">
+                  <span className="text-xl" aria-hidden="true">{batchCategory?.emoji ?? '🏷️'}</span>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-semibold text-ink">{transaction.description}</p>
+                    <p className="text-xs text-mute">
+                      <span>{transaction.type === 'income' ? 'Ingreso' : 'Gasto'}</span>
+                      {' · '}{batchCategory?.name ?? 'Otros'} · {transaction.date}
+                    </p>
+                  </div>
+                  <span className={`shrink-0 text-sm font-bold ${transaction.type === 'income' ? 'text-positive' : 'text-negative'}`}>
+                    {transaction.type === 'income' ? '+' : '−'} {formatMoney(transaction.amount, settings.currency)}
+                  </span>
+                </div>
+              )
+            })}
+          </div>
         </div>
       )}
 

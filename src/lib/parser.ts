@@ -328,6 +328,34 @@ export function parseInput(input: string): ParsedTransaction | null {
   }
 }
 
+export interface BatchParseResult {
+  transactions: ParsedTransaction[]
+  ignored: string[]
+}
+
+export function parseBatchInput(input: string): BatchParseResult {
+  const transactions: ParsedTransaction[] = []
+  const ignored: string[] = []
+
+  for (const fragment of input.split(', ')) {
+    const trimmed = fragment.trim()
+    if (!trimmed) continue
+
+    const parsed = parseInput(trimmed)
+    if (!parsed) {
+      ignored.push(trimmed)
+      continue
+    }
+
+    transactions.push({
+      ...parsed,
+      recurring: { kind: 'none' },
+    })
+  }
+
+  return { transactions, ignored }
+}
+
 export function createTransactionFromParsed(
   parsed: ParsedTransaction,
 ): import('../types').Transaction {
