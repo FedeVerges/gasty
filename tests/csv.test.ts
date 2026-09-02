@@ -365,7 +365,7 @@ Gas,3000,Servicios Públicos`
     const result = await executeImport(rows, pendingCategories)
     expect(result.imported).toBe(2)
 
-    const allCats = await db.categories.toArray()
+    const allCats = await db.profileCategories.where('profileId').equals('personal').toArray()
     const serviciosCat = allCats.find((c) => c.id === 'csv_servicios_publicos')
     expect(serviciosCat).toBeDefined()
     expect(serviciosCat!.name).toBe('Servicios Públicos')
@@ -375,7 +375,7 @@ Gas,3000,Servicios Públicos`
   })
 
   it('usa row.type para determinar tipo de transacción', async () => {
-    const cats = await db.categories.toArray()
+    const cats = await db.profileCategories.where('profileId').equals('personal').toArray()
 
     const csv = `Description,Amount,Category
 Sueldo,50000,Sueldo`
@@ -561,18 +561,19 @@ describe('csv: parseCsvContent con categorías de usuario en DB', () => {
     await db.open()
     await seedDatabase()
 
-    await db.categories.add({
+    await db.profileCategories.add({
       id: 'mascotas',
       name: 'Mascotas',
       emoji: '🐱',
       color: '#f59e0b',
       type: 'expense',
       keywords: ['mascotas', 'veterinaria', 'pet'],
+      profileId: 'personal',
     })
   })
 
   it('matchea categoría de usuario por nombre exacto', async () => {
-    const cats = await db.categories.toArray()
+    const cats = await db.profileCategories.where('profileId').equals('personal').toArray()
     const csv = 'Description,Amount,Category\nVeterinaria,5000,Mascotas'
 
     const { rows } = parseCsvContent(csv, undefined, cats)
@@ -582,7 +583,7 @@ describe('csv: parseCsvContent con categorías de usuario en DB', () => {
   })
 
   it('matchea categoría de usuario con nombre en minúsculas', async () => {
-    const cats = await db.categories.toArray()
+    const cats = await db.profileCategories.where('profileId').equals('personal').toArray()
     const csv = 'Description,Amount,Category\nVete,5000,mascotas'
 
     const { rows } = parseCsvContent(csv, undefined, cats)
@@ -591,7 +592,7 @@ describe('csv: parseCsvContent con categorías de usuario en DB', () => {
   })
 
   it('genera pending category para categoría totalmente nueva', async () => {
-    const cats = await db.categories.toArray()
+    const cats = await db.profileCategories.where('profileId').equals('personal').toArray()
     const csv = 'Description,Amount,Category\nAlgo,1000,Inversiones Varias'
 
     const { rows, pendingCategories } = parseCsvContent(csv, undefined, cats)
@@ -602,7 +603,7 @@ describe('csv: parseCsvContent con categorías de usuario en DB', () => {
   })
 
   it('no duplica pending category cuando varias filas tienen la misma categoría', async () => {
-    const cats = await db.categories.toArray()
+    const cats = await db.profileCategories.where('profileId').equals('personal').toArray()
     const csv = 'Description,Amount,Category\nAlgo,1000,Nueva Cat\nOtra cosa,2000,Nueva Cat'
 
     const { rows, pendingCategories } = parseCsvContent(csv, undefined, cats)

@@ -11,22 +11,24 @@ describe('integration: db + parser', () => {
     await seedDatabase()
   })
 
-  it('seed crea 23 categorías', async () => {
-    const count = await db.categories.count()
+  it('seed crea 23 categorías para el perfil Personal', async () => {
+    const count = await db.profileCategories.where('profileId').equals('personal').count()
     expect(count).toBe(23)
   })
 
   it('seed crea configuración por defecto', async () => {
     const settings = await db.settings.get('app-settings')
+    const profile = await db.profiles.get('personal')
     expect(settings?.theme).toBe('light')
-    expect(settings?.currency).toBe('ARS')
+    expect(settings?.activeProfileId).toBe('personal')
+    expect(profile?.currency).toBe('ARS')
   })
 
   it('flujo completo: parsear y guardar un gasto', async () => {
     const parsed = parseInput('birra 1500')
     expect(parsed).not.toBeNull()
 
-    const tx = createTransactionFromParsed(parsed!)
+    const tx = createTransactionFromParsed(parsed!, 'personal')
     await db.transactions.add(tx)
 
     const all = await db.transactions.toArray()
@@ -38,7 +40,7 @@ describe('integration: db + parser', () => {
 
   it('no guarda una parte del lote si IndexedDB rechaza una transacción', async () => {
     const parsed = parseInput('birra 1500')!
-    const transaction = createTransactionFromParsed(parsed)
+    const transaction = createTransactionFromParsed(parsed, 'personal')
 
     await expect(saveTransactionsAtomically([
       transaction,

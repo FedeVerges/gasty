@@ -1,4 +1,5 @@
 import type { Tab } from '../../types'
+import { ProfileSelector } from '../profiles/ProfileSelector'
 
 interface SidebarProps {
   active: string
@@ -80,6 +81,10 @@ export function Sidebar({ active, navigate, isWide }: SidebarProps) {
           <span className="text-on-primary font-bold text-sm">$</span>
         </div>
         <span className="text-xl font-black text-ink tracking-tight">Gasty</span>
+      </div>
+
+      <div className={'mb-6'}>
+        <ProfileSelector />
       </div>
 
       {/* Nav items */}

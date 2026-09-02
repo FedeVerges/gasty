@@ -1,5 +1,5 @@
-import Dexie, { type EntityTable } from 'dexie'
-import type { Transaction, Category, Settings, CsvFormatSettings, Investment } from '../types'
+import Dexie, { type EntityTable, type Table } from 'dexie'
+import type { AppSettings, Transaction, Category, CsvFormatSettings, Investment, Profile, RecurringRule, Theme } from '../types'
 import { DEFAULT_CATEGORIES, syncKeywordMaps, getPaletteColor } from './categories'
 
 export function generateId(): string {
@@ -19,8 +19,11 @@ const DEFAULT_CSV_FORMAT: CsvFormatSettings = {
 export const db = new Dexie('gasty') as Dexie & {
   transactions: EntityTable<Transaction, 'id'>
   categories: EntityTable<Category, 'id'>
-  settings: EntityTable<Settings & { id: string }, 'id'>
+  profileCategories: Table<Category & { profileId: string }, [string, string]>
+  settings: EntityTable<AppSettings & { id: string }, 'id'>
+  profiles: EntityTable<Profile, 'id'>
   investments: EntityTable<Investment, 'id'>
+  recurringRules: EntityTable<RecurringRule, 'id'>
 }
 
 db.version(1).stores({
@@ -95,46 +98,143 @@ db.version(6).stores({
   // v6 introduces the investments table (no backfill needed — starts empty)
 })
 
+db.version(7).stores({
+  transactions: 'id, type, date, categoryId, originalId, recurringRuleId',
+  categories: 'id, type',
+  settings: 'id',
+  investments: 'id',
+  recurringRules: 'id, startDate',
+})
+
+const PERSONAL_PROFILE_ID = 'personal'
+
+db.version(8).stores({
+  transactions: 'id, profileId, [profileId+date], type, date, categoryId, originalId, recurringRuleId',
+  categories: 'id, type',
+  profileCategories: '[profileId+id], profileId, type',
+  settings: 'id',
+  profiles: 'id, lastUsedAt',
+  investments: 'id, profileId',
+  recurringRules: 'id, profileId, startDate',
+}).upgrade(async (tx) => {
+  const now = new Date().toISOString()
+  const settings = await tx.table('settings').get(SETTINGS_ID) as { theme?: Theme, currency?: 'ARS' | 'USD', csvFormat?: CsvFormatSettings } | undefined
+  const profile = {
+    id: PERSONAL_PROFILE_ID,
+    name: 'Personal',
+    emoji: '👤',
+    color: 'var(--color-primary)',
+    currency: settings?.currency ?? 'ARS',
+    csvFormat: settings?.csvFormat ?? DEFAULT_CSV_FORMAT,
+    lastUsedAt: now,
+    createdAt: now,
+  }
+
+  await tx.table('profiles').put(profile)
+  await tx.table('profileCategories').bulkPut(
+    (await tx.table('categories').toArray()).map((category) => ({ ...category, profileId: PERSONAL_PROFILE_ID })),
+  )
+  await tx.table('transactions').toCollection().modify({ profileId: PERSONAL_PROFILE_ID })
+  await tx.table('investments').toCollection().modify({ profileId: PERSONAL_PROFILE_ID })
+  await tx.table('recurringRules').toCollection().modify({ profileId: PERSONAL_PROFILE_ID })
+  await tx.table('settings').put({
+    id: SETTINGS_ID,
+    theme: settings?.theme ?? 'light',
+    activeProfileId: PERSONAL_PROFILE_ID,
+  })
+})
+
 const SETTINGS_ID = 'app-settings'
 
 export async function seedDatabase() {
-  const catCount = await db.categories.count()
-  if (catCount === 0) {
-    await db.categories.bulkAdd(DEFAULT_CATEGORIES)
-  }
-
-  // Ensure in-memory keyword maps reflect DB state
-  const cats = await db.categories.toArray()
-  syncKeywordMaps(cats)
-
   const existing = await db.settings.get(SETTINGS_ID)
   if (!existing) {
     await db.settings.put({
       id: SETTINGS_ID,
       theme: 'light',
-      currency: 'ARS',
-      csvFormat: DEFAULT_CSV_FORMAT,
+      activeProfileId: PERSONAL_PROFILE_ID,
     })
   }
+
+  if ((await db.profiles.count()) === 0) {
+    await createProfile({ name: 'Personal', emoji: '👤', color: 'var(--color-primary)' }, PERSONAL_PROFILE_ID)
+  }
+
+  const activeProfileId = (await getAppSettings()).activeProfileId
+  await ensureProfileCategories(activeProfileId)
+  syncKeywordMaps(await getCategoriesForProfile(activeProfileId))
 }
 
-export async function getSettings(): Promise<Settings> {
-  const s = await db.settings.get(SETTINGS_ID)
-  return s ?? { theme: 'light', currency: 'ARS', csvFormat: DEFAULT_CSV_FORMAT }
+export async function getAppSettings(): Promise<AppSettings> {
+  const settings = await db.settings.get(SETTINGS_ID)
+  return settings ?? { theme: 'light', activeProfileId: PERSONAL_PROFILE_ID }
 }
 
-export async function saveSettings(partial: Partial<Settings>) {
-  const current = await getSettings()
+export async function saveAppSettings(partial: Partial<AppSettings>) {
+  const current = await getAppSettings()
   await db.settings.put({ id: SETTINGS_ID, ...current, ...partial })
 }
 
-/**
- * Clears all user data (transactions, categories, settings) and re-seeds
- * with default categories and settings. Use with caution.
- */
-export async function clearDatabase(): Promise<void> {
-  await db.transactions.clear()
-  await db.categories.clear()
-  await db.settings.clear()
-  await seedDatabase()
+export async function getCategoriesForProfile(profileId: string): Promise<Category[]> {
+  return db.profileCategories.where('profileId').equals(profileId).toArray()
+}
+
+export async function ensureProfileCategories(profileId: string): Promise<void> {
+  if (await db.profileCategories.where('profileId').equals(profileId).count()) return
+  await db.profileCategories.bulkAdd(DEFAULT_CATEGORIES.map((category) => ({ ...category, profileId })))
+}
+
+export async function createProfile(
+  input: Pick<Profile, 'name' | 'emoji' | 'color'>,
+  id = generateId(),
+): Promise<Profile> {
+  const now = new Date().toISOString()
+  const profile: Profile = {
+    id,
+    ...input,
+    currency: 'ARS',
+    csvFormat: DEFAULT_CSV_FORMAT,
+    lastUsedAt: now,
+    createdAt: now,
+  }
+  await db.transaction('rw', db.profiles, db.profileCategories, async () => {
+    await db.profiles.add(profile)
+    await db.profileCategories.bulkAdd(DEFAULT_CATEGORIES.map((category) => ({ ...category, profileId: id })))
+  })
+  return profile
+}
+
+export async function updateProfile(id: string, partial: Partial<Pick<Profile, 'name' | 'emoji' | 'color' | 'currency' | 'csvFormat' | 'lastUsedAt'>>): Promise<void> {
+  await db.profiles.update(id, partial)
+}
+
+export async function setActiveProfile(id: string): Promise<void> {
+  const now = new Date().toISOString()
+  await db.transaction('rw', db.settings, db.profiles, async () => {
+    await saveAppSettings({ activeProfileId: id })
+    await db.profiles.update(id, { lastUsedAt: now })
+  })
+  syncKeywordMaps(await getCategoriesForProfile(id))
+}
+
+export async function deleteProfile(id: string): Promise<void> {
+  if (await db.profiles.count() <= 1) {
+    throw new Error('No se puede eliminar el último perfil')
+  }
+  await db.transaction('rw', [db.profiles, db.profileCategories, db.transactions, db.investments, db.recurringRules], async () => {
+    await db.profiles.delete(id)
+    await db.profileCategories.where('profileId').equals(id).delete()
+    await db.transactions.where('profileId').equals(id).delete()
+    await db.investments.where('profileId').equals(id).delete()
+    await db.recurringRules.where('profileId').equals(id).delete()
+  })
+}
+
+/** Clears financial data for one profile while preserving its categories and settings. */
+export async function clearProfileData(profileId: string): Promise<void> {
+  await db.transaction('rw', db.transactions, db.investments, db.recurringRules, async () => {
+    await db.transactions.where('profileId').equals(profileId).delete()
+    await db.investments.where('profileId').equals(profileId).delete()
+    await db.recurringRules.where('profileId').equals(profileId).delete()
+  })
 }

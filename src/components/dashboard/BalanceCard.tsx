@@ -57,7 +57,7 @@ export function BalanceCard({
       <div className="flex flex-col gap-1 mb-5">
         <span
           className="text-xs uppercase tracking-widest"
-           style={{ color: isProjection ? 'var(--color-projection-accent)' : 'var(--color-primary-neutral)' }}
+          style={{ color: isProjection ? 'var(--color-projection-accent)' : 'var(--color-primary-neutral)' }}
         >
           {isProjection ? 'Proyección · ' : ''}Disponible
         </span>

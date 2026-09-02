@@ -1,5 +1,5 @@
 import { db, generateId } from './db'
-import type { Transaction, RecurringConfig } from '../types'
+import type { Transaction, RecurringConfig, RecurringRule } from '../types'
 
 function toLocalISO(d: Date): string {
   const y = d.getFullYear()
@@ -14,6 +14,80 @@ function toLocalISO(d: Date): string {
  * @todo v2: consider "generate on demand" for multi-year recurring expenses
  */
 const FIXED_HORIZON_MONTHS = 12
+
+function monthStart(value: Date): Date {
+  return new Date(value.getFullYear(), value.getMonth(), 1)
+}
+
+function buildRuleTransactions(rule: RecurringRule, from: Date): Transaction[] {
+  const start = monthStart(new Date(`${rule.startDate}T12:00:00`))
+  const current = monthStart(from)
+  const first = start > current ? start : current
+  const count = rule.recurring.kind === 'fixed' ? FIXED_HORIZON_MONTHS : rule.recurring.totalMonths ?? 0
+  const rows: Transaction[] = []
+  for (let i = 0; i < count; i++) {
+    const month = new Date(first.getFullYear(), first.getMonth() + i, 1)
+    if (rule.recurring.kind === 'fixed_temporary') {
+      const offset = (month.getFullYear() - start.getFullYear()) * 12 + month.getMonth() - start.getMonth()
+      if (offset >= count) break
+    }
+    const day = Math.min(rule.recurring.invoiceDay ?? 1, new Date(month.getFullYear(), month.getMonth() + 1, 0).getDate())
+    rows.push({ id: generateId(), profileId: rule.profileId, type: rule.type, amount: rule.amount, description: rule.description, categoryId: rule.categoryId, emoji: rule.emoji, date: toLocalISO(new Date(month.getFullYear(), month.getMonth(), day)), recurring: { kind: 'none' }, recurringRuleId: rule.id, createdAt: new Date().toISOString() })
+  }
+  return rows
+}
+
+export async function createRecurringRule(transaction: Transaction): Promise<void> {
+  if (transaction.recurring.kind === 'none') {
+    await db.transactions.add(transaction)
+    return
+  }
+  const rule: RecurringRule = {
+    id: generateId(), profileId: transaction.profileId, type: transaction.type, amount: transaction.amount, description: transaction.description,
+    categoryId: transaction.categoryId, emoji: transaction.emoji, startDate: transaction.date,
+    recurring: transaction.recurring as RecurringRule['recurring'], createdAt: transaction.createdAt,
+  }
+  await db.transaction('rw', db.recurringRules, db.transactions, async () => {
+    await db.recurringRules.add(rule)
+    await db.transactions.bulkAdd(buildRuleTransactions(rule, new Date()))
+  })
+}
+
+export async function renewRecurringRules(): Promise<void> {
+  const rules = await db.recurringRules.toArray()
+  const currentMonth = toLocalISO(new Date()).slice(0, 7)
+  await db.transaction('rw', db.transactions, async () => {
+    for (const rule of rules) {
+      const existing = await db.transactions.where('recurringRuleId').equals(rule.id).toArray()
+      const months = new Set(existing.filter((tx) => tx.date.slice(0, 7) >= currentMonth).map((tx) => tx.date.slice(0, 7)))
+      const missing = buildRuleTransactions(rule, new Date()).filter((tx) => !months.has(tx.date.slice(0, 7)))
+      if (missing.length) await db.transactions.bulkAdd(missing)
+    }
+  })
+}
+
+export async function getRecurringRules(profileId: string): Promise<RecurringRule[]> {
+  return db.recurringRules.where('profileId').equals(profileId).toArray()
+}
+
+export async function deleteRecurringRule(id: string): Promise<void> {
+  const thisMonth = toLocalISO(new Date()).slice(0, 7)
+  await db.transaction('rw', db.recurringRules, db.transactions, async () => {
+    await db.recurringRules.delete(id)
+    const pending = await db.transactions.where('recurringRuleId').equals(id).toArray()
+    await db.transactions.bulkDelete(pending.filter((tx) => tx.date.slice(0, 7) >= thisMonth).map((tx) => tx.id))
+  })
+}
+
+export async function updateRecurringRule(rule: RecurringRule): Promise<void> {
+  const thisMonth = toLocalISO(new Date()).slice(0, 7)
+  await db.transaction('rw', db.recurringRules, db.transactions, async () => {
+    await db.recurringRules.put(rule)
+    const pending = await db.transactions.where('recurringRuleId').equals(rule.id).toArray()
+    await db.transactions.bulkDelete(pending.filter((tx) => tx.date.slice(0, 7) >= thisMonth).map((tx) => tx.id))
+    await db.transactions.bulkAdd(buildRuleTransactions(rule, new Date()))
+  })
+}
 
 /**
  * Shared logic: compute which clone rows need to be created for a recurring
@@ -65,6 +139,7 @@ function buildCloneRows(
 
       clones.push({
         id: generateId(),
+        profileId: source.profileId,
         type: source.type,
         amount: source.amount,
         description: source.description,
@@ -90,6 +165,7 @@ function buildCloneRows(
 
       clones.push({
         id: generateId(),
+        profileId: source.profileId,
         type: source.type,
         amount: source.amount,
         description: source.description,
@@ -193,6 +269,7 @@ export async function editRecurringSource(
       // Build the full source from updated params (avoids stale re-read)
       const fullSource: Transaction = {
         id: sourceId,
+        profileId: source.profileId,
         type: updatedSource.type ?? source.type,
         amount: updatedSource.amount ?? source.amount,
         description: updatedSource.description ?? source.description,
@@ -214,8 +291,8 @@ export async function editRecurringSource(
 /**
  * Return all source transactions (those with recurring.kind !== 'none' and no originalId).
  */
-export async function getRecurringSources(): Promise<Transaction[]> {
-  const all = await db.transactions.toArray()
+export async function getRecurringSources(profileId: string): Promise<Transaction[]> {
+  const all = await db.transactions.where('profileId').equals(profileId).toArray()
   return all.filter((t) => t.recurring.kind !== 'none' && !t.originalId)
 }
 

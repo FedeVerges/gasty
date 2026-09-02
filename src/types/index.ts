@@ -11,6 +11,7 @@ export interface RecurringConfig {
 
 export interface Transaction {
   id: string
+  profileId: string
   type: TransactionType
   amount: number
   description: string
@@ -18,8 +19,23 @@ export interface Transaction {
   date: string
   recurring: RecurringConfig
   originalId?: string
+  /** Rule that scheduled this transaction. It does not affect direct edits. */
+  recurringRuleId?: string
   /** Optional per-transaction emoji override. When set, displayed instead of the category emoji. */
   emoji?: string
+  createdAt: string
+}
+
+export interface RecurringRule {
+  id: string
+  profileId: string
+  type: TransactionType
+  amount: number
+  description: string
+  categoryId: string
+  emoji?: string
+  startDate: string
+  recurring: RecurringConfig & { kind: 'fixed' | 'fixed_temporary' }
   createdAt: string
 }
 
@@ -32,6 +48,22 @@ export interface Category {
   color: string
   type: CategoryType
   keywords: string[]
+}
+
+export interface Profile {
+  id: string
+  name: string
+  emoji: string
+  color: string
+  currency: Currency
+  csvFormat: CsvFormatSettings
+  lastUsedAt: string
+  createdAt: string
+}
+
+export interface AppSettings {
+  theme: Theme
+  activeProfileId: string
 }
 
 export type Theme = 'light' | 'dark'
@@ -69,6 +101,7 @@ export type Tab = 'dashboard' | 'transactions' | 'stats' | 'settings'
 
 export interface Investment {
   id: string
+  profileId: string
   name: string
   /** Allocation percentage of the total saved amount (0-100) */
   allocationPct: number

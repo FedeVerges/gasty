@@ -1,10 +1,12 @@
 import { useState, useMemo, useRef } from 'react'
-import { db } from '../../lib/db'
+import { db, generateId } from '../../lib/db'
+import { getPaletteColor } from '../../lib/categories'
 import { parseBatchInput, parseInput, createTransactionFromParsed } from '../../lib/parser'
 import { saveTransactionsAtomically } from '../../lib/batch'
-import { createFutureClones } from '../../lib/recurring'
+import { createRecurringRule } from '../../lib/recurring'
 import { useCategories } from '../../hooks/useCategories'
 import { useSettings } from '../../context/SettingsContext'
+import { useProfile } from '../../context/ProfileContext'
 import { formatMoney } from '../../lib/format'
 import { FlashChips } from './FlashChips'
 import type { ParsedTransaction, TransactionType } from '../../types'
@@ -16,11 +18,14 @@ interface InlineSmartInputProps {
 
 export function InlineSmartInput({ onTransactionCreated }: InlineSmartInputProps) {
   const { settings } = useSettings()
+  const { profile } = useProfile()
   const categories = useCategories()
   const [text, setText] = useState('')
   const [typeOverride, setTypeOverride] = useState<TransactionType | null>(null)
   const [categoryOverride, setCategoryOverride] = useState<string | null>(null)
   const [dateOverride, setDateOverride] = useState<string | null>(null)
+  const [newCategoryName, setNewCategoryName] = useState('')
+  const [creatingCategory, setCreatingCategory] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
 
   const batch = useMemo(() => (
@@ -41,9 +46,13 @@ export function InlineSmartInput({ onTransactionCreated }: InlineSmartInputProps
     if (categoryOverride) {
       catId = categoryOverride
     } else if (typeOverride) {
-      catId = isIncome
-        ? (categories.find(c => c.type === 'income')?.id ?? 'other_inc')
-        : (categories.find(c => c.id === base.categoryId && c.type === 'expense')?.id ?? base.categoryId)
+      const parserCategory = categories.find((c) => c.id === base.categoryId)
+      const valid = parserCategory && (parserCategory.type === effectiveType || parserCategory.type === 'both')
+      catId = valid
+        ? parserCategory.id
+        : (categories.find(c => c.id === (isIncome ? 'other_inc' : 'other_exp'))?.id
+          ?? categories.find(c => c.type === effectiveType || c.type === 'both')?.id
+          ?? base.categoryId)
     }
 
     let description = base.description
@@ -62,12 +71,14 @@ export function InlineSmartInput({ onTransactionCreated }: InlineSmartInputProps
 
   const handleSubmit = async (e: React.PointerEvent | React.FormEvent) => {
     e.preventDefault()
+
     inputRef.current?.blur()
 
     if (batch) {
       if (batch.transactions.length === 0) return
 
-      const transactions = batch.transactions.map(createTransactionFromParsed)
+      if (!profile) return
+      const transactions = batch.transactions.map((transaction) => createTransactionFromParsed(transaction, profile.id))
       await saveTransactionsAtomically(transactions)
 
       setText('')
@@ -81,19 +92,13 @@ export function InlineSmartInput({ onTransactionCreated }: InlineSmartInputProps
     if (!parsed) return
 
     const finalRecurring = parsed.recurring
+    if (!profile) return
     const tx = createTransactionFromParsed({
       ...parsed,
       recurring: finalRecurring,
-    })
+    }, profile.id)
 
-    if (finalRecurring.kind !== 'none') {
-      await db.transaction('rw', db.transactions, async () => {
-        await db.transactions.add(tx)
-        await createFutureClones(tx)
-      })
-    } else {
-      await db.transactions.add(tx)
-    }
+    await createRecurringRule(tx)
 
     setText('')
     setTypeOverride(null)
@@ -106,6 +111,25 @@ export function InlineSmartInput({ onTransactionCreated }: InlineSmartInputProps
   const submitLabel = batch
     ? `Guardar ${batch.transactions.length} ${batch.transactions.length === 1 ? 'movimiento' : 'movimientos'}`
     : 'Guardar transacción'
+
+  const createQuickCategory = async () => {
+    const name = newCategoryName.trim()
+    if (!name || !parsed) return
+    const id = `custom-${generateId()}`
+    if (!profile) return
+    await db.profileCategories.add({
+      id,
+      name,
+      emoji: '🏷️',
+      color: getPaletteColor(categories.length),
+      type: parsed.type,
+      keywords: [],
+      profileId: profile.id,
+    })
+    setCategoryOverride(id)
+    setNewCategoryName('')
+    setCreatingCategory(false)
+  }
 
   return (
     <div className="sticky top-0 z-20 bg-canvas pt-1 pb-1 space-y-2">
@@ -164,8 +188,7 @@ export function InlineSmartInput({ onTransactionCreated }: InlineSmartInputProps
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}
               strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
-              <line x1="12" y1="5" x2="12" y2="19" />
-              <line x1="5" y1="12" x2="19" y2="12" />
+              <polyline points="20 6 9 17 4 12" />
             </svg>
           </button>
         </div>
@@ -220,7 +243,7 @@ export function InlineSmartInput({ onTransactionCreated }: InlineSmartInputProps
       {parsed && category && (
         <div className="bg-card border border-border shadow-xl rounded-xl animate-fade-in motion-reduce:animate-none">
           {/* Main row — like TransactionItem but editable */}
-          <div className="flex items-center gap-3 py-3 px-3">
+          <div className="flex items-center gap-2.5 px-3 py-2.5">
             {/* Emoji */}
             <div
               className="w-11 h-11 rounded-2xl flex items-center justify-center text-xl shrink-0"
@@ -231,8 +254,8 @@ export function InlineSmartInput({ onTransactionCreated }: InlineSmartInputProps
 
             {/* Description + category select */}
             <div className="flex-1 min-w-0">
-              <p className="font-medium text-ink text-sm truncate">{parsed.description}</p>
-              <div className="flex items-center gap-1.5 mt-0.5">
+              <p className="font-semibold text-ink text-base leading-tight truncate">{parsed.description}</p>
+              <div className="flex items-center gap-1.5 mt-1.5">
                 <select
                   value={parsed.categoryId}
                   onChange={(e) => setCategoryOverride(e.target.value)}
@@ -270,9 +293,9 @@ export function InlineSmartInput({ onTransactionCreated }: InlineSmartInputProps
             </div>
 
             {/* Amount + date */}
-            <div className="flex flex-col items-end gap-1 shrink-0">
+            <div className="flex flex-col items-end gap-0.5 shrink-0">
               <span
-                className={`font-bold text-base ${parsed.type === 'income' ? 'text-positive' : 'text-negative'}`}
+                className={`font-black text-xl leading-none tracking-tight ${parsed.type === 'income' ? 'text-positive' : 'text-negative'}`}
               >
                 {parsed.type === 'income' ? '+' : '−'} {formatMoney(parsed.amount, settings.currency)}
               </span>
@@ -280,16 +303,17 @@ export function InlineSmartInput({ onTransactionCreated }: InlineSmartInputProps
                 type="date"
                 value={parsed.date}
                 onChange={(e) => setDateOverride(e.target.value)}
+                onClick={(e) => e.currentTarget.showPicker?.()}
                 className="
-                  text-xs text-mute bg-transparent border-0
+                  min-h-9 px-2 py-1 text-sm text-mute bg-transparent border-0
                   focus:ring-1 focus:ring-primary rounded
-                  p-0 cursor-pointer
+                  cursor-pointer
                 "
                 aria-label="Fecha"
               />
             </div>
 
-            <div className="flex flex-col gap-1.5 shrink-0">
+            <div className="flex flex-col gap-1 shrink-0 self-end pb-0.5">
               <button
                 type="button"
                 onClick={() => {
@@ -298,10 +322,10 @@ export function InlineSmartInput({ onTransactionCreated }: InlineSmartInputProps
                   setCategoryOverride(null)
                 }}
                 className={`
-                  w-10 h-10 rounded-xl border border-border flex items-center justify-center text-lg font-bold transition-colors
+                  w-9 h-9 rounded-lg border border-border flex items-center justify-center text-base font-bold transition-colors
                   ${typeOverride === 'income'
                     ? 'bg-positive text-white'
-                    : 'bg-canvas-soft text-body'}
+                    : 'bg-canvas-soft text-positive border-positive'}
                 `}
                 aria-label="Marcar como ingreso"
               >
@@ -315,10 +339,10 @@ export function InlineSmartInput({ onTransactionCreated }: InlineSmartInputProps
                   setCategoryOverride(null)
                 }}
                 className={`
-                  w-10 h-10 rounded-xl border border-border flex items-center justify-center text-lg font-bold transition-colors
+                  w-9 h-9 rounded-lg border border-border flex items-center justify-center text-base font-bold transition-colors
                   ${typeOverride === 'expense'
                     ? 'bg-negative text-white'
-                    : 'bg-canvas-soft text-body'}
+                    : 'bg-canvas-soft text-negative border-negative'}
                 `}
                 aria-label="Marcar como gasto"
               >
@@ -326,6 +350,26 @@ export function InlineSmartInput({ onTransactionCreated }: InlineSmartInputProps
               </button>
             </div>
           </div>
+          {creatingCategory && (
+            <div className="flex gap-2 px-3 pb-3">
+              <input
+                value={newCategoryName}
+                onChange={(event) => setNewCategoryName(event.target.value)}
+                placeholder="Nombre de categoría"
+                className="min-w-0 flex-1 rounded-xl border border-border bg-canvas px-3 py-3 text-sm text-ink focus:border-primary"
+                autoFocus
+              />
+              <button
+                type="button"
+                onClick={createQuickCategory}
+                disabled={!newCategoryName.trim()}
+                className="w-11 h-11 rounded-xl bg-positive text-white disabled:opacity-40 active:scale-95"
+                aria-label="Confirmar categoría"
+              >
+                ✓
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>

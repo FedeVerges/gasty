@@ -5,11 +5,13 @@ import { useSettings } from '../../context/SettingsContext'
 import { useInvestments, useSavingsTotal } from '../../hooks/useInvestments'
 import { db, generateId } from '../../lib/db'
 import { formatMoney } from '../../lib/format'
+import { useProfile } from '../../context/ProfileContext'
 
 const MONTHS = 12
 
 export function Inversiones() {
   const { settings } = useSettings()
+  const { profile } = useProfile()
   const investments = useInvestments()
   const totalSaved = useSavingsTotal()
 
@@ -34,8 +36,10 @@ export function Inversiones() {
   const addInvestment = async () => {
     const n = name.trim()
     if (!n) return
+    if (!profile) return
     await db.investments.add({
       id: generateId(),
+      profileId: profile.id,
       name: n,
       emoji,
       allocationPct: Math.max(0, Math.min(100, allocationPct)),

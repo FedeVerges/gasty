@@ -2,7 +2,8 @@
 
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
 import type { Theme, Currency, Settings, CsvFormatSettings } from '../types'
-import { getSettings, saveSettings } from '../lib/db'
+import { getAppSettings, saveAppSettings, updateProfile } from '../lib/db'
+import { useProfile } from './ProfileContext'
 
 interface SettingsContextValue {
   settings: Settings
@@ -15,15 +16,17 @@ interface SettingsContextValue {
 const SettingsContext = createContext<SettingsContextValue | null>(null)
 
 export function SettingsProvider({ children }: { children: ReactNode }) {
+  const { profile, loading: profileLoading } = useProfile()
   const [settings, setSettings] = useState<Settings>({ theme: 'light', currency: 'ARS', csvFormat: { thousandsSeparator: 'auto', decimalSeparator: 'auto', stripCurrencyPrefix: true } })
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    getSettings().then((s) => {
-      setSettings(s)
+    if (profileLoading || !profile) return
+    getAppSettings().then((appSettings) => {
+      setSettings({ theme: appSettings.theme, currency: profile.currency, csvFormat: profile.csvFormat })
       setLoading(false)
     })
-  }, [])
+  }, [profile, profileLoading])
 
   useEffect(() => {
     if (loading) return
@@ -32,18 +35,18 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
 
   const setTheme = (theme: Theme) => {
     setSettings((s) => ({ ...s, theme }))
-    saveSettings({ theme })
+    saveAppSettings({ theme })
   }
 
   const setCurrency = (currency: Currency) => {
     setSettings((s) => ({ ...s, currency }))
-    saveSettings({ currency })
+    if (profile) void updateProfile(profile.id, { currency })
   }
 
   const setCsvFormat = (csvFormat: Partial<CsvFormatSettings>) => {
     setSettings((s) => {
       const next = { ...s, csvFormat: { ...s.csvFormat, ...csvFormat } }
-      saveSettings({ csvFormat: next.csvFormat })
+      if (profile) void updateProfile(profile.id, { csvFormat: next.csvFormat })
       return next
     })
   }

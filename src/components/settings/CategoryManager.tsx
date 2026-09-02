@@ -6,6 +6,7 @@ import { Card } from '../ui/Card'
 import { Button } from '../ui/Button'
 import { Badge } from '../ui/Badge'
 import type { CategoryType } from '../../types'
+import { useProfile } from '../../context/ProfileContext'
 
 const DEFAULT_IDS = new Set([
   'food', 'home', 'services', 'transport', 'leisure', 'repair',
@@ -16,6 +17,7 @@ let _catColorIndex = 0
 
 export function CategoryManager() {
   const categories = useCategories()
+  const { profile } = useProfile()
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [adding, setAdding] = useState(false)
   const [newName, setNewName] = useState('')
@@ -27,27 +29,29 @@ export function CategoryManager() {
 
   const handleDelete = async (id: string) => {
     if (!confirm('¿Eliminar esta categoría? Las transacciones existentes no se modificarán.')) return
-    await db.categories.delete(id)
-    const remaining = await db.categories.toArray()
+    if (!profile) return
+    await db.profileCategories.delete([profile.id, id])
+    const remaining = await db.profileCategories.where('profileId').equals(profile.id).toArray()
     syncKeywordMaps(remaining)
   }
 
   const addCategory = async () => {
     const name = newName.trim()
-    if (!name) return
+    if (!name || !profile) return
     const id = name.toLowerCase().replace(/\s+/g, '_')
     const colorIndex = _catColorIndex++
-    await db.categories.add({
+    await db.profileCategories.add({
       id,
       name,
       emoji: newEmoji,
       color: getPaletteColor(colorIndex),
       type: newType,
       keywords: [],
+      profileId: profile.id,
     })
     setNewName('')
     setAdding(false)
-    const cats = await db.categories.toArray()
+    const cats = await db.profileCategories.where('profileId').equals(profile.id).toArray()
     syncKeywordMaps(cats)
   }
 
@@ -57,9 +61,10 @@ export function CategoryManager() {
     const cat = categories.find(c => c.id === catId)
     if (!cat || cat.keywords.includes(kw)) return
     const updated = { ...cat, keywords: [...cat.keywords, kw] }
-    await db.categories.put(updated)
+    if (!profile) return
+    await db.profileCategories.put({ ...updated, profileId: profile.id })
     setKeywordInput('')
-    const cats = await db.categories.toArray()
+    const cats = await db.profileCategories.where('profileId').equals(profile.id).toArray()
     syncKeywordMaps(cats)
   }
 
@@ -67,15 +72,17 @@ export function CategoryManager() {
     const cat = categories.find(c => c.id === catId)
     if (!cat) return
     const updated = { ...cat, keywords: cat.keywords.filter(k => k !== kw) }
-    await db.categories.put(updated)
-    const cats = await db.categories.toArray()
+    if (!profile) return
+    await db.profileCategories.put({ ...updated, profileId: profile.id })
+    const cats = await db.profileCategories.where('profileId').equals(profile.id).toArray()
     syncKeywordMaps(cats)
   }
 
   const saveEmoji = async (catId: string, emoji: string) => {
     const cat = categories.find(c => c.id === catId)
     if (!cat) return
-    await db.categories.put({ ...cat, emoji })
+    if (!profile) return
+    await db.profileCategories.put({ ...cat, emoji, profileId: profile.id })
   }
 
   return (

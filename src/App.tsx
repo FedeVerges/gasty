@@ -42,7 +42,7 @@ function App() {
         />
       )}
       {route === 'stats' && <Stats categoryFilter={params.category ?? null} />}
-      {route === 'settings' && <Settings />}
+      {route === 'settings' && <Settings key={params.view ?? 'main'} initialView={params.view === 'profiles' ? 'profiles' : 'main'} />}
     </AppShell>
   )
 }

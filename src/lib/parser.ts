@@ -358,9 +358,11 @@ export function parseBatchInput(input: string): BatchParseResult {
 
 export function createTransactionFromParsed(
   parsed: ParsedTransaction,
+  profileId: string,
 ): import('../types').Transaction {
   return {
     id: generateId(),
+    profileId,
     type: parsed.type,
     amount: parsed.amount,
     description: parsed.description,

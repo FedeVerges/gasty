@@ -1,6 +1,7 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../lib/db'
 import type { Transaction } from '../types'
+import { useProfile } from '../context/ProfileContext'
 
 function toLocalISO(d: Date): string {
   const y = d.getFullYear()
@@ -10,38 +11,40 @@ function toLocalISO(d: Date): string {
 }
 
 export function useAllTransactions(): Transaction[] {
+  const { profile } = useProfile()
   return (
-    useLiveQuery(() => db.transactions.toArray(), [], []) ?? []
+    useLiveQuery(() => profile ? db.transactions.where('profileId').equals(profile.id).toArray() : [], [profile?.id], []) ?? []
   )
 }
 
 export function useTransactionsForMonth(year: number, month: number): Transaction[] {
+  const { profile } = useProfile()
   return (
     useLiveQuery(
       async () => {
         const start = toLocalISO(new Date(year, month, 1))
         const end = toLocalISO(new Date(year, month + 1, 0))
-        return db.transactions
-          .where('date')
-          .between(start, end, true, true)
-          .toArray()
+        if (!profile) return []
+        return db.transactions.where('[profileId+date]').between([profile.id, start], [profile.id, end], true, true).toArray()
       },
-      [year, month],
+      [year, month, profile?.id],
       [],
     ) ?? []
   )
 }
 
 export function useRecentTransactions(limit: number = 5): Transaction[] {
+  const { profile } = useProfile()
   return (
     useLiveQuery(
       async () => {
-        const all = await db.transactions.toArray()
+        if (!profile) return []
+        const all = await db.transactions.where('profileId').equals(profile.id).toArray()
         return all
           .sort((a, b) => b.date.localeCompare(a.date))
           .slice(0, limit)
       },
-      [limit],
+      [limit, profile?.id],
       [],
     ) ?? []
   )
