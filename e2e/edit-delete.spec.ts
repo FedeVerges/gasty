@@ -9,11 +9,11 @@ test.describe('Editar y eliminar transacciones', () => {
   test('edita una transacción y persiste el cambio', async ({ page }) => {
     await addTransaction(page, 'prueba 5000')
 
-    await page.getByText('prueba').first().click()
+    await page.getByText('prueba').last().click()
     await page.waitForTimeout(300)
 
     // Modo edición: campos individuales (descripción + monto), sin placeholders
-    const descInput = page.locator('input[type="text"]:not([placeholder])')
+    const descInput = page.getByLabel('Descripción')
     await descInput.fill('prueba editada 5000')
     const amountInput = page.locator('input[type="number"]')
     await amountInput.fill('5000')

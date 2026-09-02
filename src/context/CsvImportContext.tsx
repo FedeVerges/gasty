@@ -2,6 +2,7 @@ import { createContext, useState, useCallback, useMemo, type ReactNode } from 'r
 import { parseCsvContent, executeImport, type CsvRow, type CsvPendingCategory } from '../lib/csv'
 import { useCategories } from '../hooks/useCategories'
 import { useSettings } from './SettingsContext'
+import { useProfile } from './ProfileContext'
 
 export interface CsvImportValue {
   rows: CsvRow[]
@@ -27,6 +28,7 @@ interface CsvImportProviderProps {
 
 export function CsvImportProvider({ children, onOpenCsvImport }: CsvImportProviderProps) {
   const { settings } = useSettings()
+  const { profile } = useProfile()
   const categories = useCategories()
   const [rows, setRows] = useState<CsvRow[]>([])
   const [parseErrors, setParseErrors] = useState<number[]>([])
@@ -66,12 +68,13 @@ export function CsvImportProvider({ children, onOpenCsvImport }: CsvImportProvid
   const executeImportFn = useCallback(async () => {
     setIsImporting(true)
     try {
-      const result = await executeImport(rows, pendingCategories)
+      if (!profile) return
+      const result = await executeImport(rows, profile.id, pendingCategories)
       setImportResult({ imported: result.imported, errors: result.errors })
     } finally {
       setIsImporting(false)
     }
-  }, [rows, pendingCategories])
+  }, [rows, pendingCategories, profile])
 
   const reset = useCallback(() => {
     setRows([])

@@ -70,23 +70,16 @@ export function TransactionItem({ transaction, isExpanded = false, onToggle }: T
     return c.type === 'expense' || c.type === 'both'
   })
 
-  // Calculate expanded height based on content
-  const expandedHeight = 280 // Approximate height for edit mode
-
   return (
     <div
       className={`
         border border-border rounded-xl overflow-hidden
-        transition-all duration-200 ease-in-out
         ${isExpanded ? 'bg-canvas-soft' : 'active:bg-card-hover cursor-pointer'}
       `}
-      style={{
-        maxHeight: isExpanded ? `${expandedHeight}px` : '80px',
-      }}
       onClick={handleRowClick}
     >
       {/* Collapsed row — always visible */}
-      <div className="flex items-center gap-3 py-3 px-3">
+      <div className={`flex items-center gap-3 px-3 ${isExpanded ? 'py-4 items-start' : 'py-3 items-center'}`}>
         <div
           className="w-11 h-11 rounded-2xl flex items-center justify-center text-xl shrink-0"
           style={{ background: `${color}20` }}
@@ -95,28 +88,34 @@ export function TransactionItem({ transaction, isExpanded = false, onToggle }: T
         </div>
 
         <div className="flex-1 min-w-0">
-          <p className="font-medium text-ink truncate">
-            {isExpanded ? (
-              <input
-                type="text"
-                value={editDescription}
-                onChange={(e) => setEditDescription(e.target.value)}
-                onClick={(e) => e.stopPropagation()}
-                className="w-full bg-transparent border-b border-border focus:border-primary outline-none"
-                autoFocus
-              />
-            ) : (
-              transaction.description
-            )}
-          </p>
+          {isExpanded ? (
+            <input
+              value={editDescription}
+              onChange={(event) => setEditDescription(event.target.value)}
+              onClick={(event) => event.stopPropagation()}
+              className="min-h-11 w-full rounded-xl border border-border bg-canvas px-3 text-base font-semibold text-ink focus:border-primary"
+              aria-label="Descripción"
+              autoFocus
+            />
+          ) : (
+            <p className="font-medium text-ink truncate">{transaction.description}</p>
+          )}
           <div className="flex items-center gap-1.5 mt-0.5">
-            {/* Category badge with color */}
-            <span
-              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium"
-              style={{ background: `${color}25`, color }}
-            >
-              {displayEmoji} {category?.name}
-            </span>
+            {isExpanded ? (
+              <select
+                value={editCategoryId}
+                onChange={(event) => setEditCategoryId(event.target.value)}
+                onClick={(event) => event.stopPropagation()}
+                className="min-h-11 max-w-full rounded-xl border border-border bg-canvas px-3 text-sm font-medium text-ink focus:border-primary"
+                aria-label="Categoría"
+              >
+                {filteredCategories.map((cat) => <option key={cat.id} value={cat.id}>{cat.emoji} {cat.name}</option>)}
+              </select>
+            ) : (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium" style={{ background: `${color}25`, color }}>
+                {displayEmoji} {category?.name}
+              </span>
+            )}
             {transaction.recurring.kind === 'fixed' && !transaction.originalId && (
               <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-recurring/20 text-recurring">
                 🔄
@@ -131,37 +130,17 @@ export function TransactionItem({ transaction, isExpanded = false, onToggle }: T
         </div>
 
         {/* Amount + date column */}
-        <div className="flex flex-col items-end gap-0.5 shrink-0">
+        <div className="flex flex-col items-end gap-1 shrink-0">
           {isExpanded ? (
-            <input
-              type="number"
-              inputMode="decimal"
-              min="0"
-              step="0.01"
-              value={editAmount}
-              onChange={(e) => setEditAmount(e.target.value)}
-              onClick={(e) => e.stopPropagation()}
-              className="w-24 bg-transparent border-b border-border focus:border-primary outline-none text-right font-bold text-lg"
-            />
+            <>
+              <input type="number" inputMode="decimal" min="0" step="0.01" value={editAmount} onChange={(event) => setEditAmount(event.target.value)} onClick={(event) => event.stopPropagation()} className="min-h-11 w-28 rounded-xl border border-border bg-canvas px-2 text-right text-base font-bold text-ink focus:border-primary" aria-label="Monto" />
+              <input type="date" value={editDate} onChange={(event) => setEditDate(event.target.value)} onClick={(event) => event.stopPropagation()} className="min-h-11 rounded-xl border border-border bg-canvas px-2 text-xs text-ink focus:border-primary" aria-label="Fecha" />
+            </>
           ) : (
-            <span
-              className={`font-bold text-lg ${isIncome ? 'text-positive' : 'text-negative'}`}
-            >
-              {isIncome ? '+' : '−'} {formatMoney(transaction.amount, settings.currency)}
-            </span>
-          )}
-          {isExpanded ? (
-            <input
-              type="date"
-              value={editDate}
-              onChange={(e) => setEditDate(e.target.value)}
-              onClick={(e) => e.stopPropagation()}
-              className="bg-transparent border-b border-border focus:border-primary outline-none text-xs"
-            />
-          ) : (
-            <span className="text-xs text-mute">
-              {formatDate(transaction.date)}
-            </span>
+            <>
+              <span className={`font-bold text-lg ${isIncome ? 'text-positive' : 'text-negative'}`}>{isIncome ? '+' : '−'} {formatMoney(transaction.amount, settings.currency)}</span>
+              <span className="text-xs text-mute">{formatDate(transaction.date)}</span>
+            </>
           )}
         </div>
 
@@ -224,43 +203,6 @@ export function TransactionItem({ transaction, isExpanded = false, onToggle }: T
         )}
       </div>
 
-      {/* Expanded content — category selector */}
-      {isExpanded && (
-        <div className="px-3 pb-3 border-t border-border-soft">
-          <p className="text-xs text-mute mt-2 mb-1.5">Categoría</p>
-          <div className="max-h-32 overflow-y-auto space-y-1">
-            {filteredCategories.map((cat) => (
-              <button
-                key={cat.id}
-                onClick={(e) => {
-                  e.stopPropagation()
-                  setEditCategoryId(cat.id)
-                }}
-                className={`
-                  w-full flex items-center gap-2 px-3 py-2 rounded-lg text-left text-sm transition-colors
-                  ${editCategoryId === cat.id
-                    ? 'bg-primary/20 text-ink font-medium'
-                    : 'hover:bg-canvas-soft text-body'
-                  }
-                `}
-              >
-                <span
-                  className="w-6 h-6 rounded-full flex items-center justify-center text-xs shrink-0"
-                  style={{ background: `${cat.color}30` }}
-                >
-                  {cat.emoji}
-                </span>
-                <span className="truncate">{cat.name}</span>
-                {editCategoryId === cat.id && (
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-4 h-4 ml-auto text-primary shrink-0">
-                    <polyline points="20 6 9 17 4 12" />
-                  </svg>
-                )}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   )
 }

@@ -47,4 +47,22 @@ test.describe('Agregar transacciones', () => {
 
     await expect(page.getByText('Sueldo').first()).toBeVisible()
   })
+
+  test('guarda los movimientos válidos de una carga múltiple como transacciones únicas', async ({ page }) => {
+    const input = page.locator('input[placeholder="Ej: birra 1500"]')
+    await input.fill('birra 25000, sin monto, sueldo 500000, alquiler 300000')
+
+    await expect(page.getByText('3 movimientos listos')).toBeVisible()
+    await expect(page.getByText('1 entrada ignorada')).toBeVisible()
+    await expect(page.getByText('Ingreso', { exact: true })).toBeVisible()
+    await page.getByRole('button', { name: 'Guardar 3 movimientos' }).click()
+
+    await expect(input).toHaveValue('')
+    await expect(page.getByText('birra').first()).toBeVisible()
+    await expect(page.getByText('sueldo').first()).toBeVisible()
+    await expect(page.getByText('alquiler').first()).toBeVisible()
+
+    await navigateTo(page, 'settings')
+    await expect(page.getByText('0 activos')).toBeVisible()
+  })
 })

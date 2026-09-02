@@ -6,6 +6,7 @@ import { useCategories } from '../../hooks/useCategories'
 import { useKeyboardHeight } from '../../hooks/useKeyboardHeight'
 import { useViewport } from '../../hooks/useViewport'
 import { useSettings } from '../../context/SettingsContext'
+import { useProfile } from '../../context/ProfileContext'
 import { formatMoney, formatDate } from '../../lib/format'
 import { Badge } from '../ui/Badge'
 import { FlashChips } from './FlashChips'
@@ -34,6 +35,7 @@ function generateEditText(tx: Transaction): string {
 
 export function SmartInputSheet({ open, onClose, editTransaction }: SmartInputSheetProps) {
   const { settings } = useSettings()
+  const { profile } = useProfile()
   const { isDesktop } = useViewport()
   const categories = useCategories()
   const [text, setText] = useState(() =>
@@ -177,10 +179,11 @@ export function SmartInputSheet({ open, onClose, editTransaction }: SmartInputSh
     } else {
       if (!parsed) return
       // New transaction — atomic: source + clones in one Dexie transaction
+      if (!profile) return
       const tx = createTransactionFromParsed({
         ...parsed,
         recurring: finalRecurring,
-      })
+      }, profile.id)
       if (finalRecurring.kind !== 'none') {
         await db.transaction('rw', db.transactions, async () => {
           await db.transactions.add(tx)

@@ -39,7 +39,7 @@ export async function addTransaction(page: Page, text: string) {
   const input = page.locator('input[placeholder="Ej: birra 1500"]')
   await input.fill(text)
 
-  const submitBtn = page.locator('button[aria-label="Agregar transacción"]')
+  const submitBtn = page.locator('button[aria-label="Guardar transacción"]')
   await expect(submitBtn).toBeEnabled()
   await submitBtn.click()
   await page.waitForTimeout(400)

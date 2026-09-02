@@ -1,7 +1,6 @@
 import { useMemo, useState, useEffect, useRef } from 'react'
 import { useAllTransactions } from '../../hooks/useTransactions'
 import { useProjections } from '../../hooks/useProjections'
-import { useViewport } from '../../hooks/useViewport'
 import { BalanceCard } from './BalanceCard'
 import { TransactionItem } from '../transactions/TransactionItem'
 import { Inversiones } from './Inversiones'
@@ -18,7 +17,6 @@ interface DashboardProps {
 
 export function Dashboard({ onOpenBalanceDetail }: DashboardProps) {
   const transactions = useAllTransactions()
-  const { isWide } = useViewport()
   const [expandedTxId, setExpandedTxId] = useState<string | null>(null)
   const [showTop, setShowTop] = useState(false)
   const rootRef = useRef<HTMLDivElement>(null)
@@ -113,26 +111,7 @@ export function Dashboard({ onOpenBalanceDetail }: DashboardProps) {
   }
 
   return (
-    <div className="space-y-4" ref={rootRef}>
-      <header className="pt-2 pb-1 flex items-center justify-between">
-        <div>
-          <h1 className={`${isWide ? 'text-5xl' : 'text-4xl'} font-black tracking-tight leading-none`}>Gasty</h1>
-        </div>
-      </header>
-
-      {isProjection && (
-        <div
-          className="px-4 py-2 text-sm font-medium text-center"
-          style={{
-            background: 'var(--color-projection-card)',
-            color: 'var(--color-projection-text)',
-            border: '1px solid var(--color-projection-accent)',
-          }}
-        >
-          🚀 Modo proyección — los gastos futuros son estimados según tus recurrentes
-        </div>
-      )}
-
+    <div className="space-y-3" ref={rootRef}>
       <BalanceCard
         totalIncome={summary.totalIncome}
         totalExpense={summary.totalExpense}

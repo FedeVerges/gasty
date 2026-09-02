@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../lib/db'
+import { useProfile } from '../context/ProfileContext'
 
 function monthKey(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
@@ -15,9 +16,10 @@ export function useProjections(month: string): {
   transactions: import('../types').Transaction[]
   isProjection: boolean
 } {
+  const { profile } = useProfile()
   const allTransactions = useLiveQuery(
-    () => db.transactions.toArray(),
-    [],
+    () => profile ? db.transactions.where('profileId').equals(profile.id).toArray() : [],
+    [profile?.id],
     [],
   )
 

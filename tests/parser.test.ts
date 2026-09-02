@@ -1,5 +1,5 @@
 import { describe, it, expect, afterEach, vi } from 'vitest'
-import { parseInput, parseAmountFromText } from '../src/lib/parser'
+import { parseBatchInput, parseInput, parseAmountFromText } from '../src/lib/parser'
 
 afterEach(() => {
   vi.useRealTimers()
@@ -28,6 +28,49 @@ describe('parser: gastos básicos', () => {
   it('parsea gasto sin monto (devuelve null)', () => {
     const result = parseInput('internet')
     expect(result).toBeNull()
+  })
+})
+
+describe('parser: carga múltiple', () => {
+  it('separa movimientos por coma seguida de espacio', () => {
+    const result = parseBatchInput('birra 25000, super 300000 25/05')
+
+    expect(result.transactions).toHaveLength(2)
+    expect(result.transactions[0]).toMatchObject({
+      description: 'birra',
+      amount: 25000,
+      type: 'expense',
+    })
+    expect(result.transactions[1]).toMatchObject({
+      description: 'super',
+      amount: 300000,
+      type: 'expense',
+    })
+    expect(result.ignored).toEqual([])
+  })
+
+  it('conserva decimales, ignora fragmentos inválidos y desactiva recurrencias', () => {
+    const result = parseBatchInput('café 250,50, sin monto, alquiler 300000')
+
+    expect(result.transactions).toHaveLength(2)
+    expect(result.transactions[0]).toMatchObject({
+      amount: 250.5,
+      recurring: { kind: 'none' },
+    })
+    expect(result.transactions[1]).toMatchObject({
+      description: 'alquiler',
+      recurring: { kind: 'none' },
+    })
+    expect(result.ignored).toEqual(['sin monto'])
+  })
+
+  it('mantiene la fecha y el tipo de cada fragmento', () => {
+    const result = parseBatchInput('super 300000 25/12/2026, sueldo 500000 26/12/2026')
+
+    expect(result.transactions).toMatchObject([
+      { type: 'expense', date: '2026-12-25' },
+      { type: 'income', date: '2026-12-26' },
+    ])
   })
 })
 

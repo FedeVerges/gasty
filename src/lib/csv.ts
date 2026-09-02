@@ -1,5 +1,5 @@
 import { createTransactionFromParsed, parseAmountFromText, toLocalISO, normalizeCategory, parseInput } from './parser'
-import { db } from './db'
+import { db, getAppSettings } from './db'
 import { DEFAULT_CATEGORIES, getPaletteColor } from './categories'
 import type { CsvFormatSettings, Category, RecurringConfig } from '../types'
 
@@ -259,16 +259,21 @@ export function parseCsvContent(
 
 export async function executeImport(
   rows: CsvRow[],
+  profileIdOrPendingCategories?: string | CsvPendingCategory[],
   pendingCategories?: CsvPendingCategory[],
 ): Promise<CsvImportResult> {
+  const profileId = typeof profileIdOrPendingCategories === 'string'
+    ? profileIdOrPendingCategories
+    : (await getAppSettings()).activeProfileId
+  const categoriesToCreate = Array.isArray(profileIdOrPendingCategories) ? profileIdOrPendingCategories : pendingCategories
   // Auto-create any pending categories before importing
-  if (pendingCategories && pendingCategories.length > 0) {
-    const existingCats = await db.categories.toArray()
+  if (categoriesToCreate && categoriesToCreate.length > 0) {
+    const existingCats = await db.profileCategories.where('profileId').equals(profileId).toArray()
     const existingIds = new Set(existingCats.map((c) => c.id))
     const existingNames = new Set(existingCats.map((c) => c.name.toLowerCase()))
 
     let colorIndex = existingCats.length
-    for (const pending of pendingCategories) {
+    for (const pending of categoriesToCreate) {
       const cleanName = pending.name.trim()
 
       // Normalize: remove accents for id generation
@@ -284,13 +289,14 @@ export async function executeImport(
         .map((d) => d.toLowerCase().trim())
         .filter((k) => k.length > 0)
 
-      await db.categories.add({
+      await db.profileCategories.add({
         id,
         name: cleanName,
         emoji: '📂',
         color,
         type: pending.type === 'income' ? 'income' : 'expense',
         keywords: [cleanName.toLowerCase(), ...descriptionKeywords],
+        profileId,
       })
 
       // Update existing rows that reference this category
@@ -303,7 +309,7 @@ export async function executeImport(
 
     // Sync keyword maps after adding categories
     const { syncKeywordMaps } = await import('./categories')
-    const allCats = await db.categories.toArray()
+    const allCats = await db.profileCategories.where('profileId').equals(profileId).toArray()
     syncKeywordMaps(allCats)
   }
   let imported = 0
@@ -319,7 +325,7 @@ export async function executeImport(
         categoryId: row.categoryId,
         date: row.date,
         recurring: row.recurring,
-      })
+      }, profileId)
       await db.transactions.add(tx)
       imported++
     } catch {

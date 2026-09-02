@@ -2,46 +2,48 @@ import { useContext, useEffect, useState } from 'react'
 import { Card } from '../ui/Card'
 import { Button } from '../ui/Button'
 import { useSettings } from '../../context/SettingsContext'
-import { getRecurringSources, deleteRecurringSource } from '../../lib/recurring'
+import { getRecurringRules, deleteRecurringRule } from '../../lib/recurring'
 import { useCategories } from '../../hooks/useCategories'
 import { formatMoney, formatDate } from '../../lib/format'
-import { clearDatabase } from '../../lib/db'
+import { clearProfileData } from '../../lib/db'
 import { CsvImportContext } from '../../context/CsvImportContext'
-import { EditTransactionContext } from '../../context/EditTransactionContext'
 import { CategoryManager } from './CategoryManager'
-import type { Transaction } from '../../types'
+import type { RecurringRule } from '../../types'
+import { useProfile } from '../../context/ProfileContext'
 import { version } from '../../../package.json'
+import { ProfileManager } from '../profiles/ProfileManager'
 
-type SettingsView = 'main' | 'categories'
+type SettingsView = 'main' | 'categories' | 'profiles'
 
-export function Settings() {
+export function Settings({ initialView = 'main' }: { initialView?: SettingsView }) {
   const { settings, setTheme, setCurrency, setCsvFormat } = useSettings()
+  const { profile } = useProfile()
   const categories = useCategories()
   const csvImport = useContext(CsvImportContext)
-  const onEdit = useContext(EditTransactionContext)
-  const [recurring, setRecurring] = useState<Transaction[]>([])
+  const [recurring, setRecurring] = useState<RecurringRule[]>([])
   const [recurringSearch, setRecurringSearch] = useState('')
-  const [view, setView] = useState<SettingsView>('main')
+  const [view, setView] = useState<SettingsView>(initialView)
   const [clearing, setClearing] = useState(false)
 
   useEffect(() => {
-    getRecurringSources().then(setRecurring)
-  }, [])
+    if (profile) getRecurringRules(profile.id).then(setRecurring)
+  }, [profile])
 
-  const refresh = () => getRecurringSources().then(setRecurring)
+  const refresh = () => profile ? getRecurringRules(profile.id).then(setRecurring) : Promise.resolve()
 
   const handleDeleteRecurring = async (id: string) => {
     if (confirm('¿Eliminar este movimiento recurrente? Se cancelarán las repeticiones futuras, pero el historial se mantiene.')) {
-      await deleteRecurringSource(id)
+      await deleteRecurringRule(id)
       await refresh()
     }
   }
 
   const handleClearDatabase = async () => {
-    if (confirm('¿Borrar TODOS los datos? Esta acción no se puede deshacer.')) {
+    if (!profile) return
+    if (confirm(`¿Borrar todos los movimientos, recurrentes e inversiones de ${profile.name}? Esta acción no se puede deshacer.`)) {
       setClearing(true)
       try {
-        await clearDatabase()
+        await clearProfileData(profile.id)
         await refresh()
       } finally {
         setClearing(false)
@@ -75,6 +77,18 @@ export function Settings() {
     )
   }
 
+  if (view === 'profiles') {
+    return (
+      <div className="space-y-4">
+        <header className="flex items-center gap-3 pb-1 pt-2">
+          <button onClick={() => setView('main')} className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-canvas-soft text-lg active:scale-[0.95]" aria-label="Volver">←</button>
+          <h1 className="text-4xl font-black leading-none tracking-tight">Perfiles</h1>
+        </header>
+        <ProfileManager />
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-4">
       <header className="pt-2 pb-1 flex items-center gap-3">
@@ -98,6 +112,12 @@ export function Settings() {
       </header>
 
       {/* 1. Categorías */}
+      <Card>
+        <span className="mb-3 block text-xs font-medium uppercase tracking-widest text-body">Perfiles</span>
+        <p className="mb-3 text-xs text-body">Creá y administrá perfiles personales, familiares o de negocio.</p>
+        <Button fullWidth onClick={() => setView('profiles')}>Administrar perfiles</Button>
+      </Card>
+
       <Card>
         <span className="text-xs uppercase tracking-widest text-body font-medium block mb-3">
           Categorías
@@ -170,9 +190,8 @@ export function Settings() {
                       {tx.description}
                     </p>
                     <p className="text-xs text-body">
-                      {cat?.name} · {formatDate(tx.date)}
-                      {tx.recurring.kind === 'fixed_temporary' &&
-                        ` · ${tx.recurring.currentMonth}/${tx.recurring.totalMonths}`}
+                      {cat?.name} · desde {formatDate(tx.startDate)}
+                      {tx.recurring.kind === 'fixed_temporary' && ` · ${tx.recurring.totalMonths} meses`}
                     </p>
                   </div>
                   <div className="flex flex-col items-end gap-1">
@@ -180,13 +199,6 @@ export function Settings() {
                       {formatMoney(tx.amount, settings.currency)}
                     </span>
                     <div className="flex items-center gap-3">
-                      <button
-                        onClick={() => onEdit?.(tx)}
-                        className="text-xs text-primary"
-                        aria-label={`Editar ${tx.description}`}
-                      >
-                        Editar
-                      </button>
                       <button
                         onClick={() => handleDeleteRecurring(tx.id)}
                         className="text-xs text-negative"
@@ -331,7 +343,7 @@ export function Settings() {
           Zona de peligro
         </span>
         <p className="text-sm text-body mb-3">
-          Borrar todos los datos de la aplicación. Esta acción no se puede deshacer.
+          Borra movimientos, recurrentes e inversiones del perfil actual. Tus categorías y configuración se conservan.
         </p>
         <Button
           variant="danger"

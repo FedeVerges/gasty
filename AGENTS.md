@@ -1,184 +1,45 @@
-# AGENTS.md
+# Repository Guidelines
 
-> Portable project context for AI agents. Auto-loaded by OpenCode, Copilot, Cursor, and
-> others that honor the standard. For tool-specific extras see `.opencode/` and `.github/`.
+## Project structure
 
-## What is Gasty
+Gasty is a mobile-first expense-tracking PWA for Argentina. The React application lives in `src/`:
 
-A **mobile-first PWA** for personal expense tracking (locale es-AR), ready for Capacitor → Play
-Store. Smart input in natural Spanish ("alquiler 45000", "cuota auto 25000 4/24"), recurring
-transaction auto-cloning, contextual quick-input (Gasty Flash), expense projections for future
-months, CSV import with auto-created categories, customizable per-category emoji, Investments
-module (savings projection), balance detail page, inline transaction editing, dark mode, no backend.
+- `components/` groups UI by feature, such as `add/`, `dashboard/`, and `transactions/`. Reusable primitives belong in `components/ui/`.
+- `hooks/` contains data and browser-behavior hooks. `context/` contains shared UI state.
+- `lib/` holds domain and persistence code: Dexie access, parsing, recurring transactions, CSV, and formatting.
+- `types/index.ts` is the shared type entry point. Keep cross-feature types there.
+- Unit and integration tests are in `tests/`; browser scenarios are in `e2e/` with fixtures under `e2e/fixtures/`.
+- Product and architecture notes live in `docs/`. Static PWA assets live in `public/`.
 
-## Stack (locked)
+Do not introduce catch-all folders such as `src/utils/`, `src/store/`, `src/router/`, or `src/pages/`.
 
-- **Vite 6 + React 19 + TypeScript** (TypeScript ~6.0)
-- **Tailwind CSS v4** — CSS-native config via `@theme` in `src/index.css` (no tailwind.config.*)
-- **Dexie 4 + `dexie-react-hooks`** — all persisted data lives in IndexedDB; **never `localStorage`**
-- **`vite-plugin-pwa`** — autoUpdate service worker
-- **Vitest + jsdom + `fake-indexeddb`** for tests
-- No Framer Motion · No Recharts/D3 · No React Router · No Zustand/Redux · No CSS-in-JS runtime
+## Build, test, and development
 
-## Hard constraints
-
-| Metric | Budget |
-|---|---|
-| JS bundle (gzipped) | < 250KB |
-| CSS bundle (gzipped) | < 15KB |
-| Container width | `max-w-[480px]` mobile-first (on `#root`) |
-| Locale | es-AR only (v1) |
-| Touch targets | ≥ 44px (`py-3` min) |
-
-## Commands (exact)
+Run commands from the repository root:
 
 ```bash
-npm run dev            # vite dev server
-npm run build          # tsc -b && vite build  →  dist/
-npm run lint           # eslint .  (flat config)
-npm test               # vitest run
-npm run test:watch     # vitest watch
-npm run preview        # vite preview (serve dist/)
-npm run test:e2e       # playwright test (chromium, 375x812)
-npm run test:e2e:ui    # playwright test --ui
-npm run test:e2e:debug # playwright test --debug
+npm run dev          # Start Vite's development server
+npm run build        # Type-check and create dist/
+npm run lint         # Run ESLint on the project
+npm test             # Run Vitest once
+npm run test:watch   # Keep Vitest running while editing
+npm run test:e2e     # Run Playwright browser tests
 ```
 
-After any non-trivial change, run `npm run lint`, `npm test`. For UI changes, run `npm run test:e2e` before committing.
+Run `npm run lint` and `npm test` for non-trivial changes. Run `npm run test:e2e` when changing user flows, layouts, imports, or persistence.
 
-## File layout (do not reorganize)
+## Code style and naming
 
-```
-src/
-├── components/
-│   ├── add/         # SmartInputSheet, FlashChips, CsvImportSheet
-│   ├── dashboard/   # Dashboard, BalanceCard, CategoryDonutChart, MonthSelector, BalanceDetailPage, Inversiones
-│   ├── layout/      # AppShell (EditTransactionContext, CsvImportContext), BottomNav, FAB, Sidebar
-│   ├── settings/    # Settings, CategoryManager
-│   ├── stats/       # Stats (custom SVG bars + donut, 0KB deps)
-│   ├── transactions/# Transactions, TransactionItem
-│   └── ui/          # Card, Button, Badge (primitives)
-├── context/         # SettingsContext, EditTransactionContext, CsvImportContext, BalanceDetailContext
-├── hooks/           # useTransactions, useCategories, useProjections, useHashRouter, useViewport, useKeyboardHeight, useInvestments
-├── lib/             # db (Dexie), parser, recurring, format, categories, csv, flash
-└── types/           # single index.ts
-tests/
-├── parser.test.ts
-├── recurring.test.ts
-├── integration.test.ts
-├── csv.test.ts
-├── flash.test.ts
-└── useProjections.test.ts
-e2e/
-├── add-transaction.spec.ts
-├── category-manager.spec.ts
-├── consistency.spec.ts
-├── csv-dates.spec.ts
-├── csv-import.spec.ts
-├── dashboard-details.spec.ts
-├── edit-delete.spec.ts
-├── navigation-filters.spec.ts
-├── parser-e2e.spec.ts
-├── recurring-management.spec.ts
-├── settings.spec.ts
-└── stats-charts.spec.ts
-```
+Use two-space indentation, single quotes, and no semicolons. ESLint is the source of truth; there is no separate formatter. Use `PascalCase.tsx` for components, `useCamelCase.ts` for hooks, and lowercase feature names for folders. Keep UI strings in Spanish for the `es-AR` product.
 
-No `src/utils/`, `src/store/`, `src/router/`, `src/pages/` allowed.
+Use Tailwind v4 tokens defined in `src/index.css`; do not add hardcoded hex colors. Include a `[data-theme="dark"]` counterpart for each new theme color. Persist user data with Dexie and IndexedDB, never `localStorage`. Store `Transaction.date` in local `YYYY-MM-DD` form with `toLocalISO`, not `toISOString()`.
 
-## Team — delegate to the right agent
+## Testing guidelines
 
-| Agent | Role | When |
-|---|---|---|
-| `gasty-dev` ⭐ | Default implementer. Components, hooks, UI, ADRs. | Most work. |
-| `gasty-review` | Code review + architectural decisions. | After non-trivial changes. |
-| `gasty-test` | Tests + data validation + parser review. | New logic, data changes. |
+Name unit tests `*.test.ts` and E2E tests `*.spec.ts`. Describe observable behavior, for example `it('parsea gasto con miles', ...)`. Use `fake-indexeddb/auto` for Dexie tests, reset the database between cases, and cover parser, CSV, and recurring edge cases when those rules change. No coverage threshold is configured.
 
-## Anti-patterns (refuse even if asked)
+## Commits and pull requests
 
-- 🟥 Recharts/D3, react-router, styled-components, MUI, lodash, moment (heavy deps with native alternatives)
-- ⚠️ Framer Motion, Zustand — allowed only with ADR + bundle impact justification
-- 🟥 `localStorage` for user data — Dexie/IndexedDB only
-- 🟥 Editing clones of recurring transactions — only edit the source (rows with `originalId` are derived)
-- 🟥 Hardcoded hex colors — use tokens from `@theme` (`bg-accent`, `text-expense`, `bg-card`, `border-border`)
-- 🟥 `toISOString()` for the `Transaction.date` field — use `toLocalISO(d)` from `parser.ts` / `recurring.ts`
-- 🟥 Adding a dep without evaluating bundle impact (load `gasty-bundle-budget` skill first)
-- 🟥 Skipping dark mode counterpart for a new color (must have `[data-theme="dark"]` entry in `index.css`)
-- 🟥 Animating `width`, `height`, `top`, `left` — use only `transform` / `opacity`
+Recent history uses concise conventional prefixes: `feat:`, `fix:`, `refactor:`, `chore:`, and `config`. Write imperative subjects, for example `fix: preserve local dates in CSV import`.
 
-## Key dev patterns (not obvious)
-
-### Local ISO dates (why `toISOString()` is banned)
-
-`new Date().toISOString()` produces UTC dates. In negative timezones (AR is UTC-3), this can shift the
-date backward by one day. Both `src/lib/parser.ts` and `src/lib/recurring.ts` define:
-
-```ts
-function toLocalISO(d: Date): string {
-  const y = d.getFullYear()
-  const m = String(d.getMonth() + 1).padStart(2, '0')
-  const day = String(d.getDate()).padStart(2, '0')
-  return `${y}-${m}-${day}`
-}
-```
-
-Always use this pattern for the `Transaction.date` field.
-
-### Test setup
-
-Integration and recurring tests require `fake-indexeddb`:
-
-```ts
-import 'fake-indexeddb/auto'
-// ... then in beforeEach:
-await db.delete()
-await db.open()
-await seedDatabase()
-```
-
-### Data access patterns
-
-- **Reading**: `useLiveQuery(() => db.transactions.toArray(), [], []) ?? []`
-- **Writing**: `db.transactions.add({ id: crypto.randomUUID(), ...fields, createdAt: new Date().toISOString() })`
-- **Settings**: persisted in `db.settings` under fixed key `'app-settings'`; accessed via `SettingsContext`
-- **Editing a transaction**: `AppShell` exposes `EditTransactionContext` — call `onEdit(tx)` to open the sheet in edit mode
-
-### Theme / dark mode
-
-`SettingsContext` sets `document.documentElement.setAttribute('data-theme', settings.theme)` — the
-CSS `@theme` tokens and `[data-theme="dark"]` overrides are in `src/index.css`.
-
-### Viewport height — `dvh` obligatorio en mobile sheets
-
-En mobile, **nunca** usar `100vh` para calcular maxHeight de sheets/modales.
-`100vh` no se reduce cuando el teclado abre en Android (Samsung A55 y otros),
-tapando el input.
-
-Usar `100dvh` con fallback:
-
-```ts
-const supportsDvh = typeof CSS !== 'undefined' && CSS.supports?.('height', '100dvh')
-const mobileMaxHeight = supportsDvh ? '90dvh' : '90vh'
-```
-
-También: **nunca** `position: fixed` en `<body>` para bloquear scroll — usar
-`overflow: hidden` que es compatible con Android's `scrollIntoView`.
-
-### Build pipeline
-
-`npm run build` runs **`tsc -b` first** (type-checks both `tsconfig.app.json` and
-`tsconfig.node.json`), then `vite build`. A type error will fail the build.
-
-## Where the detailed rules live
-
-| Concern | Source |
-|---|---|
-| Domain types, IDs, defaults | `src/types/index.ts` |
-| **Functional specification** | `docs/functional.md` |
-| **Architecture & data flow** | `docs/architecture.md` |
-| UI tokens + component conventions | `.opencode/skill/gasty-ui-conventions/SKILL.md` |
-| Parser rules (regex, keywords) | `.opencode/skill/gasty-parser-rules/SKILL.md` |
-| Data layer (Dexie, hooks, recurring) | `.opencode/skill/gasty-data-layer/SKILL.md` |
-| Test patterns | `.opencode/skill/gasty-test-patterns/SKILL.md` |
-| Bundle budget | `.opencode/skill/gasty-bundle-budget/SKILL.md` |
-| Release flow | `.opencode/skill/gasty-release-flow/SKILL.md` |
+Pull requests should explain the user-visible change, link the relevant issue when one exists, list validation commands, and include screenshots for UI changes. Keep unrelated cleanup out of the same PR.

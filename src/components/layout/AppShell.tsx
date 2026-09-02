@@ -5,6 +5,7 @@ import { Sidebar } from './Sidebar'
 import { CsvImportSheet } from '../add/CsvImportSheet'
 import { CsvImportProvider } from '../../context/CsvImportContext'
 import { EditTransactionContext } from '../../context/EditTransactionContext'
+import { ProfileSelector } from '../profiles/ProfileSelector'
 
 interface AppShellProps {
   active: string
@@ -47,7 +48,10 @@ export function AppShell({ active, navigate, children }: AppShellProps) {
 
           {/* Main content */}
           <main className="flex-1 min-w-0 min-h-0 overflow-y-auto pb-20 md:pb-6">
-            <div className={`pt-6 ${isDesktop ? `pb-6 mx-auto w-full ${isWide ? 'px-12 max-w-5xl' : 'px-8 max-w-3xl'}` : 'px-5 pb-4 mx-auto max-w-[480px]'}`}>
+            <div className={`px-4 pt-3 ${isDesktop ? 'hidden' : 'block'}`}>
+              <ProfileSelector />
+            </div>
+            <div className={`pt-3 ${isDesktop ? `pb-6 mx-auto w-full ${isWide ? 'px-12 max-w-5xl' : 'px-8 max-w-3xl'}` : 'px-5 pb-4 mx-auto max-w-[480px]'}`}>
               {children}
             </div>
           </main>

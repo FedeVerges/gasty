@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
-import { getFlashSuggestions } from '../../lib/flash'
+import { useAllTransactions } from '../../hooks/useTransactions'
+import { useCategories } from '../../hooks/useCategories'
 
 interface FlashChipsProps {
   onSelect: (text: string) => void
@@ -8,17 +9,23 @@ interface FlashChipsProps {
 }
 
 export function FlashChips({ onSelect, maxChips = 6 }: FlashChipsProps) {
-  const suggestions = useMemo(() => getFlashSuggestions(), [])
+  const transactions = useAllTransactions()
+  const categories = useCategories()
 
   const chips = useMemo(() => {
-    // Remove duplicates (by text) and limit to maxChips
-    const seen = new Set<string>()
-    return suggestions.filter((s) => {
-      if (seen.has(s.text)) return false
-      seen.add(s.text)
-      return true
-    }).slice(0, maxChips)
-  }, [suggestions, maxChips])
+    const latestByDescription = new Map<string, typeof transactions[number]>()
+    for (const tx of [...transactions].sort((a, b) => b.createdAt.localeCompare(a.createdAt))) {
+      const key = tx.description.trim().toLocaleLowerCase('es-AR')
+      if (key && !latestByDescription.has(key)) latestByDescription.set(key, tx)
+    }
+    return [...latestByDescription.values()].slice(0, maxChips).map((tx) => ({
+      text: `${tx.description} ${tx.amount}`,
+      label: `${tx.description} $${new Intl.NumberFormat('es-AR', { maximumFractionDigits: 0 }).format(tx.amount)}`,
+      emoji: categories.find((category) => category.id === tx.categoryId)?.emoji ?? '💸',
+    }))
+  }, [transactions, categories, maxChips])
+
+  if (chips.length === 0) return null
 
   return (
     <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-2">
